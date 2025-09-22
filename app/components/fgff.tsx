@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,19 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const CURRENT_SUBLEVEL = 5;
 const TOTAL_SUBLEVELS = 10;
-const TIME_LIMIT = 60; // 60 seconds timer
 
-// Game data for level 5 - single word puzzle
+// Game data for level 5
 const LEVEL_DATA = {
   letters: ['R', 'E', 'A', 'C', 'T', 'S'],
-  targetWord: 'REACTS', // The word players need to form (using available letters)
+  words: [
+    { word: 'CAR', length: 3, row: 0, col: 0, direction: 'across' },
+    { word: 'CARE', length: 4, row: 0, col: 0, direction: 'down' },
+    { word: 'REACT', length: 5, row: 1, col: 2, direction: 'across' },
+    { word: 'TEA', length: 3, row: 2, col: 4, direction: 'down' },
+    { word: 'SET', length: 3, row: 3, col: 0, direction: 'across' },
+    { word: 'ART', length: 3, row: 4, col: 1, direction: 'across' },
+  ],
+  gridSize: { rows: 7, cols: 7 }
 };
 
 interface Particle {
@@ -31,15 +38,29 @@ interface Particle {
   color: string;
 }
 
+interface WordInfo {
+  word: string;
+  length: number;
+  row: number;
+  col: number;
+  direction: 'across' | 'down';
+  found: boolean;
+}
+
+interface GridCell {
+  letter: string;
+  isActive: boolean;
+  wordIds: number[];
+}
+
 interface GameState {
+  grid: (GridCell | null)[][];
+  words: WordInfo[];
   selectedLetters: string[];
   selectedIndices: number[];
+  foundWords: Set<string>;
   currentWord: string;
   gameComplete: boolean;
-  wordBoxes: string[];
-  boxStates: 'empty' | 'correct' | 'wrong';
-  timeLeft: number;
-  gameOver: boolean;
 }
 
 interface GameScreenProps {
@@ -47,53 +68,47 @@ interface GameScreenProps {
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
-  const [gameState, setGameState] = useState<GameState>({
-    selectedLetters: [],
-    selectedIndices: [],
-    currentWord: '',
-    gameComplete: false,
-    wordBoxes: new Array(LEVEL_DATA.letters.length).fill(''),
-    boxStates: 'empty',
-    timeLeft: TIME_LIMIT,
-    gameOver: false,
+  const [gameState, setGameState] = useState<GameState>(() => {
+    // Initialize grid
+    const grid: (GridCell | null)[][] = Array(LEVEL_DATA.gridSize.rows)
+      .fill(null)
+      .map(() => Array(LEVEL_DATA.gridSize.cols).fill(null));
+
+    // Place words in grid
+    const words = LEVEL_DATA.words.map((wordData, index) => ({
+      ...wordData,
+      found: false,
+    }));
+
+    words.forEach((wordInfo, wordIndex) => {
+      const letters = wordInfo.word.split('');
+      letters.forEach((letter, letterIndex) => {
+        const row = wordInfo.direction === 'down' ? wordInfo.row + letterIndex : wordInfo.row;
+        const col = wordInfo.direction === 'across' ? wordInfo.col + letterIndex : wordInfo.col;
+        
+        if (!grid[row][col]) {
+          grid[row][col] = {
+            letter,
+            isActive: false,
+            wordIds: [],
+          };
+        }
+        grid[row][col]!.wordIds.push(wordIndex);
+      });
+    });
+
+    return {
+      grid,
+      words,
+      selectedLetters: [],
+      selectedIndices: [],
+      foundWords: new Set(),
+      currentWord: '',
+      gameComplete: false,
+    };
   });
 
   const [particles, setParticles] = useState<Particle[]>([]);
-  const shakeAnimation = useRef(new Animated.Value(0)).current;
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Timer effect
-  useEffect(() => {
-    if (gameState.gameComplete || gameState.gameOver) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      return;
-    }
-
-    timerRef.current = setInterval(() => {
-      setGameState(prev => {
-        if (prev.timeLeft <= 1) {
-          // Time's up!
-          setTimeout(() => {
-            Alert.alert(
-              'Time\'s Up!',
-              `You ran out of time! The word was: ${LEVEL_DATA.targetWord}`,
-              [{ text: 'Try Again', onPress: () => onNavigate('levels') }]
-            );
-          }, 100);
-          return { ...prev, timeLeft: 0, gameOver: true };
-        }
-        return { ...prev, timeLeft: prev.timeLeft - 1 };
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [gameState.gameComplete, gameState.gameOver, onNavigate]);
 
   // Create floating particles
   useEffect(() => {
@@ -136,73 +151,27 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
     particleArray.forEach(animateParticle);
   }, []);
 
-  // Update word boxes when current word changes
-  useEffect(() => {
-    const newBoxes = new Array(LEVEL_DATA.letters.length).fill('');
-    for (let i = 0; i < gameState.currentWord.length; i++) {
-      newBoxes[i] = gameState.currentWord[i];
-    }
-    setGameState(prev => ({ ...prev, wordBoxes: newBoxes }));
-  }, [gameState.currentWord]);
-
   const handleLetterPress = (letter: string, index: number) => {
-    if (gameState.gameOver || gameState.gameComplete) return;
-
     if (gameState.selectedIndices.includes(index)) {
       // Deselect if already selected
-      setGameState(prev => {
-        const newSelectedLetters = prev.selectedLetters.filter((_, i) => prev.selectedIndices[i] !== index);
-        const newSelectedIndices = prev.selectedIndices.filter(i => i !== index);
-        return {
-          ...prev,
-          selectedLetters: newSelectedLetters,
-          selectedIndices: newSelectedIndices,
-          currentWord: newSelectedLetters.join(''),
-        };
-      });
-    } else if (gameState.currentWord.length < LEVEL_DATA.letters.length) {
-      // Select letter only if we haven't used all available letters
-      setGameState(prev => {
-        const newSelectedLetters = [...prev.selectedLetters, letter];
-        const newSelectedIndices = [...prev.selectedIndices, index];
-        return {
-          ...prev,
-          selectedLetters: newSelectedLetters,
-          selectedIndices: newSelectedIndices,
-          currentWord: newSelectedLetters.join(''),
-        };
-      });
+      setGameState(prev => ({
+        ...prev,
+        selectedLetters: prev.selectedLetters.filter((_, i) => prev.selectedIndices[i] !== index),
+        selectedIndices: prev.selectedIndices.filter(i => i !== index),
+        currentWord: prev.selectedLetters.filter((_, i) => prev.selectedIndices[i] !== index).join(''),
+      }));
+    } else {
+      // Select letter
+      setGameState(prev => ({
+        ...prev,
+        selectedLetters: [...prev.selectedLetters, letter],
+        selectedIndices: [...prev.selectedIndices, index],
+        currentWord: [...prev.selectedLetters, letter].join(''),
+      }));
     }
-  };
-
-  const shakeBoxes = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnimation, {
-        toValue: 10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: -10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: 10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: 0,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
   };
 
   const submitWord = () => {
-    if (gameState.gameOver || gameState.gameComplete) return;
-
     const word = gameState.currentWord.toUpperCase();
     
     if (word.length < 3) {
@@ -210,106 +179,90 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
       return;
     }
 
-    if (word === LEVEL_DATA.targetWord) {
-      // Correct word
-      setGameState(prev => ({
-        ...prev,
-        boxStates: 'correct',
-        gameComplete: true,
-      }));
-
-      setTimeout(() => {
-        Alert.alert(
-          'Congratulations!',
-          `You found the word: ${LEVEL_DATA.targetWord}! Time remaining: ${gameState.timeLeft}s`,
-          [{ text: 'Next Level', onPress: () => onNavigate('levels') }]
+    const foundWord = gameState.words.find(w => w.word === word && !w.found);
+    
+    if (foundWord) {
+      // Mark word as found
+      setGameState(prev => {
+        const newWords = prev.words.map(w => 
+          w.word === word ? { ...w, found: true } : w
         );
-      }, 1500);
-    } else {
-      // Wrong word
-      setGameState(prev => ({ ...prev, boxStates: 'wrong' }));
-      shakeBoxes();
+        
+        const newFoundWords = new Set(prev.foundWords).add(word);
+        const gameComplete = newWords.every(w => w.found);
+        
+        // Update grid to show found letters
+        const newGrid = prev.grid.map(row => 
+          row ? row.map(cell => {
+            if (cell && cell.wordIds.some(id => newWords[id].word === word)) {
+              return { ...cell, isActive: true };
+            }
+            return cell;
+          }) : row
+        );
 
-      setTimeout(() => {
-        // Reset after animation
-        setGameState(prev => ({
+        return {
           ...prev,
+          words: newWords,
+          foundWords: newFoundWords,
+          grid: newGrid,
           selectedLetters: [],
           selectedIndices: [],
           currentWord: '',
-          wordBoxes: new Array(LEVEL_DATA.letters.length).fill(''),
-          boxStates: 'empty',
-        }));
-      }, 800);
+          gameComplete,
+        };
+      });
+
+      if (gameState.words.filter(w => !w.found).length === 1) {
+        setTimeout(() => {
+          Alert.alert(
+            'Congratulations!',
+            'You found all the words!',
+            [{ text: 'Next Level', onPress: () => onNavigate('levels') }]
+          );
+        }, 1000);
+      }
+    } else if (gameState.foundWords.has(word)) {
+      Alert.alert('Already Found', 'You already found this word!');
+    } else {
+      Alert.alert('Not Found', 'This word is not in the puzzle.');
     }
-  };
 
-  const clearSelection = () => {
-    if (gameState.gameOver || gameState.gameComplete) return;
-
+    // Clear selection
     setGameState(prev => ({
       ...prev,
       selectedLetters: [],
       selectedIndices: [],
       currentWord: '',
-      wordBoxes: new Array(LEVEL_DATA.letters.length).fill(''),
-      boxStates: 'empty',
     }));
   };
 
-  const getBoxStyle = (index: number) => {
-    let backgroundColor = '#3a3a3c'; // Default empty
-    let borderColor = '#555';
-    
-    if (gameState.boxStates === 'correct') {
-      backgroundColor = '#10B981'; // Green
-      borderColor = '#10B981';
-    } else if (gameState.boxStates === 'wrong') {
-      backgroundColor = '#EF4444'; // Red
-      borderColor = '#EF4444';
-    } else if (gameState.wordBoxes[index]) {
-      backgroundColor = '#8B5CF6'; // Purple when filled
-      borderColor = '#8B5CF6';
+  const clearSelection = () => {
+    setGameState(prev => ({
+      ...prev,
+      selectedLetters: [],
+      selectedIndices: [],
+      currentWord: '',
+    }));
+  };
+
+  const renderGridCell = (cell: GridCell | null, row: number, col: number) => {
+    if (!cell) {
+      return <View key={`${row}-${col}`} style={styles.emptyCell} />;
     }
 
-    return {
-      backgroundColor,
-      borderColor,
-    };
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getTimerColor = () => {
-    if (gameState.timeLeft > 30) return '#10B981'; // Green
-    if (gameState.timeLeft > 10) return '#F59E0B'; // Yellow
-    return '#EF4444'; // Red
-  };
-
-  const renderWordBox = (letter: string, index: number) => {
     return (
-      <Animated.View
-        key={index}
+      <View
+        key={`${row}-${col}`}
         style={[
-          styles.wordBox,
-          getBoxStyle(index),
-          {
-            transform: [{ translateX: shakeAnimation }],
-          },
+          styles.gridCell,
+          cell.isActive ? styles.gridCellActive : styles.gridCellInactive
         ]}
       >
-        <Text style={[
-          styles.wordBoxText,
-          gameState.boxStates === 'wrong' && styles.wrongText,
-          gameState.boxStates === 'correct' && styles.correctText,
-        ]}>
-          {letter}
+        <Text style={styles.gridCellText}>
+          {cell.isActive ? cell.letter : ''}
         </Text>
-      </Animated.View>
+      </View>
     );
   };
 
@@ -322,7 +275,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
     const y = centerY + radius * Math.sin(angle - Math.PI / 2);
 
     const isSelected = gameState.selectedIndices.includes(index);
-    const isDisabled = gameState.gameOver || gameState.gameComplete;
 
     return (
       <TouchableOpacity
@@ -333,10 +285,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
             transform: [{ translateX: x }, { translateY: y }],
           },
           isSelected ? styles.circleLetterSelected : null,
-          isDisabled ? styles.circleLetterDisabled : null,
         ]}
         onPress={() => handleLetterPress(letter, index)}
-        disabled={isDisabled}
       >
         <Text style={[
           styles.circleLetterText,
@@ -391,20 +341,29 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
         </View>
       </View>
 
-      {/* Timer Section */}
-      <View style={styles.timerContainer}>
-        <Text style={[styles.timerText, { color: getTimerColor() }]}>
-          {formatTime(gameState.timeLeft)}
+      {/* Words Found Counter */}
+      <View style={styles.wordsCounter}>
+        <Text style={styles.wordsCounterText}>
+          Words Found: {gameState.foundWords.size}/{gameState.words.length}
         </Text>
       </View>
 
-      {/* Word Boxes Display */}
-      <View style={styles.wordBoxesContainer}>
-        <View style={styles.wordBoxesRow}>
-          {gameState.wordBoxes.map((letter, index) => 
-            renderWordBox(letter, index)
-          )}
+      {/* Crossword Grid */}
+      <View style={styles.gridContainer}>
+        <View style={styles.grid}>
+          {gameState.grid.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.gridRow}>
+              {row.map((cell, colIndex) => renderGridCell(cell, rowIndex, colIndex))}
+            </View>
+          ))}
         </View>
+      </View>
+
+      {/* Current Word Display */}
+      <View style={styles.currentWordContainer}>
+        <Text style={styles.currentWordText}>
+          {gameState.currentWord || 'Select letters to form a word'}
+        </Text>
       </View>
 
       {/* Letter Circle */}
@@ -419,23 +378,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity 
-          style={[
-            styles.actionButton,
-            (gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver) && styles.disabledButton
-          ]} 
+          style={styles.actionButton} 
           onPress={clearSelection}
-          disabled={gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver}
         >
           <Text style={styles.actionButtonText}>Clear</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[
-            styles.actionButton, 
-            styles.submitButton,
-            (gameState.currentWord.length === 0 || gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver) && styles.disabledButton
-          ]} 
+          style={[styles.actionButton, styles.submitButton]} 
           onPress={submitWord}
-          disabled={gameState.currentWord.length === 0 || gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver}
+          disabled={gameState.currentWord.length === 0}
         >
           <Text style={styles.actionButtonText}>Submit</Text>
         </TouchableOpacity>
@@ -496,60 +447,66 @@ const styles = StyleSheet.create({
     backgroundColor: '#8B5CF6',
     borderRadius: 4,
   },
-  timerContainer: {
+  wordsCounter: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
-  timerLabel: {
+  wordsCounterText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
-  timerText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-    marginBottom: 12,
-  },
-  targetText: {
-    color: '#8B5CF6',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  wordBoxesContainer: {
+  gridContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
-  wordBoxesRow: {
+  grid: {
+    flexDirection: 'column',
+  },
+  gridRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
   },
-  wordBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 2,
+  gridCell: {
+    width: 32,
+    height: 32,
+    borderWidth: 1,
+    borderColor: '#3a3a3c',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#3a3a3c',
-    borderColor: '#555',
+    margin: 1,
   },
-  wordBoxText: {
+  gridCellActive: {
+    backgroundColor: '#8B5CF6',
+    borderColor: '#8B5CF6',
+  },
+  gridCellInactive: {
+    backgroundColor: '#2a2a2c',
+    borderColor: '#3a3a3c',
+  },
+  emptyCell: {
+    width: 32,
+    height: 32,
+    margin: 1,
+  },
+  gridCellText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  currentWordContainer: {
+    alignItems: 'center',
+    paddingVertical: 15,
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  currentWordText: {
+    color: '#ffffff',
+    fontSize: 20,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-  },
-  wrongText: {
-    color: '#ffffff',
-  },
-  correctText: {
-    color: '#ffffff',
+    letterSpacing: 2,
   },
   letterCircleContainer: {
     alignItems: 'center',
@@ -584,9 +541,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F59E0B',
     borderColor: '#F59E0B',
   },
-  circleLetterDisabled: {
-    opacity: 0.5,
-  },
   circleLetterText: {
     color: '#ffffff',
     fontSize: 18,
@@ -611,10 +565,6 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#10B981',
-  },
-  disabledButton: {
-    backgroundColor: '#555',
-    opacity: 0.6,
   },
   actionButtonText: {
     color: '#ffffff',
