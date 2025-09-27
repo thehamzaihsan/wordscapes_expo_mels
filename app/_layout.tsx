@@ -52,6 +52,14 @@ export default function RootLayout() {
             gestureEnabled: true,
           }}
         />
+
+        <Stack.Screen 
+          name="test" 
+          options={{
+            headerShown: false,
+            gestureEnabled: true,
+          }}
+        />
       </Stack>
     </SafeAreaProvider>
   );

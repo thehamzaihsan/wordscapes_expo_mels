@@ -1,66 +1,211 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
+  Alert,
+  Animated,
+  Dimensions,
+  PanGestureHandler,
+  PanGestureHandlerGestureEvent,
+  SafeAreaView,
+  ScrollView,
+  State,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Dimensions,
-  SafeAreaView,
-  Animated,
+  View,
 } from 'react-native';
+import Svg, { Circle, Line } from 'react-native-svg';
+
+// Import your game manager functions
+import { checkGuess, CrosswordLevel, generateCrosswordLevel, GuessResult } from '../../hooks/game-manager';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const CURRENT_SUBLEVEL = 5;
-const TOTAL_SUBLEVELS = 10;
-const TIME_LIMIT = 60; // 60 seconds timer
+// Crossword puzzle structure
+interface CrosswordWord {
+  word: string;
+  startRow: number;
+  startCol: number;
+  direction: 'across' | 'down';
+  clue: string;
+  found: boolean;
+  cells: {row: number, col: number}[];
+}
 
-// Game data for level 5 - single word puzzle
-const LEVEL_DATA = {
-  letters: ['R', 'E', 'A', 'C', 'T', 'S'],
-  targetWord: 'REACTS', // The word players need to form (using available letters)
-};
+interface CrosswordCell {
+  letter: string;
+  isEmpty: boolean;
+  wordIds: number[];
+  isHighlighted: boolean;
+  correctLetter: string;
+}
 
-interface Particle {
-  id: number;
-  x: Animated.Value;
-  y: Animated.Value;
-  opacity: Animated.Value;
-  scale: Animated.Value;
-  color: string;
+interface LetterPosition {
+  x: number;
+  y: number;
+  letter: string;
+  index: number;
 }
 
 interface GameState {
-  selectedLetters: string[];
+  crosswordGrid: CrosswordCell[][];
+  circleLetters: string[];
+  letterPositions: LetterPosition[];
+  selectedPath: string;
   selectedIndices: number[];
   currentWord: string;
+  foundWords: CrosswordWord[];
+  allWords: CrosswordWord[];
   gameComplete: boolean;
-  wordBoxes: string[];
-  boxStates: 'empty' | 'correct' | 'wrong';
   timeLeft: number;
   gameOver: boolean;
+  score: number;
+  level: CrosswordLevel | null;
+  currentWordDisplay: string;
+  isSelecting: boolean;
+  currentGesturePosition: { x: number; y: number };
 }
 
-interface GameScreenProps {
-  onNavigate: (screen: string) => void;
-}
+const GRID_SIZE = 15;
+const CELL_SIZE = Math.min((screenWidth - 40) / GRID_SIZE, 25);
 
-const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
-  const [gameState, setGameState] = useState<GameState>({
-    selectedLetters: [],
-    selectedIndices: [],
-    currentWord: '',
-    gameComplete: false,
-    wordBoxes: new Array(LEVEL_DATA.letters.length).fill(''),
-    boxStates: 'empty',
-    timeLeft: TIME_LIMIT,
-    gameOver: false,
+// Enhanced crossword layout generator
+const generateCrosswordLayout = (level: CrosswordLevel): CrosswordWord[] => {
+  const words = level.crosswordWords.slice(0, 10);
+  const crosswordWords: CrosswordWord[] = [];
+
+  // More sophisticated layout patterns
+  const layouts = [
+    { word: words[0] || 'COLA', startRow: 3, startCol: 2, direction: 'across' as const, clue: 'Soft drink' },
+    { word: words[1] || 'COAL', startRow: 3, startCol: 8, direction: 'across' as const, clue: 'Black fuel' },
+    { word: words[2] || 'FOCAL', startRow: 6, startCol: 1, direction: 'across' as const, clue: 'Central point' },
+    { word: words[3] || 'CLAN', startRow: 9, startCol: 6, direction: 'across' as const, clue: 'Family group' },
+    { word: words[4] || 'FALL', startRow: 1, startCol: 3, direction: 'down' as const, clue: 'Autumn season' },
+    { word: words[5] || 'LOAF', startRow: 3, startCol: 4, direction: 'down' as const, clue: 'Bread portion' },
+    { word: words[6] || 'COLA', startRow: 6, startCol: 8, direction: 'down' as const, clue: 'Another cola' },
+    { word: words[7] || 'ACE', startRow: 2, startCol: 10, direction: 'down' as const, clue: 'Playing card' },
+  ];
+
+  layouts.forEach((layout, index) => {
+    if (layout.word && layout.word.length > 0) {
+      const cells: {row: number, col: number}[] = [];
+      for (let i = 0; i < layout.word.length; i++) {
+        if (layout.direction === 'across') {
+          cells.push({ row: layout.startRow, col: layout.startCol + i });
+        } else {
+          cells.push({ row: layout.startRow + i, col: layout.startCol });
+        }
+      }
+      
+      crosswordWords.push({
+        word: layout.word.toUpperCase(),
+        startRow: layout.startRow,
+        startCol: layout.startCol,
+        direction: layout.direction,
+        clue: layout.clue,
+        found: false,
+        cells: cells,
+      });
+    }
   });
 
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const shakeAnimation = useRef(new Animated.Value(0)).current;
+  return crosswordWords;
+};
+
+interface CrosswordGameProps {
+  difficulty?: 'easy' | 'medium' | 'hard';
+  sublevel?: number;
+  totalSublevels?: number;
+  onNavigate: (screen: string, data?: any) => void;
+}
+
+const CrosswordGame: React.FC<CrosswordGameProps> = ({ 
+  difficulty = 'medium',
+  sublevel = 1,
+  totalSublevels = 10,
+  onNavigate 
+}) => {
+  const [gameState, setGameState] = useState<GameState>({
+    crosswordGrid: Array(GRID_SIZE).fill(null).map(() => 
+      Array(GRID_SIZE).fill(null).map(() => ({
+        letter: '',
+        isEmpty: true,
+        wordIds: [],
+        isHighlighted: false,
+        correctLetter: '',
+      }))
+    ),
+    circleLetters: [],
+    letterPositions: [],
+    selectedPath: '',
+    selectedIndices: [],
+    currentWord: '',
+    foundWords: [],
+    allWords: [],
+    gameComplete: false,
+    timeLeft: 300,
+    gameOver: false,
+    score: 0,
+    level: null,
+    currentWordDisplay: '',
+    isSelecting: false,
+    currentGesturePosition: { x: 0, y: 0 },
+  });
+
+  // Animation references
+  const letterAnimations = useRef<Animated.Value[]>([]);
+  const pulseAnimation = useRef(new Animated.Value(1)).current;
+  const wordBubbleAnimation = useRef(new Animated.Value(0)).current;
+  const successAnimation = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize animations
+  useEffect(() => {
+    letterAnimations.current = gameState.circleLetters.map(() => new Animated.Value(1));
+    
+    // Pulse animation for selected letters
+    const pulseSequence = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnimation, {
+          toValue: 1.1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnimation, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    
+    pulseSequence.start();
+    
+    return () => pulseSequence.stop();
+  }, [gameState.circleLetters]);
+
+  // Word bubble animation
+  useEffect(() => {
+    if (gameState.currentWordDisplay && gameState.currentWordDisplay !== 'TAP LETTERS') {
+      Animated.spring(wordBubbleAnimation, {
+        toValue: 1,
+        tension: 300,
+        friction: 10,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.spring(wordBubbleAnimation, {
+        toValue: 0,
+        tension: 300,
+        friction: 10,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [gameState.currentWordDisplay]);
+
+  // Initialize game
+  useEffect(() => {
+    initializeGame();
+  }, [difficulty]);
 
   // Timer effect
   useEffect(() => {
@@ -74,11 +219,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
     timerRef.current = setInterval(() => {
       setGameState(prev => {
         if (prev.timeLeft <= 1) {
-          // Time's up!
           setTimeout(() => {
             Alert.alert(
               'Time\'s Up!',
-              `You ran out of time! The word was: ${LEVEL_DATA.targetWord}`,
+              `Game Over! You found ${prev.foundWords.length} words.`,
               [{ text: 'Try Again', onPress: () => onNavigate('levels') }]
             );
           }, 100);
@@ -93,115 +237,136 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
         clearInterval(timerRef.current);
       }
     };
-  }, [gameState.gameComplete, gameState.gameOver, onNavigate]);
+  }, [gameState.gameComplete, gameState.gameOver]);
 
-  // Create floating particles
-  useEffect(() => {
-    const particleColors = ['#8B5CF6', '#EF4444', '#F59E0B', '#10B981'];
-    
-    const createParticle = (id: number): Particle => ({
-      id,
-      x: new Animated.Value(Math.random() * screenWidth),
-      y: new Animated.Value(Math.random() * screenHeight),
-      opacity: new Animated.Value(Math.random() * 0.3 + 0.1),
-      scale: new Animated.Value(Math.random() * 0.5 + 0.5),
-      color: particleColors[Math.floor(Math.random() * particleColors.length)],
-    });
-
-    const particleArray = Array.from({ length: 15 }, (_, i) => createParticle(i));
-    setParticles(particleArray);
-
-    const animateParticle = (particle: Particle) => {
-      const duration = Math.random() * 10000 + 5000;
+  const initializeGame = async () => {
+    try {
+      const level = generateCrosswordLevel(undefined, difficulty);
+      const crosswordWords = generateCrosswordLayout(level);
       
-      Animated.parallel([
-        Animated.timing(particle.x, {
-          toValue: Math.random() * screenWidth,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.y, {
-          toValue: Math.random() * screenHeight,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.opacity, {
-          toValue: Math.random() * 0.3 + 0.1,
-          duration: duration / 2,
-          useNativeDriver: true,
-        }),
-      ]).start(() => animateParticle(particle));
-    };
+      // Initialize grid
+      const newGrid: CrosswordCell[][] = Array(GRID_SIZE).fill(null).map(() => 
+        Array(GRID_SIZE).fill(null).map(() => ({
+          letter: '',
+          isEmpty: true,
+          wordIds: [],
+          isHighlighted: false,
+          correctLetter: '',
+        }))
+      );
 
-    particleArray.forEach(animateParticle);
-  }, []);
-
-  // Update word boxes when current word changes
-  useEffect(() => {
-    const newBoxes = new Array(LEVEL_DATA.letters.length).fill('');
-    for (let i = 0; i < gameState.currentWord.length; i++) {
-      newBoxes[i] = gameState.currentWord[i];
-    }
-    setGameState(prev => ({ ...prev, wordBoxes: newBoxes }));
-  }, [gameState.currentWord]);
-
-  const handleLetterPress = (letter: string, index: number) => {
-    if (gameState.gameOver || gameState.gameComplete) return;
-
-    if (gameState.selectedIndices.includes(index)) {
-      // Deselect if already selected
-      setGameState(prev => {
-        const newSelectedLetters = prev.selectedLetters.filter((_, i) => prev.selectedIndices[i] !== index);
-        const newSelectedIndices = prev.selectedIndices.filter(i => i !== index);
-        return {
-          ...prev,
-          selectedLetters: newSelectedLetters,
-          selectedIndices: newSelectedIndices,
-          currentWord: newSelectedLetters.join(''),
-        };
+      // Place words in grid
+      crosswordWords.forEach((wordObj, wordIndex) => {
+        wordObj.cells.forEach((cell, letterIndex) => {
+          if (cell.row < GRID_SIZE && cell.col < GRID_SIZE) {
+            newGrid[cell.row][cell.col] = {
+              letter: '',
+              isEmpty: false,
+              wordIds: [...newGrid[cell.row][cell.col].wordIds, wordIndex],
+              isHighlighted: false,
+              correctLetter: wordObj.word[letterIndex],
+            };
+          }
+        });
       });
-    } else if (gameState.currentWord.length < LEVEL_DATA.letters.length) {
-      // Select letter only if we haven't used all available letters
-      setGameState(prev => {
-        const newSelectedLetters = [...prev.selectedLetters, letter];
-        const newSelectedIndices = [...prev.selectedIndices, index];
-        return {
-          ...prev,
-          selectedLetters: newSelectedLetters,
-          selectedIndices: newSelectedIndices,
-          currentWord: newSelectedLetters.join(''),
-        };
+
+      // Calculate letter positions for circle
+      const radius = 85;
+      const letterPositions: LetterPosition[] = level.letters.map((letter, index) => {
+        const angle = (index * 2 * Math.PI) / level.letters.length;
+        const x = radius * Math.cos(angle - Math.PI / 2);
+        const y = radius * Math.sin(angle - Math.PI / 2);
+        return { x, y, letter, index };
       });
+
+      setGameState(prev => ({
+        ...prev,
+        level,
+        crosswordGrid: newGrid,
+        circleLetters: level.letters,
+        letterPositions,
+        allWords: crosswordWords,
+        foundWords: [],
+      }));
+    } catch (error) {
+      console.error('Error generating level:', error);
+      Alert.alert('Error', 'Failed to generate level. Please try again.');
     }
   };
 
-  const shakeBoxes = () => {
+  const handleCircleLetterPress = (letter: string, index: number) => {
+    if (gameState.gameOver || gameState.gameComplete) return;
+
+    // Animate letter selection
     Animated.sequence([
-      Animated.timing(shakeAnimation, {
-        toValue: 10,
+      Animated.timing(letterAnimations.current[index], {
+        toValue: 1.3,
         duration: 100,
         useNativeDriver: true,
       }),
-      Animated.timing(shakeAnimation, {
-        toValue: -10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: 10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: 0,
+      Animated.timing(letterAnimations.current[index], {
+        toValue: 1,
         duration: 100,
         useNativeDriver: true,
       }),
     ]).start();
+
+    setGameState(prev => {
+      const isAlreadySelected = prev.selectedIndices.includes(index);
+      
+      if (isAlreadySelected) {
+        const removeIndex = prev.selectedIndices.indexOf(index);
+        const newSelectedIndices = prev.selectedIndices.slice(0, removeIndex);
+        const newPath = newSelectedIndices.map(i => prev.circleLetters[i]).join('');
+        
+        return {
+          ...prev,
+          selectedIndices: newSelectedIndices,
+          selectedPath: newPath,
+          currentWord: newPath,
+          currentWordDisplay: newPath || 'TAP LETTERS',
+        };
+      } else {
+        const newSelectedIndices = [...prev.selectedIndices, index];
+        const newPath = newSelectedIndices.map(i => prev.circleLetters[i]).join('');
+        
+        return {
+          ...prev,
+          selectedIndices: newSelectedIndices,
+          selectedPath: newPath,
+          currentWord: newPath,
+          currentWordDisplay: newPath,
+        };
+      }
+    });
+  };
+
+  // Pan gesture handler for drag selection
+  const handlePanGesture = (event: PanGestureHandlerGestureEvent) => {
+    const { x, y, state } = event.nativeEvent;
+    
+    setGameState(prev => ({
+      ...prev,
+      currentGesturePosition: { x, y },
+      isSelecting: state === State.ACTIVE,
+    }));
+
+    if (state === State.ACTIVE) {
+      // Check if gesture is over any letter
+      gameState.letterPositions.forEach((letterPos, index) => {
+        const distance = Math.sqrt(
+          Math.pow(x - (letterPos.x + 100), 2) + Math.pow(y - (letterPos.y + 100), 2)
+        );
+        
+        if (distance < 25 && !gameState.selectedIndices.includes(index)) {
+          handleCircleLetterPress(letterPos.letter, index);
+        }
+      });
+    }
   };
 
   const submitWord = () => {
-    if (gameState.gameOver || gameState.gameComplete) return;
+    if (gameState.gameOver || gameState.gameComplete || !gameState.level) return;
 
     const word = gameState.currentWord.toUpperCase();
     
@@ -210,72 +375,121 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
       return;
     }
 
-    if (word === LEVEL_DATA.targetWord) {
-      // Correct word
+    const matchingWord = gameState.allWords.find(w => w.word === word && !w.found);
+    
+    if (matchingWord) {
+      // Success animation
+      Animated.sequence([
+        Animated.timing(successAnimation, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successAnimation, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const points = word.length * 10;
+      
+      // Update grid to show the word
+      const newGrid = [...gameState.crosswordGrid];
+      matchingWord.cells.forEach((cell, letterIndex) => {
+        if (cell.row < GRID_SIZE && cell.col < GRID_SIZE) {
+          newGrid[cell.row][cell.col] = {
+            ...newGrid[cell.row][cell.col],
+            letter: matchingWord.word[letterIndex],
+            isHighlighted: true,
+          };
+        }
+      });
+
+      const updatedWords = gameState.allWords.map(w => 
+        w.word === word ? { ...w, found: true } : w
+      );
+      
+      const newFoundWords = [...gameState.foundWords, { ...matchingWord, found: true }];
+
       setGameState(prev => ({
         ...prev,
-        boxStates: 'correct',
-        gameComplete: true,
+        crosswordGrid: newGrid,
+        foundWords: newFoundWords,
+        allWords: updatedWords,
+        score: prev.score + points,
+        selectedIndices: [],
+        selectedPath: '',
+        currentWord: '',
+        currentWordDisplay: 'TAP LETTERS',
       }));
 
-      setTimeout(() => {
-        Alert.alert(
-          'Congratulations!',
-          `You found the word: ${LEVEL_DATA.targetWord}! Time remaining: ${gameState.timeLeft}s`,
-          [{ text: 'Next Level', onPress: () => onNavigate('levels') }]
-        );
-      }, 1500);
-    } else {
-      // Wrong word
-      setGameState(prev => ({ ...prev, boxStates: 'wrong' }));
-      shakeBoxes();
+      Alert.alert('Excellent!', `You found "${word}"! +${points} points`);
 
-      setTimeout(() => {
-        // Reset after animation
-        setGameState(prev => ({
-          ...prev,
-          selectedLetters: [],
-          selectedIndices: [],
-          currentWord: '',
-          wordBoxes: new Array(LEVEL_DATA.letters.length).fill(''),
-          boxStates: 'empty',
-        }));
-      }, 800);
+      if (newFoundWords.length === gameState.allWords.length) {
+        setTimeout(() => {
+          setGameState(prev => ({ ...prev, gameComplete: true }));
+          Alert.alert('Congratulations!', 'You completed the crossword!');
+        }, 1000);
+      }
+    } else {
+      const result: GuessResult = checkGuess(word, gameState.level);
+      
+      if (result.exists) {
+        Alert.alert('Valid Word', `"${word}" is valid, but not part of this crossword.`);
+      } else {
+        Alert.alert('Invalid Word', `"${word}" is not a valid English word.`);
+      }
     }
   };
 
   const clearSelection = () => {
-    if (gameState.gameOver || gameState.gameComplete) return;
+    // Reset all letter animations
+    letterAnimations.current.forEach(anim => {
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
 
     setGameState(prev => ({
       ...prev,
-      selectedLetters: [],
       selectedIndices: [],
+      selectedPath: '',
       currentWord: '',
-      wordBoxes: new Array(LEVEL_DATA.letters.length).fill(''),
-      boxStates: 'empty',
+      currentWordDisplay: 'TAP LETTERS',
+      isSelecting: false,
     }));
   };
 
-  const getBoxStyle = (index: number) => {
-    let backgroundColor = '#3a3a3c'; // Default empty
-    let borderColor = '#555';
+  const shuffleCircleLetters = () => {
+    if (!gameState.circleLetters) return;
     
-    if (gameState.boxStates === 'correct') {
-      backgroundColor = '#10B981'; // Green
-      borderColor = '#10B981';
-    } else if (gameState.boxStates === 'wrong') {
-      backgroundColor = '#EF4444'; // Red
-      borderColor = '#EF4444';
-    } else if (gameState.wordBoxes[index]) {
-      backgroundColor = '#8B5CF6'; // Purple when filled
-      borderColor = '#8B5CF6';
+    const shuffled = [...gameState.circleLetters];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-
-    return {
-      backgroundColor,
-      borderColor,
-    };
+    
+    // Update positions
+    const radius = 85;
+    const newPositions: LetterPosition[] = shuffled.map((letter, index) => {
+      const angle = (index * 2 * Math.PI) / shuffled.length;
+      const x = radius * Math.cos(angle - Math.PI / 2);
+      const y = radius * Math.sin(angle - Math.PI / 2);
+      return { x, y, letter, index };
+    });
+    
+    setGameState(prev => ({
+      ...prev,
+      circleLetters: shuffled,
+      letterPositions: newPositions,
+      selectedIndices: [],
+      selectedPath: '',
+      currentWord: '',
+      currentWordDisplay: 'TAP LETTERS',
+    }));
   };
 
   const formatTime = (seconds: number) => {
@@ -284,161 +498,246 @@ const GameScreen: React.FC<GameScreenProps> = ({ onNavigate }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getTimerColor = () => {
-    if (gameState.timeLeft > 30) return '#10B981'; // Green
-    if (gameState.timeLeft > 10) return '#F59E0B'; // Yellow
-    return '#EF4444'; // Red
-  };
-
-  const renderWordBox = (letter: string, index: number) => {
+  const renderCrosswordGrid = () => {
     return (
-      <Animated.View
-        key={index}
-        style={[
-          styles.wordBox,
-          getBoxStyle(index),
-          {
-            transform: [{ translateX: shakeAnimation }],
-          },
-        ]}
-      >
-        <Text style={[
-          styles.wordBoxText,
-          gameState.boxStates === 'wrong' && styles.wrongText,
-          gameState.boxStates === 'correct' && styles.correctText,
-        ]}>
-          {letter}
-        </Text>
-      </Animated.View>
+      <View style={styles.crosswordContainer}>
+        <ScrollView 
+          contentContainerStyle={styles.crosswordScrollContent}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+        >
+          <View style={styles.crosswordGrid}>
+            {gameState.crosswordGrid.map((row, rowIndex) => (
+              <View key={rowIndex} style={styles.crosswordRow}>
+                {row.map((cell, colIndex) => (
+                  <Animated.View
+                    key={`${rowIndex}-${colIndex}`}
+                    style={[
+                      styles.crosswordCell,
+                      { width: CELL_SIZE, height: CELL_SIZE },
+                      cell.isEmpty ? styles.emptyCrosswordCell : styles.activeCrosswordCell,
+                      cell.isHighlighted && styles.foundCrosswordCell,
+                      cell.isHighlighted && {
+                        transform: [{ scale: successAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 1.1]
+                        }) }]
+                      }
+                    ]}
+                  >
+                    {!cell.isEmpty && (
+                      <Text style={[
+                        styles.crosswordCellText,
+                        cell.isHighlighted && styles.foundCellText
+                      ]}>
+                        {cell.letter}
+                      </Text>
+                    )}
+                  </Animated.View>
+                ))}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
     );
   };
 
-  const renderCircleLetter = (letter: string, index: number) => {
-    const angle = (index * 2 * Math.PI) / LEVEL_DATA.letters.length;
-    const radius = 80;
-    const centerX = 0;
-    const centerY = 0;
-    const x = centerX + radius * Math.cos(angle - Math.PI / 2);
-    const y = centerY + radius * Math.sin(angle - Math.PI / 2);
-
-    const isSelected = gameState.selectedIndices.includes(index);
-    const isDisabled = gameState.gameOver || gameState.gameComplete;
+  const renderConnectionLines = () => {
+    if (gameState.selectedIndices.length < 2) return null;
 
     return (
-      <TouchableOpacity
-        key={index}
-        style={[
-          styles.circleLetter,
-          {
-            transform: [{ translateX: x }, { translateY: y }],
-          },
-          isSelected ? styles.circleLetterSelected : null,
-          isDisabled ? styles.circleLetterDisabled : null,
-        ]}
-        onPress={() => handleLetterPress(letter, index)}
-        disabled={isDisabled}
-      >
-        <Text style={[
-          styles.circleLetterText,
-          isSelected ? styles.circleLetterTextSelected : null
-        ]}>
-          {letter}
-        </Text>
-      </TouchableOpacity>
+      <Svg style={StyleSheet.absoluteFill} width="200" height="200">
+        {gameState.selectedIndices.slice(0, -1).map((startIndex, i) => {
+          const endIndex = gameState.selectedIndices[i + 1];
+          const startPos = gameState.letterPositions[startIndex];
+          const endPos = gameState.letterPositions[endIndex];
+          
+          return (
+            <Line
+              key={i}
+              x1={startPos.x + 100}
+              y1={startPos.y + 100}
+              x2={endPos.x + 100}
+              y2={endPos.y + 100}
+              stroke="#F39C12"
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+          );
+        })}
+        
+        {gameState.selectedIndices.map((index) => {
+          const pos = gameState.letterPositions[index];
+          return (
+            <Circle
+              key={index}
+              cx={pos.x + 100}
+              cy={pos.y + 100}
+              r="22"
+              fill="none"
+              stroke="#F39C12"
+              strokeWidth="3"
+            />
+          );
+        })}
+      </Svg>
     );
   };
+
+  const renderCircleLetters = () => {
+    if (!gameState.circleLetters || gameState.circleLetters.length === 0) return null;
+
+    return (
+      <View style={styles.circleContainer}>
+        {/* Current word display with animation */}
+        <Animated.View style={[
+          styles.currentWordBubble,
+          {
+            transform: [
+              { scale: wordBubbleAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.8, 1]
+              }) },
+              { translateY: wordBubbleAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 0]
+              }) }
+            ],
+            opacity: wordBubbleAnimation
+          }
+        ]}>
+          <Text style={styles.currentWordBubbleText}>
+            {gameState.currentWordDisplay || 'TAP LETTERS'}
+          </Text>
+        </Animated.View>
+
+        {/* Letter circle with pan gesture */}
+        <PanGestureHandler onGestureEvent={handlePanGesture}>
+          <View style={styles.letterCircle}>
+            {/* Connection lines */}
+            {renderConnectionLines()}
+            
+            {/* Letters */}
+            {gameState.letterPositions.map((letterPos, index) => {
+              const isSelected = gameState.selectedIndices.includes(index);
+              
+              return (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.circleLetter,
+                    {
+                      transform: [
+                        { translateX: letterPos.x },
+                        { translateY: letterPos.y },
+                        { scale: letterAnimations.current[index] || new Animated.Value(1) },
+                        ...(isSelected ? [{ scale: pulseAnimation }] : [])
+                      ],
+                    },
+                    isSelected && styles.selectedCircleLetter,
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.letterTouchArea}
+                    onPress={() => handleCircleLetterPress(letterPos.letter, index)}
+                    disabled={gameState.gameOver || gameState.gameComplete}
+                  >
+                    <Text style={[
+                      styles.circleLetterText,
+                      isSelected && styles.selectedCircleLetterText
+                    ]}>
+                      {letterPos.letter.toUpperCase()}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
+          </View>
+        </PanGestureHandler>
+      </View>
+    );
+  };
+
+  if (!gameState.level) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Generating Crossword...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Floating Particles Background */}
-      <View style={StyleSheet.absoluteFillObject}>
-        {particles.map(particle => (
-          <Animated.View
-            key={particle.id}
-            style={[
-              styles.particle,
-              {
-                backgroundColor: particle.color,
-                transform: [
-                  { translateX: particle.x },
-                  { translateY: particle.y },
-                  { scale: particle.scale },
-                ],
-                opacity: particle.opacity,
-              },
-            ]}
-          />
-        ))}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => onNavigate('levels')} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.levelText}>Level {sublevel}</Text>
+          <Text style={styles.scoreText}>Score: {gameState.score}</Text>
+        </View>
+        
+        <View style={styles.headerRight}>
+          <Text style={[styles.timerText, { 
+            color: gameState.timeLeft < 60 ? '#EF4444' : '#10B981' 
+          }]}>
+            {formatTime(gameState.timeLeft)}
+          </Text>
+        </View>
       </View>
 
-      {/* Progress Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => onNavigate('levels')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
+      {/* Crossword Grid */}
+      {renderCrosswordGrid()}
+
+      {/* Bottom Section with Circle */}
+      <View style={styles.bottomSection}>
+        {renderCircleLetters()}
+        
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.secondaryButton]} 
+            onPress={shuffleCircleLetters}
+            disabled={gameState.gameOver || gameState.gameComplete}
+          >
+            <Text style={styles.actionButtonText}>Shuffle</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.actionButton,
+              gameState.selectedIndices.length === 0 && styles.disabledButton
+            ]} 
+            onPress={clearSelection}
+            disabled={gameState.selectedIndices.length === 0}
+          >
+            <Text style={styles.actionButtonText}>Clear</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.actionButton, 
+              styles.submitButton,
+              (gameState.currentWord.length < 3) && styles.disabledButton
+            ]} 
+            onPress={submitWord}
+            disabled={gameState.currentWord.length < 3}
+          >
+            <Text style={styles.actionButtonText}>Submit</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.sublevelText}>
-          {CURRENT_SUBLEVEL}/{TOTAL_SUBLEVELS}
-        </Text>
-        <View style={styles.progressBarContainer}>
-          <View 
-            style={[
-              styles.progressBar, 
-              { width: `${(CURRENT_SUBLEVEL / TOTAL_SUBLEVELS) * 100}%` }
-            ]} 
-          />
+
+        {/* Progress */}
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            Words Found: {gameState.foundWords.length} / {gameState.allWords.length}
+          </Text>
         </View>
-      </View>
-
-      {/* Timer Section */}
-      <View style={styles.timerContainer}>
-        <Text style={[styles.timerText, { color: getTimerColor() }]}>
-          {formatTime(gameState.timeLeft)}
-        </Text>
-      </View>
-
-      {/* Word Boxes Display */}
-      <View style={styles.wordBoxesContainer}>
-        <View style={styles.wordBoxesRow}>
-          {gameState.wordBoxes.map((letter, index) => 
-            renderWordBox(letter, index)
-          )}
-        </View>
-      </View>
-
-      {/* Letter Circle */}
-      <View style={styles.letterCircleContainer}>
-        <View style={styles.letterCircle}>
-          {LEVEL_DATA.letters.map((letter, index) => 
-            renderCircleLetter(letter, index)
-          )}
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          style={[
-            styles.actionButton,
-            (gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver) && styles.disabledButton
-          ]} 
-          onPress={clearSelection}
-          disabled={gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver}
-        >
-          <Text style={styles.actionButtonText}>Clear</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[
-            styles.actionButton, 
-            styles.submitButton,
-            (gameState.currentWord.length === 0 || gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver) && styles.disabledButton
-          ]} 
-          onPress={submitWord}
-          disabled={gameState.currentWord.length === 0 || gameState.boxStates === 'wrong' || gameState.boxStates === 'correct' || gameState.gameOver}
-        >
-          <Text style={styles.actionButtonText}>Submit</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -448,114 +747,136 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121213',
-    paddingHorizontal: 16,
   },
-  particle: {
-    position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
     paddingVertical: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderBottomWidth: 1,
     borderBottomColor: '#3a3a3c',
   },
-  headerTop: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    marginBottom: 0,
-  },
   backButton: {
-    paddingVertical: 0,
-    paddingHorizontal: 10,
+    flex: 1,
   },
   backButtonText: {
     color: '#8B5CF6',
     fontSize: 16,
     fontWeight: '600',
   },
-  sublevelText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 10,
-  },
-  progressBarContainer: {
-    width: '80%',
-    height: 8,
-    backgroundColor: '#3a3a3c',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#8B5CF6',
-    borderRadius: 4,
-  },
-  timerContainer: {
+  headerCenter: {
+    flex: 2,
     alignItems: 'center',
-    paddingVertical: 20,
   },
-  timerLabel: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  timerText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-    marginBottom: 12,
-  },
-  targetText: {
-    color: '#8B5CF6',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  wordBoxesContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  wordBoxesRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  wordBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#3a3a3c',
-    borderColor: '#555',
-  },
-  wordBoxText: {
+  levelText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
-    textTransform: 'uppercase',
   },
-  wrongText: {
-    color: '#ffffff',
+  scoreText: {
+    color: '#F59E0B',
+    fontSize: 14,
+    marginTop: 2,
+    fontWeight: '600',
   },
-  correctText: {
-    color: '#ffffff',
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
-  letterCircleContainer: {
+  timerText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  crosswordContainer: {
+    flex: 1,
+    paddingTop: 20,
+  },
+  crosswordScrollContent: {
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 300,
+  },
+  crosswordGrid: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    padding: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: '#8B5CF6',
+  },
+  crosswordRow: {
+    flexDirection: 'row',
+  },
+  crosswordCell: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCrosswordCell: {
+    backgroundColor: '#f0f0f0',
+  },
+  activeCrosswordCell: {
+    backgroundColor: '#ffffff',
+  },
+  foundCrosswordCell: {
+    backgroundColor: '#8B5CF6',
+  },
+  crosswordCellText: {
+    color: '#333',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  foundCellText: {
+    color: '#ffffff',
+  },
+  bottomSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingVertical: 20,
-    flex: 1,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#3a3a3c',
+  },
+  circleContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  currentWordBubble: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginBottom: 20,
+    minWidth: 140,
+    alignItems: 'center',
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  currentWordBubbleText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 2,
   },
   letterCircle: {
     width: 200,
@@ -563,64 +884,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: '#3a3a3c',
   },
   circleLetter: {
     position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#8B5CF6',
-    borderWidth: 2,
-    borderColor: '#8B5CF6',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#A78BFA',
   },
-  circleLetterSelected: {
+  selectedCircleLetter: {
     backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
+    borderColor: '#FBBF24',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.6,
   },
-  circleLetterDisabled: {
-    opacity: 0.5,
+  letterTouchArea: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   circleLetterText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  circleLetterTextSelected: {
+  selectedCircleLetterText: {
     color: '#000000',
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 20,
-    paddingBottom: 40,
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 15,
   },
   actionButton: {
     backgroundColor: '#3a3a3c',
     paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    minWidth: 100,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    minWidth: 80,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#555',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitButton: {
     backgroundColor: '#10B981',
+    borderColor: '#059669',
+  },
+  secondaryButton: {
+    backgroundColor: '#8B5CF6',
+    borderColor: '#7C3AED',
   },
   disabledButton: {
     backgroundColor: '#555',
+    borderColor: '#444',
     opacity: 0.6,
   },
   actionButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
+  },
+  progressContainer: {
+    alignItems: 'center',
+    paddingTop: 10,
+  },
+  progressText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
-export default GameScreen;
+export default CrosswordGame;
