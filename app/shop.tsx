@@ -1,16 +1,16 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
-import LevelScreen from './components/LevelScreen';
+import ShopScreen from './components/SubscriptionScreen';
 
-export default function LevelsRoute() {
+export default function ShopRoute() {
   const router = useRouter();
 
   // Handle Android back button
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        router.back(); // Navigate back to login
+        router.back(); // Navigate back to levels
         return true; // Prevent default behavior
       };
 
@@ -22,14 +22,10 @@ export default function LevelsRoute() {
   );
 
   const handleNavigate = (screen: string) => {
-    if (screen === 'login') {
-      router.back(); // Use back() for going back to login
-    } else if (screen === 'game') {
-      router.push('/game');
-    } else if (screen == 'shop'){
-      router.push('/shop')
+    if (screen === 'levels') {
+      router.back(); // Use back() to return to levels
     }
   };
 
-  return <LevelScreen onNavigate={handleNavigate} />;
+  return <ShopScreen onNavigate={handleNavigate} />;
 }

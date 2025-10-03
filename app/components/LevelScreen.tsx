@@ -41,6 +41,7 @@ interface LevelCardProps {
   onPress: (level: LevelData) => void;
 }
 
+
 interface LevelScreenProps {
   onNavigate: (screen: string) => void;
 }
@@ -137,6 +138,10 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   const handleBackPress = (): void => {
     onNavigate('login');
+  };
+
+  const handleShopPress = (): void => {
+    onNavigate('shop');
   };
 
   const renderFloatingParticles = () => (
@@ -285,20 +290,29 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           </TouchableOpacity>
           
           <View style={styles.resourcesContainer}>
-            <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>💎</Text>
-              <Text style={styles.resourceText}>{playerGems}</Text>
-            </View>
-            <View style={styles.resourceItem}>
-              <Text style={styles.resourceIcon}>🟡</Text>
-              <Text style={[
-                styles.resourceText,
-                { color: playerEnergy > 50 ? '#10B981' : '#EF4444' }
-              ]}>
-                {playerEnergy}/100
-              </Text>
-            </View>
-          </View>
+          <TouchableOpacity 
+            style={styles.resourceItem}
+            onPress={handleShopPress}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.resourceIcon}>💎</Text>
+            <Text style={styles.resourceText}>{playerGems}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.resourceItem}
+            onPress={handleShopPress}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.resourceIcon}>🟡</Text>
+            <Text style={[
+              styles.resourceText,
+              { color: playerEnergy > 50 ? '#10B981' : '#EF4444' }
+            ]}>
+              {playerEnergy}/100
+            </Text>
+          </TouchableOpacity>
+        </View>
         </View>
 
         <View style={styles.playerInfo}>
