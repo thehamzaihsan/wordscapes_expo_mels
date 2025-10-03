@@ -239,13 +239,13 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             style={[
               styles.centerButton, 
               styles.submitCenterButton,
-              currentWord.length < 3 && styles.disabledCenterButton
+              currentWord.length < 2 && styles.disabledCenterButton
             ]}
             onPress={() => {
               console.log('Submit button pressed');
               submitWord();
             }}
-            disabled={currentWord.length < 3}
+            disabled={currentWord.length < 2}
           >
             <Text style={[styles.centerButtonText, styles.submitButtonText]}>✓</Text>
           </TouchableOpacity>

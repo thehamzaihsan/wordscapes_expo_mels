@@ -1,17 +1,16 @@
+import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
-  filterWordsList,
-  generateCrosswordLevelWithBaseword,
-  getRandomWords,
-  initializeGameManager,
-  testSubwordGeneration
+  generateBonusWords,
+  generateLevelFromJSON,
+  initializeGameManager
 } from "@/hooks/game-manager";
-import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
 import LetterWheel from "./inputWheel";
@@ -34,13 +33,28 @@ interface WordPlacement {
 interface GameScreenProps {
   onNavigate?: (screen: string) => void;
   difficulty?: Difficulty;
+  baseWord?: string;
+  levelTitle?: string;
+  levelData?: {
+    baseWord: string;
+    letters: string[];
+    crosswordWords: string[];
+    difficulty: Difficulty;
+  };
 }
 
-export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameScreenProps) {
+export default function GameScreen({ 
+  onNavigate, 
+  difficulty = 'medium', 
+  baseWord = 'planet',
+  levelTitle = 'Planet',
+  levelData
+}: GameScreenProps) {
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
-  const [baseWord, setBaseWord] = useState("");
+  const [baseWordState, setBaseWord] = useState("");
   const [letters, setLetters] = useState<string[]>([]);
   const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
+  const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
   const [wordPlacements, setWordPlacements] = useState<WordPlacement[]>([]);
   const [foundCrosswordWords, setFoundCrosswordWords] = useState<string[]>([]);
   const [foundBonusWords, setFoundBonusWords] = useState<string[]>([]);
@@ -234,8 +248,8 @@ export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameSc
     console.log(`Word completed: ${word}`);
     const normalizedWord = word.toLowerCase().trim();
     
-    if (normalizedWord.length < 3) {
-      setFeedback("Word must be at least 3 letters long");
+    if (normalizedWord.length < 2) {
+      setFeedback("Word must be at least 2 letters long");
       setTimeout(() => setFeedback(""), 2000);
       return;
     }
@@ -267,8 +281,20 @@ export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameSc
       setTimeout(() => setFeedback(""), 4000);
     } else {
       // Check if it's a valid bonus word (can be formed from available letters)
+      const isValidBonus = allValidWords.some(word => word.toLowerCase() === normalizedWord);
       const canForm = canFormWordFromLetters(normalizedWord, letters);
-      if (canForm && normalizedWord.length >= 3) {
+      
+      console.log(`🔍 Checking word "${normalizedWord}":`);
+      console.log(`   - Available letters:`, letters);
+      console.log(`   - All valid words (${allValidWords.length}):`, allValidWords.slice(0, 20));
+      console.log(`   - Is in valid words list:`, isValidBonus);
+      console.log(`   - Can form from letters:`, canForm);
+      
+      // Also check if it can be manually verified as valid
+      const canFormFromBaseWord = canFormWordFromLetters(normalizedWord, baseWordState.split(''));
+      console.log(`   - Can form from baseword "${baseWordState}":`, canFormFromBaseWord);
+      
+      if ((isValidBonus || canFormFromBaseWord) && canForm && normalizedWord.length >= 2) {
         // Bonus word found!
         setFoundBonusWords(prev => [...prev, normalizedWord]);
         const points = normalizedWord.length * 10; // Lower points for bonus words
@@ -276,6 +302,7 @@ export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameSc
         setFeedback(`✨ Bonus word! "${normalizedWord.toUpperCase()}" (+${points} points)`);
         setTimeout(() => setFeedback(""), 3000);
       } else {
+        console.log(`❌ "${normalizedWord}" rejected - isValidBonus: ${isValidBonus}, canForm: ${canForm}, canFormFromBase: ${canFormFromBaseWord}`);
         setFeedback(`"${normalizedWord.toUpperCase()}" is not a valid word`);
         setTimeout(() => setFeedback(""), 2000);
       }
@@ -304,14 +331,14 @@ export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameSc
     // Initialize game manager for optimal performance
     initializeGameManager();
     
-    // Test subword generation for debugging
-    testSubwordGeneration("planet");
+    console.log(`🎮 Initializing game with baseWord: "${baseWord}", difficulty: "${difficulty}"`);
     
     setLoading(true);
     setError("");
     setAttempts(0);
     setFoundCrosswordWords([]);
     setFoundBonusWords([]);
+    setAllValidWords([]);
     setScore(0);
     setFeedback("");
     setGameComplete(false);
@@ -322,49 +349,74 @@ export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameSc
 
     while (!success && currentAttempts < 5) {
       try {
-        // Generate level data (letters and word list)
-        const { baseWord, letters, crosswordWords } = generateCrosswordLevelWithBaseword(
-          "planet",
-          { difficulty: difficulty }
-        );
-
+        console.log(`🎲 Attempt ${currentAttempts + 1}: Generating level for "${baseWord}" with ${difficulty} difficulty`);
         
+        let levelDataToUse;
         
-        // Filter words to get appropriate difficulty
-        const fl_words = filterWordsList(crosswordWords, {
-          minLength: diff.min,
-          maxLength: diff.max,
-        });
-        const words = getRandomWords(fl_words, diff.minWords);
+        // Use provided level data if available (from JSON), otherwise generate
+        if (levelData) {
+          console.log(`📋 Using provided level data from JSON:`, levelData);
+          levelDataToUse = levelData;
+        } else {
+          console.log(`🔄 Generating level data for "${baseWord}"`);
+          levelDataToUse = generateLevelFromJSON(baseWord, difficulty);
+        }
+        
+        console.log(`📊 Level data to use:`, levelDataToUse);
+        
+        // Use the crossword words directly from JSON for better performance
+        const availableWords = levelDataToUse.crosswordWords.map(word => word.toLowerCase());
+        console.log(`📝 Available crossword words (${availableWords.length}):`, availableWords);
+        
+        // Select words for the grid (use most words for better gameplay)
+        const wordsForGrid = availableWords.slice(0, Math.min(availableWords.length, diff.minWords + 3));
+        console.log(`🎯 Selected ${wordsForGrid.length} words for crossword:`, wordsForGrid);
 
-        console.log('Generating crossword with words:', words);
+        if (wordsForGrid.length < 3) {
+          throw new Error(`Not enough words (${wordsForGrid.length}) for crossword generation`);
+        }
 
         // Use your 2D grid generator directly
-        const grid = generateCrossword(words);
+        const grid = generateCrossword(wordsForGrid);
 
-        if (grid && words.length > 0) {
+        if (grid && wordsForGrid.length > 0) {
           // Convert Grid (Cell[][]) to string[][]
           crosswordGrid = grid.map(row => 
             row.map(cell => cell || '') // Convert null to empty string
           );
           
           // Extract word placements from the generated grid
-          const placements = extractWordPlacements(crosswordGrid, words);
+          const placements = extractWordPlacements(crosswordGrid, wordsForGrid);
           
-          console.log('Generated grid:', crosswordGrid);
-          console.log('Word placements:', placements);
+          console.log('📍 Generated grid:', crosswordGrid);
+          console.log('📍 Word placements:', placements);
           
           if (placements.length > 0) {
             // Create game grid with hidden cells
             const gameGrid = createGameGrid(crosswordGrid, placements);
             
-            setBaseWord(baseWord);
-            setLetters(letters);
-            setCrosswordWords(words); // Only the words that are in the crossword
+            // Generate bonus words for enhanced gameplay
+            const bonusWords = generateBonusWords(levelDataToUse.baseWord, availableWords, difficulty);
+            const allWords = [...availableWords, ...bonusWords];
+            
+            setBaseWord(levelDataToUse.baseWord);
+            setLetters(levelDataToUse.letters.map(l => l.toLowerCase())); // Use letters from JSON
+            setCrosswordWords(availableWords); // Words that are in the crossword grid
+            setAllValidWords(allWords); // All words that can be found (crossword + bonus)
             setWordPlacements(placements);
             setGameGrid(gameGrid);
             success = true;
+            
+            console.log(`✅ Successfully generated game with:`);
+            console.log(`   - ${wordsForGrid.length} words in grid`);
+            console.log(`   - ${availableWords.length} crossword words`);
+            console.log(`   - ${bonusWords.length} bonus words`);
+            console.log(`   - ${allWords.length} total findable words`);
+          } else {
+            throw new Error('No word placements found in generated grid');
           }
+        } else {
+          throw new Error('Failed to generate crossword grid');
         }
       } catch (error) {
         console.warn('Error generating crossword:', error);
@@ -401,6 +453,26 @@ export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameSc
     <View style={styles.container}>
       {gameGrid ? (
         <>
+          {/* Back Button and Level Header */}
+          <View style={styles.levelHeader}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => onNavigate?.('levels')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <View style={styles.levelTitleContainer}>
+              <Text style={styles.levelTitle}>{levelTitle}</Text>
+              <View style={styles.levelSubInfo}>
+                <Text style={styles.difficultyLabel}>
+                  {getDifficultyConfig(difficulty).icon} {getDifficultyConfig(difficulty).label}
+                </Text>
+                <Text style={styles.baseWordLabel}>Base: {baseWordState}</Text>
+              </View>
+            </View>
+          </View>
+
           {/* Score and Progress Header */}
           <View style={styles.header}>
             <Text style={styles.scoreText}>Score: {score}</Text>
@@ -490,6 +562,56 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     padding: 20,
     backgroundColor: "#f8f9fa",
+  },
+  levelHeader: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginTop: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 15,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  levelTitleContainer: {
+    flex: 1,
+  },
+  levelTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  levelSubInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  difficultyLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  baseWordLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#8B5CF6",
   },
   header: {
     flexDirection: "row",

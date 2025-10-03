@@ -1,4 +1,4 @@
-import { Difficulty, difficultyMap } from '@/constants/difficulty';
+import { Difficulty, DifficultyConfig, difficultyMap } from '@/constants/difficulty';
 import wordsArray from 'an-array-of-english-words';
 import { Filter } from 'bad-words';
 
@@ -114,22 +114,18 @@ function canFormWord(baseWord: string, word: string): boolean {
 }
 
 /**
- * Validates if a word meets basic criteria
+ * Validates if a word meets basic criteria for the levels system
  */
-function isValidWord(word: string, allowProperNouns = false): boolean {
+function isValidWord(word: string, allowProperNouns = true): boolean {
   const normalized = word.toLowerCase().trim();
   
   // Basic validation
   if (!/^[a-z]+$/.test(normalized)) return false;
-  if (normalized.length < 2 || normalized.length > 15) return false; // Allow 2-letter words and longer words
+  if (normalized.length < 2 || normalized.length > 15) return false;
   
-  // Skip profanity check for now as it might be too restrictive
+  // Allow most words for better game experience
+  // Skip profanity check for performance and allow more words
   // if (badFilter.isProfane(normalized)) return false;
-  
-  // Allow proper nouns by default for testing
-  // if (!allowProperNouns && word[0] === word[0].toUpperCase() && word.length > 1) {
-  //   return false;
-  // }
   
   return true;
 }
@@ -670,7 +666,7 @@ export function initializeGameManager(): void {
 }
 
 /**
- * Test function to debug subword generation
+ * Test function to debug subword generation for specific levels
  */
 export function testSubwordGeneration(baseWord: string = 'planet'): void {
   console.log(`\n🧪 Testing subword generation for "${baseWord}"`);
@@ -687,19 +683,204 @@ export function testSubwordGeneration(baseWord: string = 'planet'): void {
     const subwords = findSubwords(baseWord, wordList);
     console.log(`🎯 Found ${subwords.length} subwords:`, subwords);
     
-    // Test expected words
-    const expectedWords = ['planet', 'plane', 'plant', 'plan', 'plate', 'late', 'net', 'ten', 'pen', 'pet', 'let', 'tan', 'pan', 'lap', 'tap', 'pat', 'ant', 'leap', 'petal', 'pale', 'tape', 'neat', 'lean', 'lane', 'pane', 'at', 'tea', 'eat'];
-    
-    const foundExpected = expectedWords.filter(word => {
-      const normalized = word.toLowerCase();
-      return normalized !== baseWord.toLowerCase() && canFormWord(baseWord, normalized);
-    });
-    
-    console.log(`✅ Expected words that can be formed:`, foundExpected);
-    console.log(`❌ Missing from results:`, foundExpected.filter(word => !subwords.includes(word)));
+    return subwords;
     
   } catch (error) {
     console.error('❌ Test failed:', error);
+    return [];
+  }
+}
+
+/**
+ * Generates a crossword level directly from complete JSON level data (FASTEST)
+ */
+export function generateLevelFromCompleteJSON(levelData: {
+  baseWord: string;
+  letters: string[];
+  crosswordWords: string[];
+  difficulty: Difficulty;
+}): CrosswordLevel {
+  console.log(`🚀 Using complete JSON data for level generation`);
+  
+  // No need to generate anything - use data directly from JSON
+  return {
+    baseWord: levelData.baseWord.toLowerCase(),
+    letters: levelData.letters.map(l => l.toLowerCase()),
+    crosswordWords: levelData.crosswordWords.map(w => w.toLowerCase()),
+    difficulty: levelData.difficulty,
+    wordCount: levelData.crosswordWords.length
+  };
+}
+
+/**
+ * Generates a crossword level optimized for the levels.json structure
+ */
+export function generateLevelFromJSON(baseWord: string, difficulty: Difficulty): CrosswordLevel {
+  console.log(`🎮 Generating level for baseWord: "${baseWord}", difficulty: "${difficulty}"`);
+  
+  try {
+    // Ensure the word is properly formatted
+    const normalizedBaseWord = baseWord.toLowerCase().trim();
+    
+    // Validate the base word
+    if (!isValidWord(normalizedBaseWord, true)) {
+      throw new Error(`Invalid base word: ${baseWord}`);
+    }
+    
+    const config = difficultyMap[difficulty];
+    const wordList = getWordList(difficulty);
+    
+    console.log(`📝 Using ${wordList.length} words for difficulty: ${difficulty}`);
+    
+    // Find subwords
+    const subwords = findSubwords(normalizedBaseWord, wordList);
+    console.log(`🔍 Found ${subwords.length} subwords for "${baseWord}":`, subwords.slice(0, 10));
+    
+    // If we don't have enough subwords, try with a more permissive approach
+    if (subwords.length < config.minWords) {
+      console.log(`⚠️ Only found ${subwords.length} subwords, need ${config.minWords}. Trying permissive mode...`);
+      
+      // Add some common words that can be formed from the base word
+      const additionalWords = generateCommonSubwords(normalizedBaseWord);
+      const allSubwords = [...new Set([...subwords, ...additionalWords])];
+      
+      console.log(`📈 After adding common words: ${allSubwords.length} total subwords`);
+      
+      return {
+        baseWord: normalizedBaseWord,
+        letters: shuffle(normalizedBaseWord.split('')),
+        crosswordWords: allSubwords.slice(0, Math.max(config.minWords, allSubwords.length)),
+        difficulty,
+        wordCount: allSubwords.length
+      };
+    }
+    
+    return {
+      baseWord: normalizedBaseWord,
+      letters: shuffle(normalizedBaseWord.split('')),
+      crosswordWords: subwords,
+      difficulty,
+      wordCount: subwords.length
+    };
+    
+  } catch (error) {
+    console.error(`❌ Failed to generate level for "${baseWord}":`, error);
+    throw error;
+  }
+}
+
+/**
+ * Generate bonus words that can be formed from the base word but aren't in crosswordWords
+ */
+export function generateBonusWords(baseWord: string, crosswordWords: string[], difficulty: Difficulty = 'medium'): string[] {
+  console.log(`🎲 Generating bonus words for "${baseWord}"`);
+  console.log(`📝 Crossword words to exclude:`, crosswordWords);
+  
+  try {
+    // Get a comprehensive word list
+    const wordList = getWordList(difficulty);
+    console.log(`📚 Using word list with ${wordList.length} words`);
+    
+    // Find all possible subwords that can be formed from the baseword
+    const allSubwords = findSubwords(baseWord, wordList);
+    console.log(`🔍 Found ${allSubwords.length} total subwords from "${baseWord}":`, allSubwords);
+    
+    // Filter out words that are already in crosswordWords
+    const crosswordWordsLower = crosswordWords.map(w => w.toLowerCase());
+    const bonusWords = allSubwords.filter(word => 
+      !crosswordWordsLower.includes(word.toLowerCase())
+    );
+    
+    console.log(`🎁 Found ${bonusWords.length} bonus words for "${baseWord}":`, bonusWords);
+    
+    // Add some manual verification for common words that should be valid
+    const manualWords = getManualValidWords(baseWord, crosswordWordsLower);
+    const allBonusWords = [...new Set([...bonusWords, ...manualWords])];
+    
+    console.log(`📈 Total bonus words after manual additions: ${allBonusWords.length}`, allBonusWords);
+    return allBonusWords;
+    
+  } catch (error) {
+    console.warn('Failed to generate bonus words:', error);
+    return [];
+  }
+}
+
+/**
+ * Manually check for common words that should be valid based on available letters
+ */
+function getManualValidWords(baseWord: string, excludeWords: string[]): string[] {
+  const letters = baseWord.toLowerCase().split('');
+  const letterCounts = letters.reduce((acc, letter) => {
+    acc[letter] = (acc[letter] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  console.log(`📊 Letter counts for "${baseWord}":`, letterCounts);
+  
+  // Common 2-4 letter words to check
+  const commonWords = [
+    'will', 'fill', 'life', 'file', 'wife', 'wild', 'fell', 'well', 'dew', 'few',
+    'led', 'fed', 'lid', 'fid', 'we', 'if', 'id', 'el', 'ed', 'ew', 'ell', 'ill',
+    'die', 'lie', 'fie', 'dell', 'dill', 'fell', 'tell', 'hell', 'cell', 'bell',
+    'will', 'bill', 'till', 'mill', 'hill', 'kill', 'pill', 'fill', 'gill'
+  ];
+  
+  const validWords = [];
+  
+  for (const word of commonWords) {
+    if (excludeWords.includes(word.toLowerCase())) continue;
+    
+    // Check if word can be formed from available letters
+    const wordLetters = word.toLowerCase().split('');
+    const wordLetterCounts = wordLetters.reduce((acc, letter) => {
+      acc[letter] = (acc[letter] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    let canForm = true;
+    for (const [letter, count] of Object.entries(wordLetterCounts)) {
+      if ((letterCounts[letter] || 0) < count) {
+        canForm = false;
+        break;
+      }
+    }
+    
+    if (canForm) {
+      validWords.push(word);
+      console.log(`✅ "${word}" can be formed from "${baseWord}"`);
+    } else {
+      console.log(`❌ "${word}" cannot be formed from "${baseWord}" - need ${JSON.stringify(wordLetterCounts)} but have ${JSON.stringify(letterCounts)}`);
+    }
+  }
+  
+  return validWords;
+}
+
+/**
+ * Get all valid words that can be formed from a base word (for comprehensive gameplay)
+ */
+export function getAllValidWords(baseWord: string, difficulty: Difficulty = 'medium'): {
+  crosswordWords: string[];
+  bonusWords: string[];
+  totalWords: string[];
+} {
+  try {
+    const wordList = getWordList(difficulty);
+    const allWords = findSubwords(baseWord, wordList);
+    
+    // Split into main words (longer, more common) and bonus words (shorter, less common)
+    const crosswordWords = allWords.filter(word => word.length >= 3 && word.length <= 7);
+    const bonusWords = allWords.filter(word => word.length >= 2 && word.length < 3);
+    
+    return {
+      crosswordWords: crosswordWords.slice(0, 15), // Limit main words
+      bonusWords: bonusWords.slice(0, 10), // Limit bonus words
+      totalWords: allWords
+    };
+  } catch (error) {
+    console.warn('Failed to get all valid words:', error);
+    return { crosswordWords: [], bonusWords: [], totalWords: [] };
   }
 }
 

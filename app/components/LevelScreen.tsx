@@ -1,5 +1,9 @@
+import { Difficulty, getDifficultyConfig } from '@/constants/difficulty';
+import levelsData from '@/constants/levels.json';
+import { initializeGameManager } from '@/hooks/game-manager';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -11,9 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Difficulty, getAllDifficulties, getDifficultyConfig } from '@/constants/difficulty';
-import { initializeGameManager } from '@/hooks/game-manager';
-import DifficultySelection from './DifficultySelection';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,32 +29,43 @@ interface Particle {
 }
 
 interface LevelData {
-  id: number;
-  name: string;
+  level: number;
+  baseWord: string;
+  letters: string[];
+  crosswordWords: string[];
   difficulty: Difficulty;
-  isUnlocked: boolean;
-  isCompleted: boolean;
-  stars: number;
-  totalLevels: number;
-  completedLevels: number;
-  reward?: string;
+  isUnlocked?: boolean;
+  isCompleted?: boolean;
+  stars?: number;
 }
 
 interface LevelCardProps {
   level: LevelData;
-  onPress: (level: LevelData) => void;
+  categoryName: string;
+  onPress: (level: LevelData, categoryName: string) => void;
 }
 
 interface LevelScreenProps {
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: string, levelData?: { 
+    baseWord: string, 
+    difficulty: Difficulty, 
+    levelTitle: string,
+    levelData: {
+      baseWord: string;
+      letters: string[];
+      crosswordWords: string[];
+      difficulty: Difficulty;
+    }
+  }) => void;
 }
 
 const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Forest');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [playerGems] = useState<number>(1245);
   const [playerEnergy] = useState<number>(75);
+  const [levelCategories, setLevelCategories] = useState<{ [key: string]: LevelData[] }>({});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Create floating particles
   useEffect(() => {
@@ -97,42 +109,64 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     particleArray.forEach(animateParticle);
   }, []);
 
-  // Initialize game manager on component mount
+  // Initialize game manager and load levels
   useEffect(() => {
     initializeGameManager();
-  }, []);
-
-  const levelCategories: { [key: string]: LevelData[] } = {
-    Forest: [
-      { id: 1, name: 'Emerald Grove', difficulty: 'easy', isUnlocked: true, isCompleted: true, stars: 3, totalLevels: 20, completedLevels: 20, reward: '100 Coins' },
-      { id: 2, name: 'Mystic Bloom', difficulty: 'easy', isUnlocked: true, isCompleted: true, stars: 3, totalLevels: 20, completedLevels: 20, reward: '150 Coins' },
-      { id: 3, name: 'Whispering Creek', difficulty: 'medium', isUnlocked: true, isCompleted: true, stars: 2, totalLevels: 20, completedLevels: 18, reward: '200 Coins' },
-      { id: 4, name: 'Shadow Canopy', difficulty: 'medium', isUnlocked: true, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 8, reward: '300 Coins' },
-      { id: 5, name: 'Ancient Grove', difficulty: 'hard', isUnlocked: true, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '500 Coins' },
-      { id: 6, name: 'Dark Thicket', difficulty: 'hard', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '750 Coins' },
-    ],
-    Ocean: [
-      { id: 7, name: 'Crystal Shore', difficulty: 'easy', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '120 Coins' },
-      { id: 8, name: 'Tidal Wave', difficulty: 'medium', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '250 Coins' },
-      { id: 9, name: 'Deep Abyss', difficulty: 'expert', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '1000 Coins' },
-    ],
-    Mountain: [
-      { id: 10, name: 'Frozen Peak', difficulty: 'hard', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '800 Coins' },
-      { id: 11, name: 'Dragon Summit', difficulty: 'expert', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: 'Legendary Item' },
-    ]
-  };
+    
+    // Load levels from JSON with unlock logic
+    try {
+      const loadedCategories: { [key: string]: LevelData[] } = {};
+      
+      Object.keys(levelsData).forEach(category => {
+        loadedCategories[category] = (levelsData as any)[category].map((level: any, index: number) => ({
+          ...level,
+          isUnlocked: index < 5 || (index < 10 && Math.random() > 0.3) || Math.random() > 0.7,
+          isCompleted: index < 3 || Math.random() > 0.8,
+          stars: index < 3 ? 3 : Math.floor(Math.random() * 4)
+        }));
+      });
+      
+      setLevelCategories(loadedCategories);
+      
+      // Ensure selected category exists
+      if (!loadedCategories[selectedCategory] && Object.keys(loadedCategories).length > 0) {
+        setSelectedCategory(Object.keys(loadedCategories)[0]);
+      }
+      
+    } catch (error) {
+      console.error('Failed to load levels:', error);
+      // Fallback to empty categories
+      setLevelCategories({});
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedCategory]);
 
   const getDifficultyColor = (difficulty: Difficulty): string => {
     const config = getDifficultyConfig(difficulty);
     return config.color;
   };
 
-  const handleLevelPress = (level: LevelData): void => {
+  const handleLevelPress = (level: LevelData, categoryName: string): void => {
     if (level.isUnlocked) {
         if (playerEnergy < 10) {
         Alert.alert('Not enough energy!', 'Wait or buy more energy to continue playing.');
         } else {
-        onNavigate('game');
+        console.log(`🎮 Selected level: ${level.baseWord} (${level.difficulty}) from ${categoryName}`);
+        console.log(`📊 Level data:`, level);
+        
+        // Navigate to game with complete level data from JSON
+        onNavigate('game', {
+          baseWord: level.baseWord,
+          difficulty: level.difficulty,
+          levelTitle: `${level.baseWord} - Level ${level.level}`,
+          levelData: {
+            baseWord: level.baseWord,
+            letters: level.letters || [],
+            crosswordWords: level.crosswordWords || [],
+            difficulty: level.difficulty
+          }
+        });
         }
     } else {
         Alert.alert('Locked', 'Complete the previous level to unlock this one.');
@@ -165,13 +199,13 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     </View>
   );
 
-  const LevelCard: React.FC<LevelCardProps> = ({ level, onPress }) => {
-    const progress = level.totalLevels > 0 ? level.completedLevels / level.totalLevels : 0;
+  const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) => {
     const difficultyColor = getDifficultyColor(level.difficulty);
+    const difficultyConfig = getDifficultyConfig(level.difficulty);
 
     return (
       <TouchableOpacity
-        onPress={() => onPress(level)}
+        onPress={() => onPress(level, categoryName)}
         style={[
           styles.levelCard,
           !level.isUnlocked && styles.levelCardLocked
@@ -191,84 +225,43 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           {/* Header */}
           <View style={styles.levelHeader}>
             <Text style={[styles.levelName, !level.isUnlocked && styles.levelNameLocked]}>
-              {level.name}
+              {level.baseWord}
             </Text>
-            <View style={[styles.difficultyBadge, { backgroundColor: difficultyColor }]}>
-              <Text style={styles.difficultyText}>{level.difficulty}</Text>
+            <View style={[styles.difficultyBadge, { backgroundColor: difficultyColor }]}> 
+              <Text style={styles.difficultyText}>{difficultyConfig.icon} {difficultyConfig.label}</Text>
             </View>
           </View>
 
-          {/* Progress */}
-          {level.isUnlocked && (
-            <View style={styles.progressSection}>
-              <View style={styles.progressInfo}>
-                <Text style={styles.progressText}>
-                  {level.completedLevels}/{level.totalLevels} Completed
-                </Text>
-                <Text style={styles.progressPercent}>
-                  {Math.round(progress * 100)}%
-                </Text>
+          {/* Level Info */}
+          <View style={styles.levelInfo}>
+            <Text style={styles.levelNumber}>Level {level.level}</Text>
+            {level.isCompleted && level.stars && (
+              <View style={styles.starsContainer}>
+                {Array.from({ length: 3 }, (_, i) => (
+                  <Text key={i} style={styles.star}>
+                    {i < (level.stars ?? 0) ? '⭐' : '☆'}
+                  </Text>
+                ))}
               </View>
-              
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBarBackground}>
-                  <View 
-                    style={[
-                      styles.progressBar, 
-                      { 
-                        width: `${progress * 100}%`,
-                        backgroundColor: difficultyColor 
-                      }
-                    ]} 
-                  />
-                </View>
-              </View>
+            )}
+          </View>
 
-              {/* Stars and Reward inline */}
-              <View style={styles.starsAndRewardContainer}>
-                {/* Stars on the left */}
-                {level.isCompleted && (
-                  <View style={styles.starsContainer}>
-                    {[1, 2, 3].map((star) => (
-                      <Text
-                        key={star}
-                        style={[
-                          styles.star,
-                          { color: star <= level.stars ? '#F59E0B' : '#374151' }
-                        ]}
-                      >
-                        ⭐
-                      </Text>
-                    ))}
-                  </View>
-                )}
-
-                {/* Reward on the right */}
-                {level.reward && (
-                  <View style={styles.rewardContainer}>
-                    <Text style={styles.rewardText}>🟡 {level.reward}</Text>
-                  </View>
-                )}
+          {/* Status Badge */}
+          <View style={styles.statusSection}>
+            {level.isCompleted ? (
+              <View style={[styles.statusBadge, styles.completedBadge]}>
+                <Text style={styles.statusText}>✓ Completed</Text>
               </View>
-
-              {/* Status */}
-              <View style={styles.statusContainer}>
-                {level.isCompleted ? (
-                  <View style={[styles.statusBadge, styles.completedBadge]}>
-                    <Text style={styles.statusText}>Completed</Text>
-                  </View>
-                ) : level.completedLevels > 0 ? (
-                  <View style={[styles.statusBadge, styles.inProgressBadge]}>
-                    <Text style={styles.statusText}>▶ Continue</Text>
-                  </View>
-                ) : (
-                  <View style={[styles.statusBadge, styles.newBadge]}>
-                    <Text style={styles.statusText}>Start</Text>
-                  </View>
-                )}
+            ) : level.isUnlocked ? (
+              <View style={[styles.statusBadge, styles.newBadge]}>
+                <Text style={styles.statusText}>Ready to Play</Text>
               </View>
-            </View>
-          )}
+            ) : (
+              <View style={[styles.statusBadge, styles.inProgressBadge]}>
+                <Text style={styles.statusText}>Locked</Text>
+              </View>
+            )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -348,26 +341,31 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         </ScrollView>
       </View>
 
-      {/* Difficulty Selection */}
-      <DifficultySelection
-        selectedDifficulty={selectedDifficulty}
-        onDifficultyChange={setSelectedDifficulty}
-        title="Choose Difficulty"
-      />
-
       {/* Level Cards */}
       <ScrollView 
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {levelCategories[selectedCategory]?.map((level) => (
-          <LevelCard
-            key={level.id}
-            level={level}
-            onPress={handleLevelPress}
-          />
-        ))}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading levels...</Text>
+          </View>
+        ) : levelCategories[selectedCategory]?.length > 0 ? (
+          levelCategories[selectedCategory].map((level) => (
+            <LevelCard
+              key={`${selectedCategory}-${level.level}`}
+              level={level}
+              categoryName={selectedCategory}
+              onPress={handleLevelPress}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No levels available in {selectedCategory}</Text>
+            <Text style={styles.emptySubtext}>Check back later for new content!</Text>
+          </View>
+        )}
         
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -560,6 +558,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  levelInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  levelNumber: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statusSection: {
+    marginTop: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   progressSection: {
     gap: 12,
   },
@@ -617,13 +640,7 @@ const styles = StyleSheet.create({
   statusContainer: {
     alignItems: 'center',
   },
-  statusBadge: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    minWidth: 120,
-    alignItems: 'center',
-  },
+  // statusBadge: duplicate removed
   completedBadge: {
     backgroundColor: '#10B981',
   },
@@ -633,13 +650,39 @@ const styles = StyleSheet.create({
   newBadge: {
     backgroundColor: '#8B5CF6',
   },
-  statusText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
+  // statusText: duplicate removed
   bottomSpacing: {
     height: 40,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    color: '#9CA3AF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    color: '#6B7280',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    color: '#8B5CF6',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

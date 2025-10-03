@@ -1,10 +1,28 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import GameScreen from './components/GameScreen';
+import { Difficulty } from '@/constants/difficulty';
 
 export default function GameRoute() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Extract level data from params
+  const baseWord = params.baseWord as string || 'planet';
+  const difficulty = params.difficulty as Difficulty || 'medium';
+  const levelTitle = params.levelTitle as string || baseWord;
+  
+  // Parse level data if provided
+  let levelData = null;
+  if (params.levelDataJSON) {
+    try {
+      levelData = JSON.parse(params.levelDataJSON as string);
+      console.log('📋 Parsed level data from navigation:', levelData);
+    } catch (error) {
+      console.warn('Failed to parse level data:', error);
+    }
+  }
 
   // Handle Android back button
   useFocusEffect(
@@ -27,5 +45,13 @@ export default function GameRoute() {
     }
   };
 
-  return <GameScreen onNavigate={handleNavigate} />;
+  return (
+    <GameScreen 
+      onNavigate={handleNavigate} 
+      difficulty={difficulty}
+      baseWord={baseWord}
+      levelTitle={levelTitle}
+      levelData={levelData}
+    />
+  );
 }
