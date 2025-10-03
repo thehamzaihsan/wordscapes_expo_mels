@@ -2,9 +2,13 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { initializeGameManager } from '@/hooks/game-manager';
 
 export default function RootLayout() {
   useEffect(() => {
+    // Initialize game manager for optimal performance across the app
+    initializeGameManager();
+    
     if (Platform.OS === 'android') {
       const backAction = () => {
         // Let Expo Router handle the back navigation

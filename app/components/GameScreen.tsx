@@ -1,247 +1,931 @@
+import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import { generateCrossword } from "@/hooks/crossword-gen";
 import {
+  generateBonusWords,
+  generateLevelFromJSON,
+  initializeGameManager
+} from "@/hooks/game-manager";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from "react-native";
+import LetterWheel from "./inputWheel";
 
-export default function GameScreen(){
+interface GridCell {
+  letter: string | null;
+  isRevealed: boolean;
+  isActive: boolean; // Can contain a letter
+  belongsToWords: string[]; // Which words this cell belongs to
+}
+
+interface WordPlacement {
+  word: string;
+  startRow: number;
+  startCol: number;
+  direction: 'horizontal' | 'vertical';
+  isFound: boolean;
+}
+
+interface GameScreenProps {
+  onNavigate?: (screen: string) => void;
+  difficulty?: Difficulty;
+  baseWord?: string;
+  levelTitle?: string;
+  levelData?: {
+    baseWord: string;
+    letters: string[];
+    crosswordWords: string[];
+    difficulty: Difficulty;
+  };
+}
+
+export default function GameScreen({ 
+  onNavigate, 
+  difficulty = 'medium', 
+  baseWord = 'planet',
+  levelTitle = 'Planet',
+  levelData
+}: GameScreenProps) {
+  const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
+  const [baseWordState, setBaseWord] = useState("");
+  const [letters, setLetters] = useState<string[]>([]);
+  const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
+  const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
+  const [wordPlacements, setWordPlacements] = useState<WordPlacement[]>([]);
+  const [foundCrosswordWords, setFoundCrosswordWords] = useState<string[]>([]);
+  const [foundBonusWords, setFoundBonusWords] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState(0);
+  const [gameComplete, setGameComplete] = useState(false);
+  
+  const diff = getDifficultyConfig(difficulty);
+
+  // Convert basic grid to game grid with word placement info
+  const createGameGrid = useCallback((basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
+    const rows = basicGrid.length;
+    const cols = basicGrid[0]?.length || 0;
+    
+    console.log('Creating game grid from basic grid:', basicGrid);
+    console.log('Using placements:', placements);
+    
+    const gameGrid: GridCell[][] = Array(rows).fill(null).map(() =>
+      Array(cols).fill(null).map(() => ({
+        letter: null,
+        isRevealed: false,
+        isActive: false,
+        belongsToWords: []
+      }))
+    );
+
+    // Mark active cells and assign letters based on word placements
+    placements.forEach(placement => {
+      const { word, startRow, startCol, direction } = placement;
+      
+      for (let i = 0; i < word.length; i++) {
+        const row = direction === 'horizontal' ? startRow : startRow + i;
+        const col = direction === 'horizontal' ? startCol + i : startCol;
+        
+        if (row >= 0 && row < rows && col >= 0 && col < cols) {
+          gameGrid[row][col].letter = word[i].toUpperCase();
+          gameGrid[row][col].isActive = true;
+          gameGrid[row][col].belongsToWords.push(word);
+        }
+      }
+    });
+
+    console.log('Created game grid:', gameGrid);
+    return gameGrid;
+  }, []);
+
+  // Extract word placements from crossword grid (with duplicate handling)
+  const extractWordPlacements = useCallback((grid: string[][], words: string[]): WordPlacement[] => {
+    const placements: WordPlacement[] = [];
+    const rows = grid.length;
+    const cols = grid[0]?.length || 0;
+
+    console.log('Extracting placements from grid:', grid);
+    console.log('Looking for words:', words);
+
+    words.forEach(word => {
+      const upperWord = word.toUpperCase();
+      let foundPlacements = 0;
+      
+      // Check horizontal placements
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col <= cols - word.length; col++) {
+          let matches = true;
+          let hasNonEmptyCell = false;
+          
+          // Check if word matches and has at least one non-empty cell
+          for (let i = 0; i < word.length; i++) {
+            const cellValue = grid[row][col + i];
+            if (cellValue && cellValue !== '') {
+              hasNonEmptyCell = true;
+            }
+            if (cellValue !== upperWord[i] && cellValue !== '') {
+              matches = false;
+              break;
+            }
+          }
+          
+          if (matches && hasNonEmptyCell) {
+            // Verify this is actually the word by checking all letters match
+            let fullMatch = true;
+            for (let i = 0; i < word.length; i++) {
+              if (grid[row][col + i] !== upperWord[i]) {
+                fullMatch = false;
+                break;
+              }
+            }
+            
+            if (fullMatch) {
+              // Check if this placement overlaps with a longer word (avoid substring matches)
+              const isSubstringMatch = placements.some(existing => {
+                const existingWord = existing.word.toUpperCase();
+                if (existingWord.length > upperWord.length && existingWord.includes(upperWord)) {
+                  // Check if this placement is within the existing longer word
+                  if (existing.direction === 'horizontal' && row === existing.startRow) {
+                    const existingStart = existing.startCol;
+                    const existingEnd = existing.startCol + existingWord.length - 1;
+                    const currentStart = col;
+                    const currentEnd = col + upperWord.length - 1;
+                    
+                    if (currentStart >= existingStart && currentEnd <= existingEnd) {
+                      return true; // This is a substring within the longer word
+                    }
+                  }
+                }
+                return false;
+              });
+              
+              if (!isSubstringMatch) {
+                placements.push({
+                  word: word.toLowerCase(),
+                  startRow: row,
+                  startCol: col,
+                  direction: 'horizontal',
+                  isFound: false
+                });
+                foundPlacements++;
+                console.log(`Found horizontal placement for "${word}" at (${row}, ${col})`);
+              } else {
+                console.log(`Skipped substring match for "${word}" at (${row}, ${col})`);
+              }
+            }
+          }
+        }
+      }
+
+      // Check vertical placements
+      for (let row = 0; row <= rows - word.length; row++) {
+        for (let col = 0; col < cols; col++) {
+          let matches = true;
+          let hasNonEmptyCell = false;
+          
+          // Check if word matches and has at least one non-empty cell
+          for (let i = 0; i < word.length; i++) {
+            const cellValue = grid[row + i][col];
+            if (cellValue && cellValue !== '') {
+              hasNonEmptyCell = true;
+            }
+            if (cellValue !== upperWord[i] && cellValue !== '') {
+              matches = false;
+              break;
+            }
+          }
+          
+          if (matches && hasNonEmptyCell) {
+            // Verify this is actually the word by checking all letters match
+            let fullMatch = true;
+            for (let i = 0; i < word.length; i++) {
+              if (grid[row + i][col] !== upperWord[i]) {
+                fullMatch = false;
+                break;
+              }
+            }
+            
+            if (fullMatch) {
+              // Check if this placement overlaps with a longer word (avoid substring matches)
+              const isSubstringMatch = placements.some(existing => {
+                const existingWord = existing.word.toUpperCase();
+                if (existingWord.length > upperWord.length && existingWord.includes(upperWord)) {
+                  // Check if this placement is within the existing longer word
+                  if (existing.direction === 'vertical' && col === existing.startCol) {
+                    const existingStart = existing.startRow;
+                    const existingEnd = existing.startRow + existingWord.length - 1;
+                    const currentStart = row;
+                    const currentEnd = row + upperWord.length - 1;
+                    
+                    if (currentStart >= existingStart && currentEnd <= existingEnd) {
+                      return true; // This is a substring within the longer word
+                    }
+                  }
+                }
+                return false;
+              });
+              
+              if (!isSubstringMatch) {
+                placements.push({
+                  word: word.toLowerCase(),
+                  startRow: row,
+                  startCol: col,
+                  direction: 'vertical',
+                  isFound: false
+                });
+                foundPlacements++;
+                console.log(`Found vertical placement for "${word}" at (${row}, ${col})`);
+              } else {
+                console.log(`Skipped substring match for "${word}" at (${row}, ${col})`);
+              }
+            }
+          }
+        }
+      }
+      
+      if (foundPlacements === 0) {
+        console.warn(`⚠️ No placement found for word "${word}"`);
+      }
+    });
+
+    console.log('Final placements:', placements);
+    return placements;
+  }, []);
+
+  // Reveal word in grid when found (with proper state handling)
+  const revealWordInGrid = useCallback((foundWord: string) => {
+    const normalizedFoundWord = foundWord.toLowerCase();
+    console.log(`🔍 Revealing word "${normalizedFoundWord}" in grid`);
+    
+    setWordPlacements(prev => {
+      const targetPlacement = prev.find(placement => 
+        placement.word === normalizedFoundWord && !placement.isFound
+      );
+      
+      if (!targetPlacement) {
+        console.warn(`❌ No unrevealed placement found for word "${normalizedFoundWord}"`);
+        console.log('Available placements:', prev.map(p => `${p.word}(${p.isFound ? 'found' : 'not found'})`));
+        return prev;
+      }
+      
+      console.log(`✅ Found placement for "${normalizedFoundWord}":`, targetPlacement);
+      
+      // Mark this specific placement as found
+      const newPlacements = prev.map(placement => 
+        placement.word === normalizedFoundWord && 
+        placement.startRow === targetPlacement.startRow &&
+        placement.startCol === targetPlacement.startCol &&
+        placement.direction === targetPlacement.direction &&
+        !placement.isFound
+          ? { ...placement, isFound: true }
+          : placement
+      );
+      
+      // Update the grid with the found placement
+      setGameGrid(prevGrid => {
+        if (!prevGrid) return prevGrid;
+        
+        const newGrid = prevGrid.map(row => row.map(cell => ({ ...cell })));
+        const { word, startRow, startCol, direction } = targetPlacement;
+        
+        // Reveal only the cells for this specific word placement
+        for (let i = 0; i < word.length; i++) {
+          const row = direction === 'horizontal' ? startRow : startRow + i;
+          const col = direction === 'horizontal' ? startCol + i : startCol;
+          
+          if (row >= 0 && row < newGrid.length && col >= 0 && col < newGrid[0].length) {
+            newGrid[row][col].isRevealed = true;
+            console.log(`🔓 Revealed cell at (${row}, ${col}) for "${normalizedFoundWord}"`);
+          }
+        }
+        
+        return newGrid;
+      });
+      
+      return newPlacements;
+    });
+  }, []);
+
+  const handleLetterSelect = useCallback((letter: string, index: number) => {
+    console.log(`Letter selected: ${letter} at index ${index}`);
+  }, []);
+
+  const handleWordComplete = useCallback((word: string) => {
+    console.log(`Word completed: ${word}`);
+    const normalizedWord = word.toLowerCase().trim();
+    
+    if (normalizedWord.length < 2) {
+      setFeedback("Word must be at least 2 letters long");
+      setTimeout(() => setFeedback(""), 2000);
+      return;
+    }
+
+    // Check if word already found
+    if (foundCrosswordWords.includes(normalizedWord) || foundBonusWords.includes(normalizedWord)) {
+      setFeedback("Word already found!");
+      setTimeout(() => setFeedback(""), 2000);
+      return;
+    }
+
+    // Check if it's a crossword word
+    if (crosswordWords.includes(normalizedWord)) {
+      // Main crossword word found!
+      setFoundCrosswordWords(prev => [...prev, normalizedWord]);
+      const points = normalizedWord.length * 100; // Higher points for crossword words
+      setScore(prev => prev + points);
+      setFeedback(`🎉 CROSSWORD WORD! "${normalizedWord.toUpperCase()}" (+${points} points)`);
+      
+      // Reveal word in grid
+      revealWordInGrid(normalizedWord);
+      
+      // Check if game is complete
+      if (foundCrosswordWords.length + 1 === crosswordWords.length) {
+        setGameComplete(true);
+        setFeedback(`🏆 PUZZLE COMPLETE! All crossword words found!`);
+      }
+      
+      setTimeout(() => setFeedback(""), 4000);
+    } else {
+      // Enhanced word validation - check multiple sources
+      const isValidBonus = allValidWords.some(word => word.toLowerCase() === normalizedWord);
+      const canForm = canFormWordFromLetters(normalizedWord, letters);
+      const canFormFromBaseWord = canFormWordFromLetters(normalizedWord, baseWordState.split(''));
+      
+      // Also check against a comprehensive list of common English words
+      const isCommonWord = isCommonEnglishWord(normalizedWord);
+      
+      console.log(`🔍 Checking word "${normalizedWord}":`);
+      console.log(`   - Available letters:`, letters);
+      console.log(`   - Base word letters:`, baseWordState.split(''));
+      console.log(`   - Is in valid words list:`, isValidBonus);
+      console.log(`   - Can form from letters:`, canForm);
+      console.log(`   - Can form from baseword:`, canFormFromBaseWord);
+      console.log(`   - Is common English word:`, isCommonWord);
+      
+      if ((isValidBonus || isCommonWord) && canForm && canFormFromBaseWord && normalizedWord.length >= 2) {
+        // Bonus word found!
+        setFoundBonusWords(prev => [...prev, normalizedWord]);
+        const points = normalizedWord.length * 10; // Lower points for bonus words
+        setScore(prev => prev + points);
+        setFeedback(`✨ Bonus word! "${normalizedWord.toUpperCase()}" (+${points} points)`);
+        setTimeout(() => setFeedback(""), 3000);
+      } else {
+        console.log(`❌ "${normalizedWord}" rejected:`);
+        console.log(`   - Valid bonus: ${isValidBonus}, Common word: ${isCommonWord}`);
+        console.log(`   - Can form from letters: ${canForm}, Can form from base: ${canFormFromBaseWord}`);
+        setFeedback(`"${normalizedWord.toUpperCase()}" is not a valid word`);
+        setTimeout(() => setFeedback(""), 2000);
+      }
+    }
+  }, [crosswordWords, foundCrosswordWords, foundBonusWords, letters, revealWordInGrid]);
+
+  // Check if word can be formed from available letters
+  const canFormWordFromLetters = useCallback((word: string, availableLetters: string[]): boolean => {
+    const wordLetters = word.toLowerCase().split('');
+    const letterCounts = availableLetters.reduce((acc, letter) => {
+      const lowerLetter = letter.toLowerCase();
+      acc[lowerLetter] = (acc[lowerLetter] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    for (const letter of wordLetters) {
+      if ((letterCounts[letter] || 0) === 0) {
+        return false;
+      }
+      letterCounts[letter]--;
+    }
+    return true;
+  }, []);
+
+  // Check if word is a common English word
+  const isCommonEnglishWord = useCallback((word: string): boolean => {
+    const commonWords = [
+      // 2-letter words
+      'we', 'if', 'id', 'el', 'ed', 'ew', 'li', 'wi', 'fi', 'di', 'de', 'fe', 'le',
+      'it', 'in', 'on', 'or', 'to', 'at', 'an', 'as', 'is', 'be', 'he', 'me', 'my',
+      // 3-letter words
+      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her',
+      'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man',
+      'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let',
+      'put', 'say', 'she', 'too', 'use', 'dew', 'few', 'led', 'fed', 'lid', 'fid',
+      'die', 'lie', 'fie', 'ell', 'ill', 'wed', 'fed', 'led', 'eld', 'del',
+      // 4-letter words
+      'will', 'fill', 'well', 'fell', 'tell', 'hell', 'cell', 'bell', 'dill',
+      'kill', 'pill', 'bill', 'mill', 'hill', 'till', 'wild', 'file', 'life',
+      'wife', 'dell', 'fled', 'weld', 'wide', 'idle', 'field', 'wile', 'deli',
+      // 5+ letter words
+      'field', 'filed', 'wield', 'lifted', 'filled', 'willed'
+    ];
+    
+    return commonWords.includes(word.toLowerCase());
+  }, []);
+
+  // Get manual bonus words for better gameplay
+  const getManualBonusWords = useCallback((baseWord: string, excludeWords: string[]): string[] => {
+    const manualWords = ['will', 'fill', 'well', 'fell', 'tell', 'hell', 'cell', 'bell', 'dill', 'kill', 'pill', 'bill', 'mill', 'hill', 'till', 'wild', 'file', 'life', 'wife', 'dell', 'fled', 'weld', 'wide', 'idle', 'wile', 'deli', 'few', 'dew', 'led', 'fed', 'lid', 'fid', 'die', 'lie', 'fie', 'ell', 'ill', 'we', 'if', 'id', 'el', 'ed'];
+    
+    const validWords = [];
+    const excludeLower = excludeWords.map(w => w.toLowerCase());
+    
+    for (const word of manualWords) {
+      if (excludeLower.includes(word)) continue;
+      
+      if (canFormWordFromLetters(word, baseWord.split(''))) {
+        validWords.push(word);
+      }
+    }
+    
+    console.log(`🔧 Manual bonus words for "${baseWord}":`, validWords);
+    return validWords;
+  }, [canFormWordFromLetters]);
+
+  const init = useCallback(() => {
+    // Initialize game manager for optimal performance
+    initializeGameManager();
+    
+    console.log(`🎮 Initializing game with baseWord: "${baseWord}", difficulty: "${difficulty}"`);
+    
+    setLoading(true);
+    setError("");
+    setAttempts(0);
+    setFoundCrosswordWords([]);
+    setFoundBonusWords([]);
+    setAllValidWords([]);
+    setScore(0);
+    setFeedback("");
+    setGameComplete(false);
+
+    let success = false;
+    let crosswordGrid: string[][] | null = null;
+    let currentAttempts = 0;
+
+    while (!success && currentAttempts < 5) {
+      try {
+        console.log(`🎲 Attempt ${currentAttempts + 1}: Generating level for "${baseWord}" with ${difficulty} difficulty`);
+        
+        let levelDataToUse;
+        
+        // Use provided level data if available (from JSON), otherwise generate
+        if (levelData) {
+          console.log(`📋 Using provided level data from JSON:`, levelData);
+          levelDataToUse = levelData;
+        } else {
+          console.log(`🔄 Generating level data for "${baseWord}"`);
+          levelDataToUse = generateLevelFromJSON(baseWord, difficulty);
+        }
+        
+        console.log(`📊 Level data to use:`, levelDataToUse);
+        
+        // Use the crossword words directly from JSON for better performance
+        const availableWords = levelDataToUse.crosswordWords.map(word => word.toLowerCase());
+        console.log(`📝 Available crossword words (${availableWords.length}):`, availableWords);
+        
+        // Select words for the grid (use most words for better gameplay)
+        const wordsForGrid = availableWords.slice(0, Math.min(availableWords.length, diff.minWords + 3));
+        console.log(`🎯 Selected ${wordsForGrid.length} words for crossword:`, wordsForGrid);
+
+        if (wordsForGrid.length < 3) {
+          throw new Error(`Not enough words (${wordsForGrid.length}) for crossword generation`);
+        }
+
+        // Use your 2D grid generator directly
+        const grid = generateCrossword(wordsForGrid);
+
+        if (grid && wordsForGrid.length > 0) {
+          // Convert Grid (Cell[][]) to string[][]
+          crosswordGrid = grid.map(row => 
+            row.map(cell => cell || '') // Convert null to empty string
+          );
+          
+          // Extract word placements from the generated grid
+          const placements = extractWordPlacements(crosswordGrid, wordsForGrid);
+          
+          console.log('📍 Generated grid:', crosswordGrid);
+          console.log('📍 Word placements:', placements);
+          
+          if (placements.length > 0) {
+            // Create game grid with hidden cells
+            const gameGrid = createGameGrid(crosswordGrid, placements);
+            
+            // Generate bonus words for enhanced gameplay
+            const bonusWords = generateBonusWords(levelDataToUse.baseWord, availableWords, difficulty);
+            
+            // Add manual bonus words for common words that might be missing
+            const manualBonusWords = getManualBonusWords(levelDataToUse.baseWord, availableWords);
+            const allBonusWords = [...new Set([...bonusWords, ...manualBonusWords])];
+            
+            const allWords = [...availableWords, ...allBonusWords];
+            
+            setBaseWord(levelDataToUse.baseWord);
+            setLetters(levelDataToUse.letters.map(l => l.toLowerCase())); // Use letters from JSON
+            setCrosswordWords(availableWords); // Words that are in the crossword grid
+            setAllValidWords(allWords); // All words that can be found (crossword + bonus)
+            setWordPlacements(placements);
+            setGameGrid(gameGrid);
+            success = true;
+            
+            console.log(`✅ Successfully generated game with:`);
+            console.log(`   - ${wordsForGrid.length} words in grid`);
+            console.log(`   - ${availableWords.length} crossword words`);
+            console.log(`   - ${allBonusWords.length} bonus words (${bonusWords.length} generated + ${manualBonusWords.length} manual)`);
+            console.log(`   - ${allWords.length} total findable words`);
+            console.log(`   - All valid words:`, allWords);
+          } else {
+            throw new Error('No word placements found in generated grid');
+          }
+        } else {
+          throw new Error('Failed to generate crossword grid');
+        }
+      } catch (error) {
+        console.warn('Error generating crossword:', error);
+      }
+      
+      currentAttempts++;
+      setAttempts(currentAttempts);
+    }
+
+    if (!success) {
+      setGameGrid(null);
+      setError("Failed to generate crossword after multiple attempts.");
+    }
+
+    setLoading(false);
+  }, [diff, extractWordPlacements, createGameGrid]);
+
+  useEffect(() => {
+    init();
+  }, [init]);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#ff6600" />
+        <Text style={{ marginTop: 10, color: "#444" }}>
+          Generating crossword... {attempts}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text>hello</Text>
+      {gameGrid ? (
+        <>
+          {/* Back Button and Level Header */}
+          <View style={styles.levelHeader}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => onNavigate?.('levels')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <View style={styles.levelTitleContainer}>
+              <Text style={styles.levelTitle}>{levelTitle}</Text>
+              <View style={styles.levelSubInfo}>
+                <Text style={styles.difficultyLabel}>
+                  {getDifficultyConfig(difficulty).icon} {getDifficultyConfig(difficulty).label}
+                </Text>
+                <Text style={styles.baseWordLabel}>Base: {baseWordState}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Score and Progress Header */}
+          <View style={styles.header}>
+            <Text style={styles.scoreText}>Score: {score}</Text>
+            <Text style={styles.progressText}>
+              Progress: {foundCrosswordWords.length}/{crosswordWords.length}
+            </Text>
+          </View>
+
+          {/* Feedback Message */}
+          {feedback ? (
+            <View style={styles.feedbackContainer}>
+              <Text style={styles.feedbackText}>{feedback}</Text>
+            </View>
+          ) : null}
+
+          {/* Game Complete Message */}
+          {gameComplete && (
+            <View style={styles.gameCompleteContainer}>
+              <Text style={styles.gameCompleteText}>🏆 PUZZLE COMPLETE! 🏆</Text>
+              <Text style={styles.gameCompleteSubtext}>
+                You found all {crosswordWords.length} crossword words!
+              </Text>
+            </View>
+          )}
+
+          {/* Crossword Grid - Only show active cells */}
+          <View style={styles.gridContainer}>
+            
+            <View style={styles.grid}>
+              {gameGrid.map((row, rowIndex) => (
+                <View key={rowIndex} style={styles.row}>
+                  {row.map((cell, colIndex) => {
+                    if (!cell.isActive) {
+                      // Don't render inactive cells
+                      return <View key={colIndex} style={styles.emptyCell} />;
+                    }
+                    
+                    return (
+                      <View 
+                        key={colIndex} 
+                        style={[
+                          styles.cell,
+                          cell.isRevealed ? styles.revealedCell : styles.hiddenCell
+                        ]}
+                      >
+                        <Text style={[
+                          styles.cellText,
+                          cell.isRevealed ? styles.revealedCellText : styles.hiddenCellText
+                        ]}>
+                          {cell.isRevealed ? cell.letter : ""}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          </View>
+
+         
+
+          {/* Letter Wheel */}
+          <View style={styles.wheelSection}>
+            {letters.length > 0 ? (
+              <LetterWheel 
+                letters={letters} 
+                onLetterSelect={handleLetterSelect} 
+                onWordComplete={handleWordComplete} 
+                validWords={[...crosswordWords]} // Only validate against crossword words for highlighting
+              />
+            ) : (
+              <Text style={styles.errorText}>No letters available</Text>
+            )}
+          </View>
+        </>
+      ) : (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121213",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: 20,
+    backgroundColor: "#f8f9fa",
   },
-  loadingContainer: {
+  levelHeader: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    marginTop: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 15,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  levelTitleContainer: {
     flex: 1,
-    justifyContent: "center",
+  },
+  levelTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  levelSubInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  loadingText: {
-    color: "#ffffff",
-    fontSize: 18,
+  difficultyLabel: {
+    fontSize: 12,
     fontWeight: "600",
+    color: "#6B7280",
+  },
+  baseWordLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#8B5CF6",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    width: "100%",
     paddingVertical: 15,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderBottomWidth: 1,
-    borderBottomColor: "#3a3a3c",
-  },
-  backButton: {
-    flex: 1,
-  },
-  backButtonText: {
-    color: "#8B5CF6",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  headerCenter: {
-    flex: 2,
-    alignItems: "center",
-  },
-  levelText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "bold",
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    marginBottom: 15,
+    elevation: 3,
+    marginTop: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   scoreText: {
-    color: "#F59E0B",
-    fontSize: 14,
-    marginTop: 2,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#8B5CF6",
   },
-  headerRight: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  timerText: {
+  progressText: {
     fontSize: 16,
-    fontWeight: "bold",
-    fontFamily: "monospace",
+    fontWeight: "600",
+    color: "#374151",
   },
-  crosswordContainer: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  crosswordScrollContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 300,
-  },
-  crosswordGrid: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    padding: 10,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: "#8B5CF6",
-  },
-  crosswordRow: {
-    flexDirection: "row",
-  },
-  crosswordCell: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyCrosswordCell: {
-    backgroundColor: "#f0f0f0",
-  },
-  activeCrosswordCell: {
-    backgroundColor: "#ffffff",
-  },
-  foundCrosswordCell: {
-    backgroundColor: "#8B5CF6",
-  },
-  crosswordCellText: {
-    color: "#333",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  foundCellText: {
-    color: "#ffffff",
-  },
-  bottomSection: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    paddingVertical: 20,
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#3a3a3c",
-  },
-  circleContainer: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  currentWordBubble: {
-    backgroundColor: "#8B5CF6",
+  feedbackContainer: {
+    backgroundColor: "#10B981",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 25,
-    marginBottom: 20,
-    minWidth: 140,
-    alignItems: "center",
-    shadowColor: "#8B5CF6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    marginBottom: 15,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
+    elevation: 4,
+  },
+  feedbackText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  gameCompleteContainer: {
+    backgroundColor: "#F59E0B",
+    paddingHorizontal: 25,
+    paddingVertical: 15,
+    borderRadius: 20,
+    marginBottom: 20,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
     elevation: 6,
   },
-  currentWordBubbleText: {
-    color: "#ffffff",
-    fontSize: 18,
+  gameCompleteText: {
+    color: "#000",
+    fontSize: 20,
     fontWeight: "bold",
-    letterSpacing: 2,
+    textAlign: "center",
+    marginBottom: 5,
   },
-  letterCircle: {
-    width: 200,
-    height: 200,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 100,
-    borderWidth: 2,
-    borderColor: "#3a3a3c",
+  gameCompleteSubtext: {
+    color: "#000",
+    fontSize: 14,
+    textAlign: "center",
+    opacity: 0.8,
   },
-  circleLetter: {
-    position: "absolute",
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#8B5CF6",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
+  gridContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
     elevation: 5,
-    borderWidth: 2,
-    borderColor: "#A78BFA",
   },
-  selectedCircleLetter: {
-    backgroundColor: "#F59E0B",
-    borderColor: "#FBBF24",
-    shadowColor: "#F59E0B",
-    shadowOpacity: 0.6,
+  debugGridInfo: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '500',
   },
-  letterTouchArea: {
-    width: "100%",
-    height: "100%",
+  grid: {
     alignItems: "center",
     justifyContent: "center",
   },
-  circleLetterText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  selectedCircleLetterText: {
-    color: "#000000",
-  },
-  actionButtons: {
+  row: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingHorizontal: 20,
-    marginBottom: 15,
   },
-  actionButton: {
-    backgroundColor: "#3a3a3c",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    minWidth: 80,
+  emptyCell: {
+    width: 28,
+    height: 28,
+    margin: 1,
+  },
+  cell: {
+    width: 28,
+    height: 28,
+    margin: 1,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#555",
-    shadowColor: "#000",
+    justifyContent: "center",
+    borderRadius: 4,
+  },
+  hiddenCell: {
+    backgroundColor: "#E5E7EB",
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+  },
+  revealedCell: {
+    backgroundColor: "#8B5CF6",
+    borderWidth: 2,
+    borderColor: "#7C3AED",
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
-  submitButton: {
-    backgroundColor: "#10B981",
-    borderColor: "#059669",
-  },
-  secondaryButton: {
-    backgroundColor: "#8B5CF6",
-    borderColor: "#7C3AED",
-  },
-  disabledButton: {
-    backgroundColor: "#555",
-    borderColor: "#444",
-    opacity: 0.6,
-  },
-  actionButtonText: {
-    color: "#ffffff",
+  cellText: {
     fontSize: 14,
     fontWeight: "bold",
+    textAlign: "center",
   },
-  progressContainer: {
-    alignItems: "center",
-    paddingTop: 10,
+  hiddenCellText: {
+    color: "transparent",
   },
-  progressText: {
-    color: "#ffffff",
+  revealedCellText: {
+    color: "#fff",
+  },
+  wordsContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  foundWordsSection: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sectionTitle: {
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 10,
+  },
+  wordsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  wordBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginBottom: 5,
+  },
+  crosswordWordBadge: {
+    backgroundColor: "#8B5CF6",
+  },
+  bonusWordBadge: {
+    backgroundColor: "#10B981",
+  },
+  wordText: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "600",
+  },
+  wheelSection: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    minHeight: 200,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 16,
+    marginVertical: 10,
+    textAlign: "center",
   },
 });
 
