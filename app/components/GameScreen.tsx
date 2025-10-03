@@ -104,7 +104,7 @@ export default function GameScreen({
     return gameGrid;
   }, []);
 
-  // Extract word placements from crossword grid
+  // Extract word placements from crossword grid (with duplicate handling)
   const extractWordPlacements = useCallback((grid: string[][], words: string[]): WordPlacement[] => {
     const placements: WordPlacement[] = [];
     const rows = grid.length;
@@ -115,6 +115,7 @@ export default function GameScreen({
 
     words.forEach(word => {
       const upperWord = word.toUpperCase();
+      let foundPlacements = 0;
       
       // Check horizontal placements
       for (let row = 0; row < rows; row++) {
@@ -145,14 +146,38 @@ export default function GameScreen({
             }
             
             if (fullMatch) {
-              placements.push({
-                word: word.toLowerCase(),
-                startRow: row,
-                startCol: col,
-                direction: 'horizontal',
-                isFound: false
+              // Check if this placement overlaps with a longer word (avoid substring matches)
+              const isSubstringMatch = placements.some(existing => {
+                const existingWord = existing.word.toUpperCase();
+                if (existingWord.length > upperWord.length && existingWord.includes(upperWord)) {
+                  // Check if this placement is within the existing longer word
+                  if (existing.direction === 'horizontal' && row === existing.startRow) {
+                    const existingStart = existing.startCol;
+                    const existingEnd = existing.startCol + existingWord.length - 1;
+                    const currentStart = col;
+                    const currentEnd = col + upperWord.length - 1;
+                    
+                    if (currentStart >= existingStart && currentEnd <= existingEnd) {
+                      return true; // This is a substring within the longer word
+                    }
+                  }
+                }
+                return false;
               });
-              console.log(`Found horizontal placement for "${word}" at (${row}, ${col})`);
+              
+              if (!isSubstringMatch) {
+                placements.push({
+                  word: word.toLowerCase(),
+                  startRow: row,
+                  startCol: col,
+                  direction: 'horizontal',
+                  isFound: false
+                });
+                foundPlacements++;
+                console.log(`Found horizontal placement for "${word}" at (${row}, ${col})`);
+              } else {
+                console.log(`Skipped substring match for "${word}" at (${row}, ${col})`);
+              }
             }
           }
         }
@@ -187,17 +212,45 @@ export default function GameScreen({
             }
             
             if (fullMatch) {
-              placements.push({
-                word: word.toLowerCase(),
-                startRow: row,
-                startCol: col,
-                direction: 'vertical',
-                isFound: false
+              // Check if this placement overlaps with a longer word (avoid substring matches)
+              const isSubstringMatch = placements.some(existing => {
+                const existingWord = existing.word.toUpperCase();
+                if (existingWord.length > upperWord.length && existingWord.includes(upperWord)) {
+                  // Check if this placement is within the existing longer word
+                  if (existing.direction === 'vertical' && col === existing.startCol) {
+                    const existingStart = existing.startRow;
+                    const existingEnd = existing.startRow + existingWord.length - 1;
+                    const currentStart = row;
+                    const currentEnd = row + upperWord.length - 1;
+                    
+                    if (currentStart >= existingStart && currentEnd <= existingEnd) {
+                      return true; // This is a substring within the longer word
+                    }
+                  }
+                }
+                return false;
               });
-              console.log(`Found vertical placement for "${word}" at (${row}, ${col})`);
+              
+              if (!isSubstringMatch) {
+                placements.push({
+                  word: word.toLowerCase(),
+                  startRow: row,
+                  startCol: col,
+                  direction: 'vertical',
+                  isFound: false
+                });
+                foundPlacements++;
+                console.log(`Found vertical placement for "${word}" at (${row}, ${col})`);
+              } else {
+                console.log(`Skipped substring match for "${word}" at (${row}, ${col})`);
+              }
             }
           }
         }
+      }
+      
+      if (foundPlacements === 0) {
+        console.warn(`⚠️ No placement found for word "${word}"`);
       }
     });
 
@@ -205,40 +258,59 @@ export default function GameScreen({
     return placements;
   }, []);
 
-  // Reveal word in grid when found
+  // Reveal word in grid when found (with proper state handling)
   const revealWordInGrid = useCallback((foundWord: string) => {
+    const normalizedFoundWord = foundWord.toLowerCase();
+    console.log(`🔍 Revealing word "${normalizedFoundWord}" in grid`);
+    
     setWordPlacements(prev => {
+      const targetPlacement = prev.find(placement => 
+        placement.word === normalizedFoundWord && !placement.isFound
+      );
+      
+      if (!targetPlacement) {
+        console.warn(`❌ No unrevealed placement found for word "${normalizedFoundWord}"`);
+        console.log('Available placements:', prev.map(p => `${p.word}(${p.isFound ? 'found' : 'not found'})`));
+        return prev;
+      }
+      
+      console.log(`✅ Found placement for "${normalizedFoundWord}":`, targetPlacement);
+      
+      // Mark this specific placement as found
       const newPlacements = prev.map(placement => 
-        placement.word === foundWord.toLowerCase() 
+        placement.word === normalizedFoundWord && 
+        placement.startRow === targetPlacement.startRow &&
+        placement.startCol === targetPlacement.startCol &&
+        placement.direction === targetPlacement.direction &&
+        !placement.isFound
           ? { ...placement, isFound: true }
           : placement
       );
-      return newPlacements;
-    });
-
-    setGameGrid(prev => {
-      if (!prev) return prev;
       
-      const newGrid = prev.map(row => row.map(cell => ({ ...cell })));
-
-      // Find the word placement and reveal its cells
-      const placement = wordPlacements.find(p => p.word === foundWord.toLowerCase());
-      if (placement) {
-        const { word, startRow, startCol, direction } = placement;
+      // Update the grid with the found placement
+      setGameGrid(prevGrid => {
+        if (!prevGrid) return prevGrid;
         
+        const newGrid = prevGrid.map(row => row.map(cell => ({ ...cell })));
+        const { word, startRow, startCol, direction } = targetPlacement;
+        
+        // Reveal only the cells for this specific word placement
         for (let i = 0; i < word.length; i++) {
           const row = direction === 'horizontal' ? startRow : startRow + i;
           const col = direction === 'horizontal' ? startCol + i : startCol;
           
           if (row >= 0 && row < newGrid.length && col >= 0 && col < newGrid[0].length) {
             newGrid[row][col].isRevealed = true;
+            console.log(`🔓 Revealed cell at (${row}, ${col}) for "${normalizedFoundWord}"`);
           }
         }
-      }
+        
+        return newGrid;
+      });
       
-      return newGrid;
+      return newPlacements;
     });
-  }, [wordPlacements]);
+  }, []);
 
   const handleLetterSelect = useCallback((letter: string, index: number) => {
     console.log(`Letter selected: ${letter} at index ${index}`);
