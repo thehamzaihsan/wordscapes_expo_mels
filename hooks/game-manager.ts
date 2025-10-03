@@ -1,5 +1,8 @@
 import { Filter } from 'bad-words';
-import { words } from 'popular-english-words';
+import wordsArray from 'an-array-of-english-words';
+
+// Cast to ensure we have a string array
+const words: string[] = Array.isArray(wordsArray) ? wordsArray : [];
 
 // Initialize profanity filter
 const badFilter = new Filter();
@@ -134,13 +137,25 @@ function getWordList(
   }
   
   try {
-    // Get popular words based on difficulty
-    const popularWords = words.getMostPopular(config.popularityRange);
-    return popularWords.filter(word => isValidWord(word, options.allowProperNouns));
+    // Get words from the array and filter by popularity range (use array slice for range)
+    if (words.length === 0) {
+      throw new Error('No words available');
+    }
+    
+    const maxWords = Math.min(config.popularityRange, words.length);
+    const popularWords = words.slice(0, maxWords);
+    const validWords = popularWords.filter(word => isValidWord(word, options.allowProperNouns));
+    
+    // Ensure we have some words
+    if (validWords.length === 0) {
+      throw new Error('No valid words found');
+    }
+    
+    return validWords;
   } catch (error) {
-    console.warn('Failed to get popular words, falling back to basic word list');
+    console.warn('Failed to get words, falling back to basic word list');
     // Fallback to a basic word list if the library fails
-    return [];
+    return ['cat', 'dog', 'fish', 'bird', 'tree', 'house', 'car', 'book', 'game', 'play', 'water', 'fire', 'earth', 'wind', 'star', 'moon', 'sun', 'rock', 'sand', 'leaf'];
   }
 }
 
@@ -283,6 +298,11 @@ export function generateMultipleLevels(
 export function getRandomWords(wordsList: string[], count: number): string[] {
   if (wordsList.length === 0 || count <= 0) {
     return [];
+  }
+
+  // If we need more words than available, return all available words
+  if (count >= wordsList.length) {
+    return [...wordsList];
   }
 
   // Calculate length statistics for the word list
