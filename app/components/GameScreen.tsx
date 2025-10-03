@@ -280,21 +280,23 @@ export default function GameScreen({
       
       setTimeout(() => setFeedback(""), 4000);
     } else {
-      // Check if it's a valid bonus word (can be formed from available letters)
+      // Enhanced word validation - check multiple sources
       const isValidBonus = allValidWords.some(word => word.toLowerCase() === normalizedWord);
       const canForm = canFormWordFromLetters(normalizedWord, letters);
+      const canFormFromBaseWord = canFormWordFromLetters(normalizedWord, baseWordState.split(''));
+      
+      // Also check against a comprehensive list of common English words
+      const isCommonWord = isCommonEnglishWord(normalizedWord);
       
       console.log(`🔍 Checking word "${normalizedWord}":`);
       console.log(`   - Available letters:`, letters);
-      console.log(`   - All valid words (${allValidWords.length}):`, allValidWords.slice(0, 20));
+      console.log(`   - Base word letters:`, baseWordState.split(''));
       console.log(`   - Is in valid words list:`, isValidBonus);
       console.log(`   - Can form from letters:`, canForm);
+      console.log(`   - Can form from baseword:`, canFormFromBaseWord);
+      console.log(`   - Is common English word:`, isCommonWord);
       
-      // Also check if it can be manually verified as valid
-      const canFormFromBaseWord = canFormWordFromLetters(normalizedWord, baseWordState.split(''));
-      console.log(`   - Can form from baseword "${baseWordState}":`, canFormFromBaseWord);
-      
-      if ((isValidBonus || canFormFromBaseWord) && canForm && normalizedWord.length >= 2) {
+      if ((isValidBonus || isCommonWord) && canForm && canFormFromBaseWord && normalizedWord.length >= 2) {
         // Bonus word found!
         setFoundBonusWords(prev => [...prev, normalizedWord]);
         const points = normalizedWord.length * 10; // Lower points for bonus words
@@ -302,7 +304,9 @@ export default function GameScreen({
         setFeedback(`✨ Bonus word! "${normalizedWord.toUpperCase()}" (+${points} points)`);
         setTimeout(() => setFeedback(""), 3000);
       } else {
-        console.log(`❌ "${normalizedWord}" rejected - isValidBonus: ${isValidBonus}, canForm: ${canForm}, canFormFromBase: ${canFormFromBaseWord}`);
+        console.log(`❌ "${normalizedWord}" rejected:`);
+        console.log(`   - Valid bonus: ${isValidBonus}, Common word: ${isCommonWord}`);
+        console.log(`   - Can form from letters: ${canForm}, Can form from base: ${canFormFromBaseWord}`);
         setFeedback(`"${normalizedWord.toUpperCase()}" is not a valid word`);
         setTimeout(() => setFeedback(""), 2000);
       }
@@ -326,6 +330,48 @@ export default function GameScreen({
     }
     return true;
   }, []);
+
+  // Check if word is a common English word
+  const isCommonEnglishWord = useCallback((word: string): boolean => {
+    const commonWords = [
+      // 2-letter words
+      'we', 'if', 'id', 'el', 'ed', 'ew', 'li', 'wi', 'fi', 'di', 'de', 'fe', 'le',
+      'it', 'in', 'on', 'or', 'to', 'at', 'an', 'as', 'is', 'be', 'he', 'me', 'my',
+      // 3-letter words
+      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her',
+      'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man',
+      'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let',
+      'put', 'say', 'she', 'too', 'use', 'dew', 'few', 'led', 'fed', 'lid', 'fid',
+      'die', 'lie', 'fie', 'ell', 'ill', 'wed', 'fed', 'led', 'eld', 'del',
+      // 4-letter words
+      'will', 'fill', 'well', 'fell', 'tell', 'hell', 'cell', 'bell', 'dill',
+      'kill', 'pill', 'bill', 'mill', 'hill', 'till', 'wild', 'file', 'life',
+      'wife', 'dell', 'fled', 'weld', 'wide', 'idle', 'field', 'wile', 'deli',
+      // 5+ letter words
+      'field', 'filed', 'wield', 'lifted', 'filled', 'willed'
+    ];
+    
+    return commonWords.includes(word.toLowerCase());
+  }, []);
+
+  // Get manual bonus words for better gameplay
+  const getManualBonusWords = useCallback((baseWord: string, excludeWords: string[]): string[] => {
+    const manualWords = ['will', 'fill', 'well', 'fell', 'tell', 'hell', 'cell', 'bell', 'dill', 'kill', 'pill', 'bill', 'mill', 'hill', 'till', 'wild', 'file', 'life', 'wife', 'dell', 'fled', 'weld', 'wide', 'idle', 'wile', 'deli', 'few', 'dew', 'led', 'fed', 'lid', 'fid', 'die', 'lie', 'fie', 'ell', 'ill', 'we', 'if', 'id', 'el', 'ed'];
+    
+    const validWords = [];
+    const excludeLower = excludeWords.map(w => w.toLowerCase());
+    
+    for (const word of manualWords) {
+      if (excludeLower.includes(word)) continue;
+      
+      if (canFormWordFromLetters(word, baseWord.split(''))) {
+        validWords.push(word);
+      }
+    }
+    
+    console.log(`🔧 Manual bonus words for "${baseWord}":`, validWords);
+    return validWords;
+  }, [canFormWordFromLetters]);
 
   const init = useCallback(() => {
     // Initialize game manager for optimal performance
@@ -397,7 +443,12 @@ export default function GameScreen({
             
             // Generate bonus words for enhanced gameplay
             const bonusWords = generateBonusWords(levelDataToUse.baseWord, availableWords, difficulty);
-            const allWords = [...availableWords, ...bonusWords];
+            
+            // Add manual bonus words for common words that might be missing
+            const manualBonusWords = getManualBonusWords(levelDataToUse.baseWord, availableWords);
+            const allBonusWords = [...new Set([...bonusWords, ...manualBonusWords])];
+            
+            const allWords = [...availableWords, ...allBonusWords];
             
             setBaseWord(levelDataToUse.baseWord);
             setLetters(levelDataToUse.letters.map(l => l.toLowerCase())); // Use letters from JSON
@@ -410,8 +461,9 @@ export default function GameScreen({
             console.log(`✅ Successfully generated game with:`);
             console.log(`   - ${wordsForGrid.length} words in grid`);
             console.log(`   - ${availableWords.length} crossword words`);
-            console.log(`   - ${bonusWords.length} bonus words`);
+            console.log(`   - ${allBonusWords.length} bonus words (${bonusWords.length} generated + ${manualBonusWords.length} manual)`);
             console.log(`   - ${allWords.length} total findable words`);
+            console.log(`   - All valid words:`, allWords);
           } else {
             throw new Error('No word placements found in generated grid');
           }
