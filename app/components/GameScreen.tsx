@@ -1,9 +1,12 @@
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   filterWordsList,
-  generateCrosswordLevel,
+  generateCrosswordLevelWithBaseword,
   getRandomWords,
+  initializeGameManager,
+  testSubwordGeneration
 } from "@/hooks/game-manager";
+import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,15 +15,6 @@ import {
   View
 } from "react-native";
 import LetterWheel from "./inputWheel";
-
-export type Difficulty = "easy" | "medium" | "hard" | "expert";
-
-interface DifficultyConfig {
-  min: number;
-  max: number;
-  minWords: number;
-  popularityRange: number;
-}
 
 interface GridCell {
   letter: string | null;
@@ -37,14 +31,12 @@ interface WordPlacement {
   isFound: boolean;
 }
 
-const difficultyMap: Record<Difficulty, DifficultyConfig> = {
-  easy: { min: 3, max: 4, minWords: 4, popularityRange: 5000 },
-  medium: { min: 4, max: 7, minWords: 6, popularityRange: 10000 },
-  hard: { min: 5, max: 8, minWords: 7, popularityRange: 15000 },
-  expert: { min: 5, max: 9, minWords: 8, popularityRange: 25000 },
-};
+interface GameScreenProps {
+  onNavigate?: (screen: string) => void;
+  difficulty?: Difficulty;
+}
 
-export default function GameScreen() {
+export default function GameScreen({ onNavigate, difficulty = 'medium' }: GameScreenProps) {
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
   const [baseWord, setBaseWord] = useState("");
   const [letters, setLetters] = useState<string[]>([]);
@@ -59,7 +51,7 @@ export default function GameScreen() {
   const [score, setScore] = useState(0);
   const [gameComplete, setGameComplete] = useState(false);
   
-  const diff = difficultyMap.medium;
+  const diff = getDifficultyConfig(difficulty);
 
   // Convert basic grid to game grid with word placement info
   const createGameGrid = useCallback((basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
@@ -309,6 +301,12 @@ export default function GameScreen() {
   }, []);
 
   const init = useCallback(() => {
+    // Initialize game manager for optimal performance
+    initializeGameManager();
+    
+    // Test subword generation for debugging
+    testSubwordGeneration("planet");
+    
     setLoading(true);
     setError("");
     setAttempts(0);
@@ -325,9 +323,12 @@ export default function GameScreen() {
     while (!success && currentAttempts < 5) {
       try {
         // Generate level data (letters and word list)
-        const { baseWord, letters, crosswordWords } = generateCrosswordLevel({
-          difficulty: "easy",
-        });
+        const { baseWord, letters, crosswordWords } = generateCrosswordLevelWithBaseword(
+          "planet",
+          { difficulty: difficulty }
+        );
+
+        
         
         // Filter words to get appropriate difficulty
         const fl_words = filterWordsList(crosswordWords, {
@@ -427,10 +428,7 @@ export default function GameScreen() {
 
           {/* Crossword Grid - Only show active cells */}
           <View style={styles.gridContainer}>
-            <Text style={styles.debugGridInfo}>
-              Grid: {gameGrid?.length || 0}x{gameGrid?.[0]?.length || 0} | 
-              Active cells: {gameGrid?.flat().filter(cell => cell.isActive).length || 0}
-            </Text>
+            
             <View style={styles.grid}>
               {gameGrid.map((row, rowIndex) => (
                 <View key={rowIndex} style={styles.row}>

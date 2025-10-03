@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Svg, { Path, Polygon } from 'react-native-svg';
 
@@ -271,7 +271,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       {/* Debug Info */}
       <View style={styles.debugContainer}>
         <Text style={styles.debugText}>
-          Word: "{currentWord}" | Selected: [{selectedLetters.join(', ')}] | Valid: {isValidWord ? '✓' : '✗'}
+          Word: {currentWord} | Selected: [{selectedLetters.join(', ')}] | Valid: {isValidWord ? '✓' : '✗'}
         </Text>
       </View>
     </View>
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
   },
   centerControlsContainer: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
+    top: '48%',
+    left: '45%',
     transform: [{ translateX: -50 }, { translateY: -20 }],
     flexDirection: 'row',
     justifyContent: 'center',

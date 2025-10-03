@@ -11,6 +11,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Difficulty, getAllDifficulties, getDifficultyConfig } from '@/constants/difficulty';
+import { initializeGameManager } from '@/hooks/game-manager';
+import DifficultySelection from './DifficultySelection';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,7 +30,7 @@ interface Particle {
 interface LevelData {
   id: number;
   name: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert';
+  difficulty: Difficulty;
   isUnlocked: boolean;
   isCompleted: boolean;
   stars: number;
@@ -47,6 +50,7 @@ interface LevelScreenProps {
 
 const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Forest');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('medium');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [playerGems] = useState<number>(1245);
   const [playerEnergy] = useState<number>(75);
@@ -93,34 +97,34 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     particleArray.forEach(animateParticle);
   }, []);
 
+  // Initialize game manager on component mount
+  useEffect(() => {
+    initializeGameManager();
+  }, []);
+
   const levelCategories: { [key: string]: LevelData[] } = {
     Forest: [
-      { id: 1, name: 'Emerald Grove', difficulty: 'Easy', isUnlocked: true, isCompleted: true, stars: 3, totalLevels: 20, completedLevels: 20, reward: '100 Coins' },
-      { id: 2, name: 'Mystic Bloom', difficulty: 'Easy', isUnlocked: true, isCompleted: true, stars: 3, totalLevels: 20, completedLevels: 20, reward: '150 Coins' },
-      { id: 3, name: 'Whispering Creek', difficulty: 'Medium', isUnlocked: true, isCompleted: true, stars: 2, totalLevels: 20, completedLevels: 18, reward: '200 Coins' },
-      { id: 4, name: 'Shadow Canopy', difficulty: 'Medium', isUnlocked: true, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 8, reward: '300 Coins' },
-      { id: 5, name: 'Ancient Grove', difficulty: 'Hard', isUnlocked: true, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '500 Coins' },
-      { id: 6, name: 'Dark Thicket', difficulty: 'Hard', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '750 Coins' },
+      { id: 1, name: 'Emerald Grove', difficulty: 'easy', isUnlocked: true, isCompleted: true, stars: 3, totalLevels: 20, completedLevels: 20, reward: '100 Coins' },
+      { id: 2, name: 'Mystic Bloom', difficulty: 'easy', isUnlocked: true, isCompleted: true, stars: 3, totalLevels: 20, completedLevels: 20, reward: '150 Coins' },
+      { id: 3, name: 'Whispering Creek', difficulty: 'medium', isUnlocked: true, isCompleted: true, stars: 2, totalLevels: 20, completedLevels: 18, reward: '200 Coins' },
+      { id: 4, name: 'Shadow Canopy', difficulty: 'medium', isUnlocked: true, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 8, reward: '300 Coins' },
+      { id: 5, name: 'Ancient Grove', difficulty: 'hard', isUnlocked: true, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '500 Coins' },
+      { id: 6, name: 'Dark Thicket', difficulty: 'hard', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '750 Coins' },
     ],
     Ocean: [
-      { id: 7, name: 'Crystal Shore', difficulty: 'Easy', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '120 Coins' },
-      { id: 8, name: 'Tidal Wave', difficulty: 'Medium', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '250 Coins' },
-      { id: 9, name: 'Deep Abyss', difficulty: 'Expert', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '1000 Coins' },
+      { id: 7, name: 'Crystal Shore', difficulty: 'easy', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '120 Coins' },
+      { id: 8, name: 'Tidal Wave', difficulty: 'medium', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '250 Coins' },
+      { id: 9, name: 'Deep Abyss', difficulty: 'expert', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '1000 Coins' },
     ],
     Mountain: [
-      { id: 10, name: 'Frozen Peak', difficulty: 'Hard', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '800 Coins' },
-      { id: 11, name: 'Dragon Summit', difficulty: 'Expert', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: 'Legendary Item' },
+      { id: 10, name: 'Frozen Peak', difficulty: 'hard', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: '800 Coins' },
+      { id: 11, name: 'Dragon Summit', difficulty: 'expert', isUnlocked: false, isCompleted: false, stars: 0, totalLevels: 20, completedLevels: 0, reward: 'Legendary Item' },
     ]
   };
 
-  const getDifficultyColor = (difficulty: string): string => {
-    switch (difficulty) {
-      case 'Easy': return '#10B981';
-      case 'Medium': return '#F59E0B';
-      case 'Hard': return '#EF4444';
-      case 'Expert': return '#8B5CF6';
-      default: return '#6B7280';
-    }
+  const getDifficultyColor = (difficulty: Difficulty): string => {
+    const config = getDifficultyConfig(difficulty);
+    return config.color;
   };
 
   const handleLevelPress = (level: LevelData): void => {
@@ -343,6 +347,13 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           ))}
         </ScrollView>
       </View>
+
+      {/* Difficulty Selection */}
+      <DifficultySelection
+        selectedDifficulty={selectedDifficulty}
+        onDifficultyChange={setSelectedDifficulty}
+        title="Choose Difficulty"
+      />
 
       {/* Level Cards */}
       <ScrollView 
