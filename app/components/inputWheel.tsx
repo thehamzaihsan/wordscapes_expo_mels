@@ -1,4 +1,4 @@
-import { Check, Eraser, X } from 'lucide-react-native';
+import { Check, Eraser, Shuffle, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
@@ -32,6 +32,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [selectedLetters, setSelectedLetters] = useState<string[]>([]);
   const [connectionPath, setConnectionPath] = useState<string>('');
   const [currentWord, setCurrentWord] = useState<string>('');
+  const [shuffledLetters, setShuffledLetters] = useState<string[]>([]);
   const letterPositions = useRef<LetterPosition[]>([]);
   
   // --- REFINED DYNAMIC SIZING ---
@@ -43,7 +44,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
   // Calculate radius based on the circumference needed for the letters
   const radius = useMemo(() => {
-    const numLetters = letters.length;
+    const numLetters = shuffledLetters.length;
     if (numLetters === 0) {
       return minRadius;
     }
@@ -59,7 +60,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     
     // Use the calculated radius, but ensure it doesn't shrink below the minimum
     return Math.max(minRadius, radiusFromCircumference);
-  }, [letters.length]);
+  }, [shuffledLetters.length]);
 
   // Calculate the total wheel size based on the dynamic radius
   const wheelSize = useMemo(() => {
@@ -82,18 +83,22 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   };
 
   useEffect(() => {
-    if (letters.length === 0) {
+    setShuffledLetters([...letters]);
+  }, [letters]);
+
+  useEffect(() => {
+    if (shuffledLetters.length === 0) {
       return;
     }
         
     // Calculate letter positions in a circle
-    letterPositions.current = letters.map((letter, index) => {
-      const angle = (index * 2 * Math.PI) / letters.length - Math.PI / 2;
+    letterPositions.current = shuffledLetters.map((letter, index) => {
+      const angle = (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
       const x = Math.cos(angle) * radius + wheelCenter;
       const y = Math.sin(angle) * radius + wheelCenter;
       return { x, y, letter, index };
     });
-  }, [letters, wheelSize, radius, wheelCenter]);
+  }, [shuffledLetters, wheelSize, radius, wheelCenter]);
 
   const updateConnectionPath = useCallback((indices: number[]): void => {
     if (indices.length === 0) {
@@ -152,6 +157,18 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     }
   }, [selectedLetters, selectedIndices, updateConnectionPath]);
 
+  const shuffleLetters = useCallback((): void => {
+    // Create a copy of the letters array and shuffle it using Fisher-Yates algorithm
+    const lettersToShuffle = [...letters];
+    for (let i = lettersToShuffle.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [lettersToShuffle[i], lettersToShuffle[j]] = [lettersToShuffle[j], lettersToShuffle[i]];
+    }
+    setShuffledLetters(lettersToShuffle);
+    // Reset any current selection when shuffling
+    resetSelection();
+  }, [letters, resetSelection]);
+
   const isValidWord = currentWord.length > 2 && validWords.includes(currentWord.toLowerCase());
 
   if (letters.length === 0) {
@@ -177,8 +194,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             opacity={0.8} 
           />
           
-          {letters.map((letter, index) => {
-            const angle = (index * 2 * Math.PI) / letters.length - Math.PI / 2;
+          {shuffledLetters.map((letter, index) => {
+            const angle = (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
             const x = Math.cos(angle) * radius + wheelCenter;
             const y = Math.sin(angle) * radius + wheelCenter;
             const isSelected = selectedIndices.includes(index);
@@ -196,8 +213,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           })}
         </Svg>
 
-        {letters.map((letter, index) => {
-          const angle = (index * 2 * Math.PI) / letters.length - Math.PI / 2;
+        {shuffledLetters.map((letter, index) => {
+          const angle = (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
           const isSelected = selectedIndices.includes(index);
@@ -239,6 +256,13 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           disabled={selectedLetters.length === 0}
         >
           <Eraser size={24} color="#ffffff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.centerButton, styles.shuffleButton]}
+          onPress={shuffleLetters}
+        >
+          <Shuffle size={24} color="#ffffff" />
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -348,6 +372,9 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     backgroundColor: '#EF4444',
+  },
+  shuffleButton: {
+    backgroundColor: '#F59E0B',
   },
   submitCenterButton: {
     backgroundColor: '#10B981',
