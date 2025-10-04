@@ -1,3 +1,4 @@
+import { Check, Eraser, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
@@ -237,7 +238,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           onPress={removeLetter}
           disabled={selectedLetters.length === 0}
         >
-          <Text style={styles.centerButtonText}>⌫</Text>
+          <Eraser size={24} color="#ffffff" />
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -245,7 +246,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           onPress={submitWord}
           disabled={currentWord.length < 2}
         >
-          <Text style={[styles.centerButtonText, styles.submitButtonText]}>✓</Text>
+          <Check size={24} color="#ffffff" />
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -253,7 +254,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           onPress={resetSelection}
           disabled={selectedLetters.length === 0}
         >
-          <Text style={styles.centerButtonText}>✕</Text>
+          <X size={24} color="#ffffff" />
         </TouchableOpacity>
       </View>
     </View>
