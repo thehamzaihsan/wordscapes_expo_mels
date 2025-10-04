@@ -213,7 +213,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
         <TouchableOpacity onPress={handleBackClick} style={styles.backButton}>
-          <ChevronLeft size={16} color={"#8B5CF6"} /> 
+          <ChevronLeft size={16} color={"white"} /> 
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         {/* Compact Logo */}
@@ -382,16 +382,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    
+ backButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+    backgroundColor: '#374151',
+    alignSelf: 'flex-start',
+    paddingEnd: 16,
   },
   backButtonText: {
-    color: '#8B5CF6',
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

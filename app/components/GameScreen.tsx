@@ -1,13 +1,15 @@
+// import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
   generateLevelFromJSON,
-  initializeGameManager
+  initializeGameManager,
 } from "@/hooks/game-manager";
-import { Audio } from 'expo-av';
-import { BlurView } from 'expo-blur';
-import LottieView from 'lottie-react-native';
+import { Audio } from "expo-av";
+import { BlurView } from "expo-blur";
+import LottieView from "lottie-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,13 +19,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity, // Import TouchableOpacity for the button
-  View
+  View,
 } from "react-native";
 import LetterWheel from "./inputWheel";
 
-
-const GUEST_PROGRESS_KEY = 'wordscapes_guest_progress';
-const { width, height } = Dimensions.get('window');
+const GUEST_PROGRESS_KEY = "wordscapes_guest_progress";
+const { width, height } = Dimensions.get("window");
 
 // Define a fixed area for the grid
 const GRID_AREA_WIDTH = width * 0.9;
@@ -41,9 +42,9 @@ interface Particle {
 
 // Interface for letters being animated
 interface AnimatingLetter {
-    id: string;
-    letter: string;
-    position: Animated.ValueXY;
+  id: string;
+  letter: string;
+  position: Animated.ValueXY;
 }
 
 interface GridCell {
@@ -57,7 +58,7 @@ interface WordPlacement {
   word: string;
   startRow: number;
   startCol: number;
-  direction: 'horizontal' | 'vertical';
+  direction: "horizontal" | "vertical";
   isFound: boolean;
 }
 
@@ -76,14 +77,13 @@ interface GameScreenProps {
   };
 }
 
-
 export default function GameScreen({
   onNavigate,
-  difficulty = 'medium',
-  baseWord = 'planet',
-  levelTitle = 'Planet',
+  difficulty = "medium",
+  baseWord = "planet",
+  levelTitle = "Planet",
   categoryName,
-  levelData
+  levelData,
 }: GameScreenProps) {
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
   const [baseWordState, setBaseWord] = useState("");
@@ -102,7 +102,9 @@ export default function GameScreen({
   const [isAnimationFinished, setIsAnimationFinished] = useState(false); // State for the button
   const [particles, setParticles] = useState<Particle[]>([]);
 
-  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>([]);
+  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>(
+    []
+  );
   const gridCellRefs = useRef<{ [key: string]: View }>({});
   const letterWheelRef = useRef<View>(null);
   const containerRef = useRef<View>(null);
@@ -111,10 +113,17 @@ export default function GameScreen({
   const [cellSize, setCellSize] = useState(40);
 
   // --- SOUND STATES ---
-  const [rightWordSound, setRightWordSound] = useState<Audio.Sound | null>(null);
-  const [wrongWordSound, setWrongWordSound] = useState<Audio.Sound | null>(null);
-  const [bonusWordSound, setBonusWordSound] = useState<Audio.Sound | null>(null);
-  const [levelCompleteSound, setLevelCompleteSound] = useState<Audio.Sound | null>(null);
+  const [rightWordSound, setRightWordSound] = useState<Audio.Sound | null>(
+    null
+  );
+  const [wrongWordSound, setWrongWordSound] = useState<Audio.Sound | null>(
+    null
+  );
+  const [bonusWordSound, setBonusWordSound] = useState<Audio.Sound | null>(
+    null
+  );
+  const [levelCompleteSound, setLevelCompleteSound] =
+    useState<Audio.Sound | null>(null);
 
   const diff = getDifficultyConfig(difficulty);
 
@@ -123,25 +132,24 @@ export default function GameScreen({
     const loadSounds = async () => {
       try {
         const { sound: rightSound } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/correct-word.mp3') // Adjust path
+          require("../../assets/sounds/correct-word.mp3") // Adjust path
         );
         setRightWordSound(rightSound);
 
         const { sound: wrongSound } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/wrong-word.mp3') // Adjust path
+          require("../../assets/sounds/wrong-word.mp3") // Adjust path
         );
         setWrongWordSound(wrongSound);
 
         const { sound: bonusSound } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/bonus-word.mp3') // Adjust path
+          require("../../assets/sounds/bonus-word.mp3") // Adjust path
         );
         setBonusWordSound(bonusSound);
 
         const { sound: levelComplete } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/level-complete.mp3') // Adjust path
+          require("../../assets/sounds/level-complete.mp3") // Adjust path
         );
         setLevelCompleteSound(levelComplete);
-
       } catch (error) {
         console.error("Failed to load sounds", error);
       }
@@ -172,13 +180,21 @@ export default function GameScreen({
   useEffect(() => {
     if (score === 0) return;
     Animated.sequence([
-      Animated.timing(scoreScaleAnim, { toValue: 1.5, duration: 150, useNativeDriver: true }),
-      Animated.timing(scoreScaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(scoreScaleAnim, {
+        toValue: 1.5,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scoreScaleAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [score]);
 
   useEffect(() => {
-    const particleColors = ['#8B5CF6', '#EF4444', '#F59E0B', '#10B981'];
+    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"];
     const createParticle = (id: number): Particle => ({
       id,
       x: new Animated.Value(Math.random() * width),
@@ -188,254 +204,327 @@ export default function GameScreen({
       color: particleColors[Math.floor(Math.random() * particleColors.length)],
     });
 
-    const particleArray = Array.from({ length: 20 }, (_, i) => createParticle(i));
+    const particleArray = Array.from({ length: 20 }, (_, i) =>
+      createParticle(i)
+    );
     setParticles(particleArray);
 
     const animateParticle = (particle: Particle) => {
       const duration = Math.random() * 10000 + 8000;
       Animated.parallel([
-        Animated.timing(particle.x, { toValue: Math.random() * width, duration, useNativeDriver: true }),
-        Animated.timing(particle.y, { toValue: Math.random() * height, duration, useNativeDriver: true }),
-        Animated.timing(particle.opacity, { toValue: Math.random() * 0.3 + 0.1, duration: duration / 2, useNativeDriver: true }),
+        Animated.timing(particle.x, {
+          toValue: Math.random() * width,
+          duration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(particle.y, {
+          toValue: Math.random() * height,
+          duration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(particle.opacity, {
+          toValue: Math.random() * 0.3 + 0.1,
+          duration: duration / 2,
+          useNativeDriver: true,
+        }),
       ]).start(() => animateParticle(particle));
     };
 
     particleArray.forEach(animateParticle);
   }, []);
 
-  const createGameGrid = useCallback((basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
-    const rows = basicGrid.length;
-    const cols = basicGrid[0]?.length || 0;
+  const createGameGrid = useCallback(
+    (basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
+      const rows = basicGrid.length;
+      const cols = basicGrid[0]?.length || 0;
 
-    const gameGrid: GridCell[][] = Array(rows).fill(null).map(() =>
-      Array(cols).fill(null).map(() => ({
-        letter: null,
-        isRevealed: false,
-        isActive: false,
-        belongsToWords: []
-      }))
-    );
+      const gameGrid: GridCell[][] = Array(rows)
+        .fill(null)
+        .map(() =>
+          Array(cols)
+            .fill(null)
+            .map(() => ({
+              letter: null,
+              isRevealed: false,
+              isActive: false,
+              belongsToWords: [],
+            }))
+        );
 
-    placements.forEach(placement => {
-      const { word, startRow, startCol, direction } = placement;
-      for (let i = 0; i < word.length; i++) {
-        const row = direction === 'horizontal' ? startRow : startRow + i;
-        const col = direction === 'horizontal' ? startCol + i : startCol;
-        if (row >= 0 && row < rows && col >= 0 && col < cols) {
-          gameGrid[row][col].letter = word[i].toUpperCase();
-          gameGrid[row][col].isActive = true;
-          gameGrid[row][col].belongsToWords.push(word);
+      placements.forEach((placement) => {
+        const { word, startRow, startCol, direction } = placement;
+        for (let i = 0; i < word.length; i++) {
+          const row = direction === "horizontal" ? startRow : startRow + i;
+          const col = direction === "horizontal" ? startCol + i : startCol;
+          if (row >= 0 && row < rows && col >= 0 && col < cols) {
+            gameGrid[row][col].letter = word[i].toUpperCase();
+            gameGrid[row][col].isActive = true;
+            gameGrid[row][col].belongsToWords.push(word);
+          }
         }
-      }
+      });
+      return gameGrid;
+    },
+    []
+  );
+
+  const measureComponent = (
+    ref: View
+  ): Promise<{ px: number; py: number; width: number; height: number }> => {
+    return new Promise((resolve) => {
+      ref.measure((fx, fy, width, height, px, py) => {
+        resolve({ px, py, width, height });
+      });
     });
-    return gameGrid;
-  }, []);
+  };
 
-    const measureComponent = (ref: View): Promise<{ px: number; py: number; width: number; height: number }> => {
-        return new Promise(resolve => {
-            ref.measure((fx, fy, width, height, px, py) => {
-                resolve({ px, py, width, height });
-            });
-        });
-    };
+  const revealWordInGrid = useCallback((foundWord: string) => {
+    const normalizedFoundWord = foundWord.toLowerCase();
 
-    const revealWordInGrid = useCallback((foundWord: string) => {
-        const normalizedFoundWord = foundWord.toLowerCase();
-        
-        setWordPlacements(prev => {
-          const targetPlacement = prev.find(placement => 
-            placement.word === normalizedFoundWord && !placement.isFound
-          );
-          if (!targetPlacement) return prev;
-    
-          const newPlacements = prev.map(p => 
-            p === targetPlacement ? { ...p, isFound: true } : p
-          );
-          
-          setGameGrid(prevGrid => {
-            if (!prevGrid) return prevGrid;
-            const newGrid = prevGrid.map(row => row.map(cell => ({ ...cell })));
-            const { word, startRow, startCol, direction } = targetPlacement;
-            
-            for (let i = 0; i < word.length; i++) {
-              const row = direction === 'horizontal' ? startRow : startRow + i;
-              const col = direction === 'horizontal' ? startCol + i : startCol;
-              if (newGrid[row]?.[col]) {
-                newGrid[row][col].isRevealed = true;
-              }
-            }
-            return newGrid;
-          });
-          return newPlacements;
-        });
-      }, []);
+    setWordPlacements((prev) => {
+      const targetPlacement = prev.find(
+        (placement) =>
+          placement.word === normalizedFoundWord && !placement.isFound
+      );
+      if (!targetPlacement) return prev;
 
-    const startFloatingLetterAnimation = useCallback(async (word: string) => {
-        const normalizedWord = word.toLowerCase();
-        const placement = wordPlacements.find(p => p.word === normalizedWord && !p.isFound);
+      const newPlacements = prev.map((p) =>
+        p === targetPlacement ? { ...p, isFound: true } : p
+      );
 
-        if (!placement || !letterWheelRef.current || !containerRef.current) {
-            revealWordInGrid(word);
-            return;
-        }
-
-        const containerMeasurement = await measureComponent(containerRef.current);
-        const containerAbsX = containerMeasurement.px;
-        const containerAbsY = containerMeasurement.py;
-
-        const { startRow, startCol, direction } = placement;
-
-        const wheelMeasurement = await measureComponent(letterWheelRef.current);
-        const startX = (wheelMeasurement.px + wheelMeasurement.width / 2) - containerAbsX;
-        const startY = (wheelMeasurement.py + wheelMeasurement.height / 2) - containerAbsY;
-        
-        const animations: Animated.CompositeAnimation[] = [];
-        const lettersToAnimate: AnimatingLetter[] = [];
+      setGameGrid((prevGrid) => {
+        if (!prevGrid) return prevGrid;
+        const newGrid = prevGrid.map((row) => row.map((cell) => ({ ...cell })));
+        const { word, startRow, startCol, direction } = targetPlacement;
 
         for (let i = 0; i < word.length; i++) {
-            const row = direction === 'horizontal' ? startRow : startRow + i;
-            const col = direction === 'horizontal' ? startCol + i : startCol;
-            const cellRef = gridCellRefs.current[`${row}-${col}`];
-
-            if (cellRef) {
-                const cellMeasurement = await measureComponent(cellRef);
-                const endX = cellMeasurement.px - containerAbsX;
-                const endY = cellMeasurement.py - containerAbsY;
-
-                const letterInfo: AnimatingLetter = {
-                    id: `${word}-${i}`,
-                    letter: word[i].toUpperCase(),
-                    position: new Animated.ValueXY({ x: startX, y: startY }),
-                };
-                lettersToAnimate.push(letterInfo);
-
-                animations.push(
-                    Animated.timing(letterInfo.position, {
-                        toValue: { x: endX, y: endY },
-                        duration: 600,
-                        useNativeDriver: false,
-                    })
-                );
-            }
+          const row = direction === "horizontal" ? startRow : startRow + i;
+          const col = direction === "horizontal" ? startCol + i : startCol;
+          if (newGrid[row]?.[col]) {
+            newGrid[row][col].isRevealed = true;
+          }
         }
-        
-        setAnimatingLetters(lettersToAnimate);
+        return newGrid;
+      });
+      return newPlacements;
+    });
+  }, []);
 
-        Animated.stagger(100, animations).start(() => {
-            revealWordInGrid(word);
-            setAnimatingLetters([]);
-        });
-    }, [wordPlacements, revealWordInGrid]);
+  const startFloatingLetterAnimation = useCallback(
+    async (word: string) => {
+      const normalizedWord = word.toLowerCase();
+      const placement = wordPlacements.find(
+        (p) => p.word === normalizedWord && !p.isFound
+      );
+
+      if (!placement || !letterWheelRef.current || !containerRef.current) {
+        revealWordInGrid(word);
+        return;
+      }
+
+      const containerMeasurement = await measureComponent(containerRef.current);
+      const containerAbsX = containerMeasurement.px;
+      const containerAbsY = containerMeasurement.py;
+
+      const { startRow, startCol, direction } = placement;
+
+      const wheelMeasurement = await measureComponent(letterWheelRef.current);
+      const startX =
+        wheelMeasurement.px + wheelMeasurement.width / 2 - containerAbsX;
+      const startY =
+        wheelMeasurement.py + wheelMeasurement.height / 2 - containerAbsY;
+
+      const animations: Animated.CompositeAnimation[] = [];
+      const lettersToAnimate: AnimatingLetter[] = [];
+
+      for (let i = 0; i < word.length; i++) {
+        const row = direction === "horizontal" ? startRow : startRow + i;
+        const col = direction === "horizontal" ? startCol + i : startCol;
+        const cellRef = gridCellRefs.current[`${row}-${col}`];
+
+        if (cellRef) {
+          const cellMeasurement = await measureComponent(cellRef);
+          const endX = cellMeasurement.px - containerAbsX;
+          const endY = cellMeasurement.py - containerAbsY;
+
+          const letterInfo: AnimatingLetter = {
+            id: `${word}-${i}`,
+            letter: word[i].toUpperCase(),
+            position: new Animated.ValueXY({ x: startX, y: startY }),
+          };
+          lettersToAnimate.push(letterInfo);
+
+          animations.push(
+            Animated.timing(letterInfo.position, {
+              toValue: { x: endX, y: endY },
+              duration: 600,
+              useNativeDriver: false,
+            })
+          );
+        }
+      }
+
+      setAnimatingLetters(lettersToAnimate);
+
+      Animated.stagger(100, animations).start(() => {
+        revealWordInGrid(word);
+        setAnimatingLetters([]);
+      });
+    },
+    [wordPlacements, revealWordInGrid]
+  );
 
   const handleLetterSelect = useCallback((letter: string, index: number) => {
     // ...
   }, []);
 
-  const handleWordComplete = useCallback(async (word: string) => {
-    const normalizedWord = word.toLowerCase().trim();
-    if (normalizedWord.length < 2) {
-      setFeedback("Word must be at least 2 letters long");
-      setTimeout(() => setFeedback(""), 2000);
-      return;
-    }
-    if (foundCrosswordWords.includes(normalizedWord) || foundBonusWords.includes(normalizedWord)) {
-      setFeedback("Word already found!");
-      await playSound(wrongWordSound);
-      setTimeout(() => setFeedback(""), 2000);
-      return;
-    }
+  const handleWordComplete = useCallback(
+    async (word: string) => {
+      const normalizedWord = word.toLowerCase().trim();
+      if (normalizedWord.length < 2) {
+        setFeedback("Word must be at least 2 letters long");
+        setTimeout(() => setFeedback(""), 2000);
+        return;
+      }
+      if (
+        foundCrosswordWords.includes(normalizedWord) ||
+        foundBonusWords.includes(normalizedWord)
+      ) {
+        setFeedback("Word already found!");
+        await playSound(wrongWordSound);
+        setTimeout(() => setFeedback(""), 2000);
+        return;
+      }
 
-    if (crosswordWords.includes(normalizedWord)) {
+      if (crosswordWords.includes(normalizedWord)) {
         await playSound(rightWordSound);
-        setFoundCrosswordWords(prev => [...prev, normalizedWord]);
+        setFoundCrosswordWords((prev) => [...prev, normalizedWord]);
         const points = normalizedWord.length * 100;
-        setScore(prev => prev + points);
-        setFeedback(`🎉 CROSSWORD WORD! "${normalizedWord.toUpperCase()}" (+${points} points)`);
-        
+        setScore((prev) => prev + points);
+        setFeedback(
+          `🎉 CROSSWORD WORD! "${normalizedWord.toUpperCase()}" (+${points} points)`
+        );
+
         startFloatingLetterAnimation(normalizedWord);
 
         if (foundCrosswordWords.length + 1 === crosswordWords.length) {
-            setGameComplete(true);
-            setTimeout(() => {
-                playSound(levelCompleteSound);
-            }, 1000); 
+          setGameComplete(true);
+          setTimeout(() => {
+            playSound(levelCompleteSound);
+          }, 1000);
         }
 
         setTimeout(() => setFeedback(""), 4000);
-    } else {
-        const isValidBonus = allValidWords.some(w => w.toLowerCase() === normalizedWord);
+      } else {
+        const isValidBonus = allValidWords.some(
+          (w) => w.toLowerCase() === normalizedWord
+        );
         if (isValidBonus) {
-            await playSound(bonusWordSound);
-            setFoundBonusWords(prev => [...prev, normalizedWord]);
-            const points = normalizedWord.length * 10;
-            setScore(prev => prev + points);
-            setFeedback(`✨ Bonus word! "${normalizedWord.toUpperCase()}" (+${points} points)`);
-            setTimeout(() => setFeedback(""), 3000);
+          await playSound(bonusWordSound);
+          setFoundBonusWords((prev) => [...prev, normalizedWord]);
+          const points = normalizedWord.length * 10;
+          setScore((prev) => prev + points);
+          setFeedback(
+            `✨ Bonus word! "${normalizedWord.toUpperCase()}" (+${points} points)`
+          );
+          setTimeout(() => setFeedback(""), 3000);
         } else {
-            await playSound(wrongWordSound);
-            setFeedback(`"${normalizedWord.toUpperCase()}" is not a valid word`);
-            setTimeout(() => setFeedback(""), 2000);
-        }
-    }
-}, [crosswordWords, foundCrosswordWords, foundBonusWords, allValidWords, startFloatingLetterAnimation, rightWordSound, wrongWordSound, bonusWordSound, levelCompleteSound]);
-
-  const extractWordPlacements = useCallback((grid: string[][], words: string[]): WordPlacement[] => {
-    const placements: WordPlacement[] = [];
-    const rows = grid.length;
-    const cols = grid[0]?.length || 0;
-
-    const isBoundary = (r: number, c: number) => {
-      if (r < 0 || r >= rows || c < 0 || c >= cols) return true;
-      return grid[r][c] === '';
-    };
-
-    words.forEach(word => {
-      const upperWord = word.toUpperCase();
-      
-      // Horizontal placements
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col <= cols - word.length; col++) {
-          let isSubstringMatch = true;
-          for (let i = 0; i < word.length; i++) {
-            if (grid[row][col + i] !== upperWord[i]) {
-              isSubstringMatch = false;
-              break;
-            }
-          }
-          if (isSubstringMatch) {
-            const isProperWord = isBoundary(row, col - 1) && isBoundary(row, col + word.length);
-            if (isProperWord) {
-                placements.push({ word: word.toLowerCase(), startRow: row, startCol: col, direction: 'horizontal', isFound: false });
-            }
-          }
+          await playSound(wrongWordSound);
+          setFeedback(`"${normalizedWord.toUpperCase()}" is not a valid word`);
+          setTimeout(() => setFeedback(""), 2000);
         }
       }
+    },
+    [
+      crosswordWords,
+      foundCrosswordWords,
+      foundBonusWords,
+      allValidWords,
+      startFloatingLetterAnimation,
+      rightWordSound,
+      wrongWordSound,
+      bonusWordSound,
+      levelCompleteSound,
+    ]
+  );
 
-      // Vertical placements
-      for (let row = 0; row <= rows - word.length; row++) {
-        for (let col = 0; col < cols; col++) {
-          let isSubstringMatch = true;
-          for (let i = 0; i < word.length; i++) {
-            if (grid[row + i][col] !== upperWord[i]) {
-              isSubstringMatch = false;
-              break;
+  const extractWordPlacements = useCallback(
+    (grid: string[][], words: string[]): WordPlacement[] => {
+      const placements: WordPlacement[] = [];
+      const rows = grid.length;
+      const cols = grid[0]?.length || 0;
+
+      const isBoundary = (r: number, c: number) => {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return true;
+        return grid[r][c] === "";
+      };
+
+      words.forEach((word) => {
+        const upperWord = word.toUpperCase();
+
+        // Horizontal placements
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col <= cols - word.length; col++) {
+            let isSubstringMatch = true;
+            for (let i = 0; i < word.length; i++) {
+              if (grid[row][col + i] !== upperWord[i]) {
+                isSubstringMatch = false;
+                break;
+              }
             }
-          }
-          if (isSubstringMatch) {
-            const isProperWord = isBoundary(row - 1, col) && isBoundary(row + word.length, col);
-            if (isProperWord) {
-                placements.push({ word: word.toLowerCase(), startRow: row, startCol: col, direction: 'vertical', isFound: false });
+            if (isSubstringMatch) {
+              const isProperWord =
+                isBoundary(row, col - 1) && isBoundary(row, col + word.length);
+              if (isProperWord) {
+                placements.push({
+                  word: word.toLowerCase(),
+                  startRow: row,
+                  startCol: col,
+                  direction: "horizontal",
+                  isFound: false,
+                });
+              }
             }
           }
         }
-      }
-    });
-    return placements;
-  }, []);
 
-  const getManualBonusWords = useCallback((baseWord: string, excludeWords: string[]): string[] => {
-    return [];
-  }, []);
+        // Vertical placements
+        for (let row = 0; row <= rows - word.length; row++) {
+          for (let col = 0; col < cols; col++) {
+            let isSubstringMatch = true;
+            for (let i = 0; i < word.length; i++) {
+              if (grid[row + i][col] !== upperWord[i]) {
+                isSubstringMatch = false;
+                break;
+              }
+            }
+            if (isSubstringMatch) {
+              const isProperWord =
+                isBoundary(row - 1, col) && isBoundary(row + word.length, col);
+              if (isProperWord) {
+                placements.push({
+                  word: word.toLowerCase(),
+                  startRow: row,
+                  startCol: col,
+                  direction: "vertical",
+                  isFound: false,
+                });
+              }
+            }
+          }
+        }
+      });
+      return placements;
+    },
+    []
+  );
+
+  const getManualBonusWords = useCallback(
+    (baseWord: string, excludeWords: string[]): string[] => {
+      return [];
+    },
+    []
+  );
 
   const init = useCallback(() => {
     initializeGameManager();
@@ -446,17 +535,25 @@ export default function GameScreen({
 
     while (!success && currentAttempts < 5) {
       try {
-        let levelDataToUse = levelData || generateLevelFromJSON(baseWord, difficulty);
-        const availableWords = levelDataToUse.crosswordWords.map(w => w.toLowerCase());
-        const wordsForGrid = availableWords.slice(0, Math.min(availableWords.length, diff.minWords + 3));
+        let levelDataToUse =
+          levelData || generateLevelFromJSON(baseWord, difficulty);
+        const availableWords = levelDataToUse.crosswordWords.map((w) =>
+          w.toLowerCase()
+        );
+        const wordsForGrid = availableWords.slice(
+          0,
+          Math.min(availableWords.length, diff.minWords + 3)
+        );
 
         if (wordsForGrid.length < 3) throw new Error("Not enough words");
 
         const grid = generateCrossword(wordsForGrid);
         if (grid) {
-          const crosswordGrid = grid.map(row => row.map(cell => cell || ''));
+          const crosswordGrid = grid.map((row) =>
+            row.map((cell) => cell || "")
+          );
           const placements = extractWordPlacements(crosswordGrid, wordsForGrid);
-          
+
           if (placements.length > 0) {
             const gameGrid = createGameGrid(crosswordGrid, placements);
 
@@ -467,13 +564,22 @@ export default function GameScreen({
             const newCellSize = Math.min(sizeByWidth, sizeByHeight) - 2; // Subtract margin
             setCellSize(newCellSize);
 
-            const bonusWords = generateBonusWords(levelDataToUse.baseWord, availableWords, difficulty);
-            const manualBonusWords = getManualBonusWords(levelDataToUse.baseWord, availableWords);
-            const allBonusWords = [...new Set([...bonusWords, ...manualBonusWords])];
+            const bonusWords = generateBonusWords(
+              levelDataToUse.baseWord,
+              availableWords,
+              difficulty
+            );
+            const manualBonusWords = getManualBonusWords(
+              levelDataToUse.baseWord,
+              availableWords
+            );
+            const allBonusWords = [
+              ...new Set([...bonusWords, ...manualBonusWords]),
+            ];
             const allWords = [...availableWords, ...allBonusWords];
 
             setBaseWord(levelDataToUse.baseWord);
-            setLetters(levelDataToUse.letters.map(l => l.toLowerCase()));
+            setLetters(levelDataToUse.letters.map((l) => l.toLowerCase()));
             setCrosswordWords(availableWords);
             setAllValidWords(allWords);
             setWordPlacements(placements);
@@ -482,20 +588,28 @@ export default function GameScreen({
           }
         }
       } catch (e) {
-          setError("Failed to generate level. Please try again.");
+        setError("Failed to generate level. Please try again.");
       }
       currentAttempts++;
     }
     setLoading(false);
-  }, [difficulty, baseWord, levelData, diff.minWords, extractWordPlacements, createGameGrid, getManualBonusWords]);
+  }, [
+    difficulty,
+    baseWord,
+    levelData,
+    diff.minWords,
+    extractWordPlacements,
+    createGameGrid,
+    getManualBonusWords,
+  ]);
 
   useEffect(() => {
     init();
   }, [init]);
-  
+
   const renderFloatingParticles = () => (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      {particles.map(particle => (
+      {particles.map((particle) => (
         <Animated.View
           key={particle.id}
           style={[
@@ -520,49 +634,68 @@ export default function GameScreen({
       <View style={styles.loadingContainer}>
         {renderFloatingParticles()}
         <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.loadingText}>
-          Generating crossword...
-        </Text>
+        <Text style={styles.loadingText}>Generating crossword...</Text>
       </View>
     );
   }
 
+  // const handleBackPress = (): void => {
+  //   router.back();
+  // };
+
   return (
     <View style={styles.container} ref={containerRef}>
       {renderFloatingParticles()}
-      
-      <View style={[StyleSheet.absoluteFillObject, { zIndex: 1 }]} pointerEvents="none">
-          {animatingLetters.map(({ id, letter, position }) => (
-              <Animated.View 
-                key={id} 
-                style={[
-                    styles.cell, 
-                    styles.revealedCell, 
-                    { 
-                        width: cellSize,
-                        height: cellSize,
-                        position: 'absolute', 
-                        left: 0, 
-                        top: 0, 
-                        transform: position.getTranslateTransform() 
-                    }
-                ]}
-              >
-                  <Text style={[styles.revealedCellText, { fontSize: cellSize * 0.5 }]}>{letter}</Text>
-              </Animated.View>
-          ))}
+
+      <View
+        style={[StyleSheet.absoluteFillObject, { zIndex: 1 }]}
+        pointerEvents="none"
+      >
+        {animatingLetters.map(({ id, letter, position }) => (
+          <Animated.View
+            key={id}
+            style={[
+              styles.cell,
+              styles.revealedCell,
+              {
+                width: cellSize,
+                height: cellSize,
+                position: "absolute",
+                left: 0,
+                top: 0,
+                transform: position.getTranslateTransform(),
+              },
+            ]}
+          >
+            <Text
+              style={[styles.revealedCellText, { fontSize: cellSize * 0.5 }]}
+            >
+              {letter}
+            </Text>
+          </Animated.View>
+        ))}
       </View>
 
       {gameGrid ? (
         <>
           <View style={styles.levelHeader}>
+            <TouchableOpacity
+              onPress={() => onNavigate?.("levels")}
+              style={styles.backButton}
+            >
+              <ChevronLeft size={16} color={"white"} />
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+
             <View style={styles.levelTitleContainer}>
-              <Animated.Text style={[
-                styles.scoreText,
-                {
-                  transform: [{ scale: scoreScaleAnim }]
-                }
-              ]}>
+              <Animated.Text
+                style={[
+                  styles.scoreText,
+                  {
+                    transform: [{ scale: scoreScaleAnim }],
+                  },
+                ]}
+              >
                 Score: {score}
               </Animated.Text>
             </View>
@@ -574,25 +707,41 @@ export default function GameScreen({
                 <View key={rowIndex} style={styles.row}>
                   {row.map((cell, colIndex) => {
                     if (!cell.isActive) {
-                      return <View key={colIndex} style={[styles.emptyCell, { width: cellSize, height: cellSize }]} />;
+                      return (
+                        <View
+                          key={colIndex}
+                          style={[
+                            styles.emptyCell,
+                            { width: cellSize, height: cellSize },
+                          ]}
+                        />
+                      );
                     }
                     return (
-                      <View 
-                        key={colIndex} 
+                      <View
+                        key={colIndex}
                         ref={(el) => {
-                            if (el) gridCellRefs.current[`${rowIndex}-${colIndex}`] = el as View;
+                          if (el)
+                            gridCellRefs.current[`${rowIndex}-${colIndex}`] =
+                              el as View;
                         }}
                         style={[
                           styles.cell,
                           { width: cellSize, height: cellSize },
-                          cell.isRevealed ? styles.revealedCell : styles.hiddenCell
+                          cell.isRevealed
+                            ? styles.revealedCell
+                            : styles.hiddenCell,
                         ]}
                       >
-                        <Text style={[
-                          styles.cellText,
-                          { fontSize: cellSize * 0.5 },
-                          cell.isRevealed ? styles.revealedCellText : styles.hiddenCellText
-                        ]}>
+                        <Text
+                          style={[
+                            styles.cellText,
+                            { fontSize: cellSize * 0.5 },
+                            cell.isRevealed
+                              ? styles.revealedCellText
+                              : styles.hiddenCellText,
+                          ]}
+                        >
                           {cell.isRevealed ? cell.letter : ""}
                         </Text>
                       </View>
@@ -603,12 +752,16 @@ export default function GameScreen({
             </View>
           </View>
 
-          <View style={styles.wheelSection} ref={letterWheelRef} collapsable={false}>
+          <View
+            style={styles.wheelSection}
+            ref={letterWheelRef}
+            collapsable={false}
+          >
             {letters.length > 0 ? (
-              <LetterWheel 
-                letters={letters} 
-                onLetterSelect={handleLetterSelect} 
-                onWordComplete={handleWordComplete} 
+              <LetterWheel
+                letters={letters}
+                onLetterSelect={handleLetterSelect}
+                onWordComplete={handleWordComplete}
                 validWords={[...crosswordWords]}
               />
             ) : (
@@ -630,15 +783,11 @@ export default function GameScreen({
         }}
       >
         <View style={styles.modalContainer}>
-          <BlurView
-            style={styles.absolute}
-            intensity={80} 
-            tint="dark"     
-          />
+          <BlurView style={styles.absolute} intensity={80} tint="dark" />
           <View style={styles.animationContainer}>
             <Text style={styles.gameCompleteText}>LEVEL COMPLETED</Text>
             <LottieView
-              source={require('../../assets/animations/level-complete.json')}
+              source={require("../../assets/animations/level-complete.json")}
               autoPlay
               loop={false}
               style={styles.lottieAnimation}
@@ -648,15 +797,13 @@ export default function GameScreen({
             />
             <TouchableOpacity
               style={styles.nextLevelButton}
-              onPress={() => onNavigate?.('levels')}
+              onPress={() => onNavigate?.("levels")}
             >
               <Text style={styles.nextLevelButtonText}>Back to Levels</Text>
             </TouchableOpacity>
-            
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
@@ -680,7 +827,7 @@ const styles = StyleSheet.create({
     color: "#AAA",
   },
   particle: {
-    position: 'absolute',
+    position: "absolute",
     width: 6,
     height: 6,
     borderRadius: 3,
@@ -689,27 +836,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     marginBottom: 10,
-    marginTop: 40,
-    flexDirection: 'row',
-    justifyContent: 'center', 
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    flex: 0,
+    width: "100%",
   },
   levelTitleContainer: {
-    flex: 1,
-    alignItems: 'center', 
+    // flex: 1,
+    // alignItems: "center",
   },
   scoreText: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#00ff33ff",
-    textAlign: 'center', 
+    textAlign: "center",
   },
   gridContainer: {
     width: GRID_AREA_WIDTH,
     height: GRID_AREA_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   grid: {
@@ -763,22 +911,22 @@ const styles = StyleSheet.create({
   },
   // --- MODAL AND ANIMATION STYLES ---
   modalContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   absolute: {
     position: "absolute",
     top: 0,
     left: 0,
     bottom: 0,
-    right: 0
+    right: 0,
   },
   animationContainer: {
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   lottieAnimation: {
     width: 250,
@@ -793,7 +941,7 @@ const styles = StyleSheet.create({
   },
   nextLevelButton: {
     marginTop: 15,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 25,
@@ -807,8 +955,24 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   nextLevelButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
+    paddingEnd: 16,
+  },
+  backButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

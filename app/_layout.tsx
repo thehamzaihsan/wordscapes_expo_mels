@@ -21,7 +21,7 @@ function LayoutWithInsets() {
   <Stack
     screenOptions={{
       headerShown: false,
-      animation: 'slide_from_right',
+      // animation: 'slide_from_right',
       gestureEnabled: true,
     }}
   >
@@ -61,6 +61,7 @@ function LayoutWithInsets() {
     />
   </Stack>
 </View>
+  )}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -111,5 +112,4 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
-}
 }

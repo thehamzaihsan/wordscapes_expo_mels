@@ -1,24 +1,24 @@
-import { Difficulty, getDifficultyConfig } from '@/constants/difficulty';
-import levelsData from '@/constants/levels.json';
-import { initializeGameManager } from '@/hooks/game-manager';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
+import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import levelsData from "@/constants/levels.json";
+import { initializeGameManager } from "@/hooks/game-manager";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ChevronLeft } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Animated,
   Dimensions,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
-} from 'react-native';
+  View,
+} from "react-native";
 
-const GUEST_PROGRESS_KEY = 'wordscapes_guest_progress';
+const GUEST_PROGRESS_KEY = "wordscapes_guest_progress";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 // Particle interface
 interface Particle {
@@ -47,35 +47,39 @@ interface LevelCardProps {
   onPress: (level: LevelData, categoryName: string) => void;
 }
 
-
 interface LevelScreenProps {
-  onNavigate: (screen: string, levelData?: { 
-    baseWord: string, 
-    difficulty: Difficulty, 
-    levelTitle: string,
-    categoryName: string, // LOCAL STORAGE: Pass category name to GameScreen
-    levelData: {
-      level: number; // LOCAL STORAGE: Pass level number to GameScreen
+  onNavigate: (
+    screen: string,
+    levelData?: {
       baseWord: string;
-      letters: string[];
-      crosswordWords: string[];
       difficulty: Difficulty;
+      levelTitle: string;
+      categoryName: string; // LOCAL STORAGE: Pass category name to GameScreen
+      levelData: {
+        level: number; // LOCAL STORAGE: Pass level number to GameScreen
+        baseWord: string;
+        letters: string[];
+        crosswordWords: string[];
+        difficulty: Difficulty;
+      };
     }
-  }) => void;
+  ) => void;
 }
 
 const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('Forest');
+  const [selectedCategory, setSelectedCategory] = useState<string>("Forest");
   const [particles, setParticles] = useState<Particle[]>([]);
   const [playerGems] = useState<number>(1245);
   const [playerEnergy] = useState<number>(75);
-  const [levelCategories, setLevelCategories] = useState<{ [key: string]: LevelData[] }>({});
+  const [levelCategories, setLevelCategories] = useState<{
+    [key: string]: LevelData[];
+  }>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Create floating particles
   useEffect(() => {
-    const particleColors = ['#8B5CF6', '#EF4444', '#F59E0B', '#10B981'];
-    
+    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"];
+
     const createParticle = (id: number): Particle => ({
       id,
       x: new Animated.Value(Math.random() * width),
@@ -85,13 +89,15 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       color: particleColors[Math.floor(Math.random() * particleColors.length)],
     });
 
-    const particleArray = Array.from({ length: 25 }, (_, i) => createParticle(i));
+    const particleArray = Array.from({ length: 25 }, (_, i) =>
+      createParticle(i)
+    );
     setParticles(particleArray);
 
     // Animate particles
     const animateParticle = (particle: Particle) => {
       const duration = Math.random() * 8000 + 6000;
-      
+
       Animated.parallel([
         Animated.timing(particle.x, {
           toValue: Math.random() * width,
@@ -119,11 +125,13 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     const loadLevels = async () => {
       setIsLoading(true);
       initializeGameManager();
-      
+
       try {
         // Try to get saved progress from local storage
-        const savedProgressJSON = await AsyncStorage.getItem(GUEST_PROGRESS_KEY);
-        
+        const savedProgressJSON = await AsyncStorage.getItem(
+          GUEST_PROGRESS_KEY
+        );
+
         if (savedProgressJSON) {
           // If data exists, parse it and set it as our state
           const savedProgress = JSON.parse(savedProgressJSON);
@@ -131,32 +139,36 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         } else {
           // If no data exists (first time playing), load from JSON and set initial state
           const initialCategories: { [key: string]: LevelData[] } = {};
-          
-          Object.keys(levelsData).forEach(category => {
-            initialCategories[category] = (levelsData as any)[category].map((level: any, index: number) => ({
-              ...level,
-              isUnlocked: index < 3, // Unlock the first 3 levels
-              isCompleted: false,
-              stars: 0,
-            }));
-          });
-          
-          setLevelCategories(initialCategories);
-          
-          // Save this initial state to local storage for the next session
-          await AsyncStorage.setItem(GUEST_PROGRESS_KEY, JSON.stringify(initialCategories));
-        }
 
+          Object.keys(levelsData).forEach((category) => {
+            initialCategories[category] = (levelsData as any)[category].map(
+              (level: any, index: number) => ({
+                ...level,
+                isUnlocked: index < 3, // Unlock the first 3 levels
+                isCompleted: false,
+                stars: 0,
+              })
+            );
+          });
+
+          setLevelCategories(initialCategories);
+
+          // Save this initial state to local storage for the next session
+          await AsyncStorage.setItem(
+            GUEST_PROGRESS_KEY,
+            JSON.stringify(initialCategories)
+          );
+        }
       } catch (error) {
-        console.error('Failed to load levels:', error);
+        console.error("Failed to load levels:", error);
         setLevelCategories({});
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     loadLevels();
-  }, []); 
+  }, []);
 
   const getDifficultyColor = (difficulty: Difficulty): string => {
     const config = getDifficultyConfig(difficulty);
@@ -165,14 +177,19 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   const handleLevelPress = (level: LevelData, categoryName: string): void => {
     if (level.isUnlocked) {
-        if (playerEnergy < 10) {
-        Alert.alert('Not enough energy!', 'Wait or buy more energy to continue playing.');
-        } else {
-        console.log(`🎮 Selected level: ${level.baseWord} (${level.difficulty}) from ${categoryName}`);
+      if (playerEnergy < 10) {
+        Alert.alert(
+          "Not enough energy!",
+          "Wait or buy more energy to continue playing."
+        );
+      } else {
+        console.log(
+          `🎮 Selected level: ${level.baseWord} (${level.difficulty}) from ${categoryName}`
+        );
         console.log(`📊 Level data:`, level);
-        
+
         // Navigate to game with complete level data from JSON
-        onNavigate('game', {
+        onNavigate("game", {
           baseWord: level.baseWord,
           difficulty: level.difficulty,
           levelTitle: `${level.baseWord} - Level ${level.level}`,
@@ -180,26 +197,26 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             baseWord: level.baseWord,
             letters: level.letters || [],
             crosswordWords: level.crosswordWords || [],
-            difficulty: level.difficulty
-          }
+            difficulty: level.difficulty,
+          },
         });
-        }
+      }
     } else {
-        Alert.alert('Locked', 'Complete the previous level to unlock this one.');
+      Alert.alert("Locked", "Complete the previous level to unlock this one.");
     }
   };
 
   const handleBackPress = (): void => {
-    onNavigate('login');
+    onNavigate("login");
   };
 
   const handleShopPress = (): void => {
-    onNavigate('shop');
+    onNavigate("shop");
   };
 
   const renderFloatingParticles = () => (
     <View style={StyleSheet.absoluteFillObject}>
-      {particles.map(particle => (
+      {particles.map((particle) => (
         <Animated.View
           key={particle.id}
           style={[
@@ -219,17 +236,18 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     </View>
   );
 
-  const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) => {
+  const LevelCard: React.FC<LevelCardProps> = ({
+    level,
+    categoryName,
+    onPress,
+  }) => {
     const difficultyColor = getDifficultyColor(level.difficulty);
     const difficultyConfig = getDifficultyConfig(level.difficulty);
 
     return (
       <TouchableOpacity
         onPress={() => onPress(level, categoryName)}
-        style={[
-          styles.levelCard,
-          !level.isUnlocked && styles.levelCardLocked
-        ]}
+        style={[styles.levelCard, !level.isUnlocked && styles.levelCardLocked]}
         activeOpacity={0.8}
       >
         {/* Lock Overlay */}
@@ -244,11 +262,23 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         <View style={styles.levelContent}>
           {/* Header */}
           <View style={styles.levelHeader}>
-            <Text style={[styles.levelName, !level.isUnlocked && styles.levelNameLocked]}>
+            <Text
+              style={[
+                styles.levelName,
+                !level.isUnlocked && styles.levelNameLocked,
+              ]}
+            >
               {level.baseWord}
             </Text>
-            <View style={[styles.difficultyBadge, { backgroundColor: difficultyColor }]}> 
-              <Text style={styles.difficultyText}>{difficultyConfig.icon} {difficultyConfig.label}</Text>
+            <View
+              style={[
+                styles.difficultyBadge,
+                { backgroundColor: difficultyColor },
+              ]}
+            >
+              <Text style={styles.difficultyText}>
+                {difficultyConfig.icon} {difficultyConfig.label}
+              </Text>
             </View>
           </View>
 
@@ -259,7 +289,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               <View style={styles.starsContainer}>
                 {Array.from({ length: 3 }, (_, i) => (
                   <Text key={i} style={styles.star}>
-                    {i < (level.stars ?? 0) ? '⭐' : '☆'}
+                    {i < (level.stars ?? 0) ? "⭐" : "☆"}
                   </Text>
                 ))}
               </View>
@@ -288,9 +318,9 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
-      
+
       {/* Floating Particles */}
       {renderFloatingParticles()}
 
@@ -298,33 +328,36 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
+            <ChevronLeft size={16} color={"white"} />
+            <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
-          
+
           <View style={styles.resourcesContainer}>
-          <TouchableOpacity 
-            style={styles.resourceItem}
-            onPress={handleShopPress}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.resourceIcon}>💎</Text>
-            <Text style={styles.resourceText}>{playerGems}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.resourceItem}
-            onPress={handleShopPress}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.resourceIcon}>🟡</Text>
-            <Text style={[
-              styles.resourceText,
-              { color: playerEnergy > 50 ? '#10B981' : '#EF4444' }
-            ]}>
-              {playerEnergy}/100
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.resourceItem}
+              onPress={handleShopPress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.resourceIcon}>💎</Text>
+              <Text style={styles.resourceText}>{playerGems}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.resourceItem}
+              onPress={handleShopPress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.resourceIcon}>🟡</Text>
+              <Text
+                style={[
+                  styles.resourceText,
+                  { color: playerEnergy > 50 ? "#10B981" : "#EF4444" },
+                ]}
+              >
+                {playerEnergy}/100
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.playerInfo}>
@@ -337,7 +370,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           <Text style={styles.xpLabel}>7450/10000 XP</Text>
           <View style={styles.xpBarContainer}>
             <View style={styles.xpBarBackground}>
-              <View style={[styles.xpBar, { width: '74.5%' }]} />
+              <View style={[styles.xpBar, { width: "74.5%" }]} />
             </View>
           </View>
         </View>
@@ -355,15 +388,22 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               key={category}
               style={[
                 styles.categoryTab,
-                selectedCategory === category && styles.categoryTabActive
+                selectedCategory === category && styles.categoryTabActive,
               ]}
               onPress={() => setSelectedCategory(category)}
             >
-              <Text style={[
-                styles.categoryText,
-                selectedCategory === category && styles.categoryTextActive
-              ]}>
-                {category === 'Forest' ? '🌲' : category === 'Ocean' ? '🌊' : '🏔️'} {category.toUpperCase()}
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category && styles.categoryTextActive,
+                ]}
+              >
+                {category === "Forest"
+                  ? "🌲"
+                  : category === "Ocean"
+                  ? "🌊"
+                  : "🏔️"}{" "}
+                {category.toUpperCase()}
               </Text>
             </TouchableOpacity>
           ))}
@@ -371,7 +411,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       </View>
 
       {/* Level Cards */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -391,58 +431,68 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           ))
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No levels available in {selectedCategory}</Text>
-            <Text style={styles.emptySubtext}>Check back later for new content!</Text>
+            <Text style={styles.emptyText}>
+              No levels available in {selectedCategory}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              Check back later for new content!
+            </Text>
           </View>
         )}
-        
+
         <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121213',
+    backgroundColor: "#121213",
   },
   particle: {
-    position: 'absolute',
+    position: "absolute",
     width: 6,
     height: 6,
     borderRadius: 3,
   },
   header: {
-    backgroundColor: '#1F2937',
+    backgroundColor: "#1F2937",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 2,
-    borderBottomColor: '#374151',
+    borderBottomColor: "#374151",
   },
   headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   backButton: {
-    paddingVertical: 8,
     paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
+    paddingEnd: 16,
   },
   backButtonText: {
-    color: '#8B5CF6',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   resourcesContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   resourceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#374151',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -452,53 +502,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   resourceText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   playerInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
   },
   playerName: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 1,
   },
   playerLevel: {
-    color: '#8B5CF6',
+    color: "#8B5CF6",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   xpContainer: {
     gap: 6,
   },
   xpLabel: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   xpBarContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   xpBarBackground: {
-    width: '80%',
+    width: "80%",
     height: 8,
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   xpBar: {
-    height: '100%',
-    backgroundColor: '#8B5CF6',
+    height: "100%",
+    backgroundColor: "#8B5CF6",
     borderRadius: 4,
   },
   categoryContainer: {
-    backgroundColor: '#1F2937',
+    backgroundColor: "#1F2937",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
+    borderBottomColor: "#374151",
   },
   categoryScrollContent: {
     paddingHorizontal: 20,
@@ -508,18 +558,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
   },
   categoryTabActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
   },
   categoryText: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   categoryTextActive: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   scrollContainer: {
     flex: 1,
@@ -529,25 +579,25 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   levelCard: {
-    backgroundColor: '#1F2937',
+    backgroundColor: "#1F2937",
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#374151',
-    overflow: 'hidden',
-    position: 'relative',
+    borderColor: "#374151",
+    overflow: "hidden",
+    position: "relative",
   },
   levelCardLocked: {
     opacity: 0.6,
   },
   lockOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1,
   },
   lockIcon: {
@@ -555,27 +605,27 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   lockText: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   levelContent: {
     padding: 20,
   },
   levelHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   levelName: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     flex: 1,
   },
   levelNameLocked: {
-    color: '#6B7280',
+    color: "#6B7280",
   },
   difficultyBadge: {
     paddingHorizontal: 12,
@@ -583,20 +633,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   difficultyText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   levelInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   levelNumber: {
-    color: '#D1D5DB',
+    color: "#D1D5DB",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   statusSection: {
     marginTop: 8,
@@ -605,79 +655,79 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   statusText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   progressSection: {
     gap: 12,
   },
   progressInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   progressText: {
-    color: '#D1D5DB',
+    color: "#D1D5DB",
     fontSize: 14,
   },
   progressPercent: {
-    color: '#8B5CF6',
+    color: "#8B5CF6",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   progressBarContainer: {
     marginVertical: 4,
   },
   progressBarBackground: {
-    width: '100%',
+    width: "100%",
     height: 8,
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBar: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
   starsAndRewardContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   starsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 4,
   },
   star: {
     fontSize: 20,
   },
   rewardContainer: {
-    backgroundColor: '#1F2937',
+    backgroundColor: "#1F2937",
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
   },
   rewardText: {
-    color: '#F59E0B',
+    color: "#F59E0B",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statusContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   // statusBadge: duplicate removed
   completedBadge: {
-    backgroundColor: '#10B981',
+    backgroundColor: "#10B981",
   },
   inProgressBadge: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
   },
   newBadge: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
   },
   // statusText: duplicate removed
   bottomSpacing: {
@@ -685,33 +735,33 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySubtext: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   loadingText: {
-    color: '#8B5CF6',
+    color: "#8B5CF6",
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
 
