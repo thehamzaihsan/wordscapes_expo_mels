@@ -1,3 +1,4 @@
+import { ChevronLeft, Play, Settings } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -194,11 +195,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         {/* Menu Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={handlePlayClick} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>▶ START GAME</Text>
+            <Play  size={18} color={'white'}/>
+            <Text style={styles.primaryButtonText}> Play Game</Text>
           </TouchableOpacity>
           
           <TouchableOpacity onPress={() => Alert.alert('Settings', 'Settings menu')} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>⚙ SETTINGS</Text>
+            <Settings size={18} color={'white'} />
+            <Text style={styles.secondaryButtonText}> Settings</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -213,7 +216,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
         <TouchableOpacity onPress={handleBackClick} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <ChevronLeft size={16} color={"#8B5CF6"} /> 
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
         {/* Compact Logo */}
@@ -353,6 +357,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 2,
     borderColor: '#7C3AED',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -367,12 +375,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: '#4B5563',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+
   },
   secondaryButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+
   },
   scrollContent: {
     flexGrow: 1,
@@ -381,9 +395,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 20,
+    
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   backButtonText: {
     color: '#8B5CF6',
