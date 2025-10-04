@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  Alert,
+  Animated,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  StatusBar,
-  SafeAreaView,
-  ScrollView,
-  Animated,
-  Alert,
+  View,
 } from 'react-native';
+import Logo from './logo';
 
 const { width, height } = Dimensions.get('window');
-
 // Particle interface
 interface Particle {
   id: number;
@@ -174,7 +174,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         {/* Logo Section */}
         <View style={styles.logoContainer}>
           <View style={styles.logoSection}>
-            <View style={styles.letterRow}>
+            {/* <View style={styles.letterRow}>
               {['W', 'O', 'R', 'D', 'S'].map((letter, index) => (
                 <LetterTile key={index} letter={letter} index={index} />
               ))}
@@ -186,7 +186,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
             </View>
             <View style={styles.betaTag}>
               <Text style={styles.betaText}>BETA</Text>
-            </View>
+            </View> */}
+            <Logo />
           </View>
         </View>
 
@@ -217,16 +218,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
         {/* Compact Logo */}
         <View style={styles.compactLogoContainer}>
-          <View style={styles.compactLetterRow}>
-            {['W', 'O', 'R', 'D', 'S'].map((letter, index) => (
-              <LetterTile key={index} letter={letter} size="small" index={index} />
-            ))}
-          </View>
-          <View style={styles.compactLetterRow}>
-            {['C', 'A', 'P', 'E', 'S'].map((letter, index) => (
-              <LetterTile key={index + 5} letter={letter} size="small" index={index + 5} />
-            ))}
-          </View>
+          <Logo />
         </View>
 
         {/* Login Form */}
