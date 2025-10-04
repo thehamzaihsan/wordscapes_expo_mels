@@ -4,7 +4,63 @@ import { Stack } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, BackHandler, Platform, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+function LayoutWithInsets() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={{
+      flex: 1,
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right,
+      backgroundColor: '#121213',
+    }}>
+  <Stack
+    screenOptions={{
+      headerShown: false,
+      animation: 'slide_from_right',
+      gestureEnabled: true,
+    }}
+  >
+    <Stack.Screen 
+      name="index" 
+      options={{
+        headerShown: false,
+      }}
+    />
+    <Stack.Screen 
+      name="login" 
+      options={{
+        headerShown: false,
+        gestureEnabled: false,
+      }}
+    />
+    <Stack.Screen 
+      name="levels" 
+      options={{
+        headerShown: false,
+        gestureEnabled: true,
+      }}
+    />
+    <Stack.Screen 
+      name="game" 
+      options={{
+        headerShown: false,
+        gestureEnabled: true,
+      }}
+    />
+    <Stack.Screen 
+      name="test" 
+      options={{
+        headerShown: false,
+        gestureEnabled: true,
+      }}
+    />
+  </Stack>
+</View>
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -51,49 +107,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-            gestureEnabled: true,
-          }}
-        >
-          <Stack.Screen 
-            name="index" 
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen 
-            name="login" 
-            options={{
-              headerShown: false,
-              gestureEnabled: false,
-            }}
-          />
-          <Stack.Screen 
-            name="levels" 
-            options={{
-              headerShown: false,
-              gestureEnabled: true,
-            }}
-          />
-          <Stack.Screen 
-            name="game" 
-            options={{
-              headerShown: false,
-              gestureEnabled: true,
-            }}
-          />
-          <Stack.Screen 
-            name="test" 
-            options={{
-              headerShown: false,
-              gestureEnabled: true,
-            }}
-          />
-        </Stack>
+        <LayoutWithInsets />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
 }
