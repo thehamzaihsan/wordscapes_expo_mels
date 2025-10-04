@@ -1,18 +1,19 @@
+
 import { ChevronLeft, Play, Settings } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Animated,
   Dimensions,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Logo from './logo';
 
 const { width, height } = Dimensions.get('window');
@@ -37,6 +38,7 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
+  const insets = useSafeAreaInsets();
   const [showLogin, setShowLogin] = useState<boolean>(false);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -167,68 +169,60 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   );
 
   const renderMainMenu = () => (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, {
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right,
+    }]}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
       {renderFloatingParticles()}
-      
       <View style={styles.mainContent}>
         {/* Logo Section */}
         <View style={styles.logoContainer}>
           <View style={styles.logoSection}>
-            {/* <View style={styles.letterRow}>
-              {['W', 'O', 'R', 'D', 'S'].map((letter, index) => (
-                <LetterTile key={index} letter={letter} index={index} />
-              ))}
-            </View>
-            <View style={styles.letterRow}>
-              {['C', 'A', 'P', 'E', 'S'].map((letter, index) => (
-                <LetterTile key={index + 5} letter={letter} index={index + 5} />
-              ))}
-            </View>
-            <View style={styles.betaTag}>
-              <Text style={styles.betaText}>BETA</Text>
-            </View> */}
             <Logo />
           </View>
         </View>
-
         {/* Menu Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={handlePlayClick} style={styles.primaryButton}>
             <Play  size={18} color={'white'}/>
             <Text style={styles.primaryButtonText}> Play Game</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity onPress={() => Alert.alert('Settings', 'Settings menu')} style={styles.secondaryButton}>
             <Settings size={18} color={'white'} />
             <Text style={styles.secondaryButtonText}> Settings</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 
   const renderLoginScreen = () => (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, {
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right,
+    }]}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
       {renderFloatingParticles()}
-      
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
         <TouchableOpacity onPress={handleBackClick} style={styles.backButton}>
           <ChevronLeft size={16} color={"#8B5CF6"} /> 
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-
         {/* Compact Logo */}
         <View style={styles.compactLogoContainer}>
           <Logo />
         </View>
-
         {/* Login Form */}
         <View style={styles.loginForm}>
           <Text style={styles.loginTitle}>LOGIN TO PLAY</Text>
-          
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>EMAIL</Text>
             <TextInput
@@ -241,7 +235,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
               autoCapitalize="none"
             />
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>PASSWORD</Text>
             <TextInput
@@ -253,7 +246,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
               secureTextEntry
             />
           </View>
-
           <TouchableOpacity 
             onPress={handleLogin} 
             disabled={isLoading}
@@ -263,17 +255,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
               {isLoading ? 'CONNECTING...' : 'LOGIN'}
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
-
         {/* Guest Login */}
         <TouchableOpacity onPress={handleGuestLogin} style={styles.guestButton}>
           <Text style={styles.guestButtonText}>CONTINUE AS GUEST</Text>
         </TouchableOpacity>
-
         {/* Create Account */}
         <View style={styles.createAccountContainer}>
           <Text style={styles.createAccountText}>New player? </Text>
@@ -282,7 +271,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 
   return showLogin ? renderLoginScreen() : renderMainMenu();
@@ -449,6 +438,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#4B5563',
+    paddingStart: 20,
   },
   loginButton: {
     backgroundColor: '#8B5CF6',
