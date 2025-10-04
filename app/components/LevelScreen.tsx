@@ -1,9 +1,9 @@
 import { Difficulty, getDifficultyConfig } from '@/constants/difficulty';
 import levelsData from '@/constants/levels.json';
 import { initializeGameManager } from '@/hooks/game-manager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -13,8 +13,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+
+const GUEST_PROGRESS_KEY = 'wordscapes_guest_progress';
 
 const { width, height } = Dimensions.get('window');
 
@@ -51,7 +53,9 @@ interface LevelScreenProps {
     baseWord: string, 
     difficulty: Difficulty, 
     levelTitle: string,
+    categoryName: string, // LOCAL STORAGE: Pass category name to GameScreen
     levelData: {
+      level: number; // LOCAL STORAGE: Pass level number to GameScreen
       baseWord: string;
       letters: string[];
       crosswordWords: string[];
@@ -112,36 +116,47 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   // Initialize game manager and load levels
   useEffect(() => {
-    initializeGameManager();
-    
-    // Load levels from JSON with unlock logic
-    try {
-      const loadedCategories: { [key: string]: LevelData[] } = {};
+    const loadLevels = async () => {
+      setIsLoading(true);
+      initializeGameManager();
       
-      Object.keys(levelsData).forEach(category => {
-        loadedCategories[category] = (levelsData as any)[category].map((level: any, index: number) => ({
-          ...level,
-          isUnlocked: index < 5 || (index < 10 && Math.random() > 0.3) || Math.random() > 0.7,
-          isCompleted: index < 3 || Math.random() > 0.8,
-          stars: index < 3 ? 3 : Math.floor(Math.random() * 4)
-        }));
-      });
-      
-      setLevelCategories(loadedCategories);
-      
-      // Ensure selected category exists
-      if (!loadedCategories[selectedCategory] && Object.keys(loadedCategories).length > 0) {
-        setSelectedCategory(Object.keys(loadedCategories)[0]);
+      try {
+        // Try to get saved progress from local storage
+        const savedProgressJSON = await AsyncStorage.getItem(GUEST_PROGRESS_KEY);
+        
+        if (savedProgressJSON) {
+          // If data exists, parse it and set it as our state
+          const savedProgress = JSON.parse(savedProgressJSON);
+          setLevelCategories(savedProgress);
+        } else {
+          // If no data exists (first time playing), load from JSON and set initial state
+          const initialCategories: { [key: string]: LevelData[] } = {};
+          
+          Object.keys(levelsData).forEach(category => {
+            initialCategories[category] = (levelsData as any)[category].map((level: any, index: number) => ({
+              ...level,
+              isUnlocked: index < 3, // Unlock the first 3 levels
+              isCompleted: false,
+              stars: 0,
+            }));
+          });
+          
+          setLevelCategories(initialCategories);
+          
+          // Save this initial state to local storage for the next session
+          await AsyncStorage.setItem(GUEST_PROGRESS_KEY, JSON.stringify(initialCategories));
+        }
+
+      } catch (error) {
+        console.error('Failed to load levels:', error);
+        setLevelCategories({});
+      } finally {
+        setIsLoading(false);
       }
-      
-    } catch (error) {
-      console.error('Failed to load levels:', error);
-      // Fallback to empty categories
-      setLevelCategories({});
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedCategory]);
+    };
+    
+    loadLevels();
+  }, []); 
 
   const getDifficultyColor = (difficulty: Difficulty): string => {
     const config = getDifficultyConfig(difficulty);

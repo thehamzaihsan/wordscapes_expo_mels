@@ -1,8 +1,8 @@
+import { Difficulty } from '@/constants/difficulty';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import LevelScreen from './components/LevelScreen';
-import { Difficulty } from '@/constants/difficulty';
 
 interface LevelData {
   baseWord: string;
@@ -39,11 +39,6 @@ export default function LevelsRoute() {
     if (screen === 'login') {
       router.back(); // Use back() for going back to login
     } else if (screen === 'game') {
-<<<<<<< HEAD
-      router.push('/game');
-    } else if (screen == 'shop'){
-      router.push('/shop')
-=======
       if (levelData) {
         // Store level data and navigate
         setSelectedLevel(levelData);
@@ -59,8 +54,9 @@ export default function LevelsRoute() {
       } else {
         router.push('/game');
       }
->>>>>>> 1788752d5788556b75b39ac724c9b9a67b59fb56
-    }
+    }else if (screen == 'shop'){
+        router.push('/shop');
+      }
   };
 
   return <LevelScreen onNavigate={handleNavigate} />;

@@ -1,8 +1,10 @@
+import { initializeGameManager } from '@/hooks/game-manager';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { initializeGameManager } from '@/hooks/game-manager';
+// NEW: Import GestureHandlerRootView
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
   useEffect(() => {
@@ -21,50 +23,52 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-          gestureEnabled: true, // Enable swipe gestures
-        }}
-      >
-        <Stack.Screen 
-          name="index" 
-          options={{
+    // MODIFIED: Wrap everything with GestureHandlerRootView
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack
+          screenOptions={{
             headerShown: false,
+            animation: 'slide_from_right',
+            gestureEnabled: true, // Enable swipe gestures
           }}
-        />
-        <Stack.Screen 
-          name="login" 
-          options={{
-            headerShown: false,
-            gestureEnabled: false, // Disable swipe back on login
-          }}
-        />
-        <Stack.Screen 
-          name="levels" 
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen 
-          name="game" 
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-
-        <Stack.Screen 
-          name="test" 
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-      </Stack>
-    </SafeAreaProvider>
+        >
+          <Stack.Screen 
+            name="index" 
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen 
+            name="login" 
+            options={{
+              headerShown: false,
+              gestureEnabled: false, // Disable swipe back on login
+            }}
+          />
+          <Stack.Screen 
+            name="levels" 
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen 
+            name="game" 
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
+            }}
+          />
+          <Stack.Screen 
+            name="test" 
+            options={{
+              headerShown: false,
+              gestureEnabled: true,
+            }}
+          />
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

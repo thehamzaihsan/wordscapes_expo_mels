@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -32,9 +32,41 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [connectionPath, setConnectionPath] = useState<string>('');
   const [currentWord, setCurrentWord] = useState<string>('');
   const letterPositions = useRef<LetterPosition[]>([]);
-  const wheelSize = 320;
-  const radius = 120;
+  
+  // --- REFINED DYNAMIC SIZING ---
   const hexagonSize = 35;
+  // Increased padding to create more space, especially for more letters
+  const hexagonPadding = 25; 
+  // A reasonable minimum radius for a small number of letters
+  const minRadius = 75;      
+
+  // Calculate radius based on the circumference needed for the letters
+  const radius = useMemo(() => {
+    const numLetters = letters.length;
+    if (numLetters === 0) {
+      return minRadius;
+    }
+    
+    // Calculate the total space needed for one letter (its diameter + padding)
+    const spacePerLetter = (hexagonSize * 2) + hexagonPadding;
+    
+    // Determine the total circumference required to fit all letters without them touching
+    const requiredCircumference = numLetters * spacePerLetter;
+    
+    // Convert the circumference to the radius needed (C = 2 * PI * r)
+    const radiusFromCircumference = requiredCircumference / (2 * Math.PI);
+    
+    // Use the calculated radius, but ensure it doesn't shrink below the minimum
+    return Math.max(minRadius, radiusFromCircumference);
+  }, [letters.length]);
+
+  // Calculate the total wheel size based on the dynamic radius
+  const wheelSize = useMemo(() => {
+    // Diameter is (radius + hexagon size) * 2, plus some overall padding for the container
+    return (radius + hexagonSize) * 2 + 20;
+  }, [radius]);
+  
+  const wheelCenter = wheelSize / 2;
 
   // Create hexagon path for SVG
   const createHexagonPath = (centerX: number, centerY: number, size: number): string => {
@@ -49,16 +81,18 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   };
 
   useEffect(() => {
-    if (letters.length === 0) return;
-    
+    if (letters.length === 0) {
+      return;
+    }
+        
     // Calculate letter positions in a circle
     letterPositions.current = letters.map((letter, index) => {
       const angle = (index * 2 * Math.PI) / letters.length - Math.PI / 2;
-      const x = Math.cos(angle) * radius + wheelSize / 2;
-      const y = Math.sin(angle) * radius + wheelSize / 2;
+      const x = Math.cos(angle) * radius + wheelCenter;
+      const y = Math.sin(angle) * radius + wheelCenter;
       return { x, y, letter, index };
     });
-  }, [letters, wheelSize, radius]);
+  }, [letters, wheelSize, radius, wheelCenter]);
 
   const updateConnectionPath = useCallback((indices: number[]): void => {
     if (indices.length === 0) {
@@ -77,29 +111,20 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   }, []);
 
   const addLetter = useCallback((letter: string, index: number): void => {
-    console.log(`Adding letter: ${letter} at index: ${index}`);
-    
-    // Prevent adding the same letter twice
     if (selectedIndices.includes(index)) {
-      console.log(`Letter ${letter} already selected`);
       return;
     }
-
     const newIndices = [...selectedIndices, index];
     const newLetters = [...selectedLetters, letter];
     
     setSelectedIndices(newIndices);
     setSelectedLetters(newLetters);
     setCurrentWord(newLetters.join(''));
-    
-    // Update connection path
     updateConnectionPath(newIndices);
-
     onLetterSelect?.(letter, index);
   }, [selectedIndices, selectedLetters, onLetterSelect, updateConnectionPath]);
 
   const resetSelection = useCallback((): void => {
-    console.log('Resetting selection');
     setSelectedLetters([]);
     setSelectedIndices([]);
     setConnectionPath('');
@@ -107,16 +132,14 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   }, []);
 
   const submitWord = useCallback((): void => {
-    console.log(`Submitting word: ${currentWord}`);
     if (selectedLetters.length > 0) {
       const word = selectedLetters.join('').toLowerCase();
       onWordComplete?.(word);
     }
     resetSelection();
-  }, [selectedLetters, currentWord, onWordComplete, resetSelection]);
+  }, [selectedLetters, onWordComplete, resetSelection]);
 
   const removeLetter = useCallback((): void => {
-    console.log('Removing last letter');
     if (selectedLetters.length > 0) {
       const newLetters = selectedLetters.slice(0, -1);
       const newIndices = selectedIndices.slice(0, -1);
@@ -128,10 +151,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     }
   }, [selectedLetters, selectedIndices, updateConnectionPath]);
 
-  // Check if current word is valid
   const isValidWord = currentWord.length > 2 && validWords.includes(currentWord.toLowerCase());
 
-  // Early return if no letters
   if (letters.length === 0) {
     return (
       <View style={styles.container}>
@@ -142,12 +163,9 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
   return (
     <View style={styles.container}>
-     
-      {/* Hexagonal Letter Wheel */}
-      <View style={[styles.wheelContainer, { width: wheelSize, height: wheelSize }]}>
-        {/* SVG for hexagons and connection lines */}
+      {/* Hexagonal Letter Wheel with dynamic sizing */}
+      <View style={[styles.wheelContainer, { width: wheelSize, height: wheelSize, borderRadius: wheelCenter }]}>
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-          {/* Connection Lines */}
           <Path 
             d={connectionPath} 
             stroke={isValidWord ? "#10B981" : "#fde047"} 
@@ -158,11 +176,10 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             opacity={0.8} 
           />
           
-          {/* Hexagon backgrounds */}
           {letters.map((letter, index) => {
             const angle = (index * 2 * Math.PI) / letters.length - Math.PI / 2;
-            const x = Math.cos(angle) * radius + wheelSize / 2;
-            const y = Math.sin(angle) * radius + wheelSize / 2;
+            const x = Math.cos(angle) * radius + wheelCenter;
+            const y = Math.sin(angle) * radius + wheelCenter;
             const isSelected = selectedIndices.includes(index);
             
             return (
@@ -170,15 +187,14 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                 key={`hexagon-${index}`}
                 points={createHexagonPath(x, y, hexagonSize)}
                 fill={isSelected ? "#F59E0B" : "#8B5CF6"}
-                stroke={isSelected ? "#FBBF24" : "#A78BFA"}
-                strokeWidth={3}
-                opacity={0.9}
+                stroke={isSelected ? "#F59E0B" : "#8B5CF6"}
+                strokeWidth={2}
+                opacity={1}
               />
             );
           })}
         </Svg>
 
-        {/* Letter Buttons */}
         {letters.map((letter, index) => {
           const angle = (index * 2 * Math.PI) / letters.length - Math.PI / 2;
           const x = Math.cos(angle) * radius;
@@ -192,16 +208,13 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
               style={[
                 styles.letterHexagon,
                 {
-                  left: wheelSize / 2 + x - hexagonSize,
-                  top: wheelSize / 2 + y - hexagonSize,
+                  left: wheelCenter + x - hexagonSize,
+                  top: wheelCenter + y - hexagonSize,
                   width: hexagonSize * 2,
                   height: hexagonSize * 2,
                 },
               ]}
-              onPress={() => {
-                console.log(`Letter ${letter} pressed`);
-                addLetter(letter, index);
-              }}
+              onPress={() => addLetter(letter, index)}
               activeOpacity={0.7}
             >
               <Text style={[styles.letterText, isSelected && styles.letterTextSelected]}>
@@ -215,64 +228,33 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             </TouchableOpacity>
           );
         })}
-
-        {/* Center Control Buttons */}
-        <View style={styles.centerControlsContainer}>
-          {/* Remove/Backspace Button */}
-          <TouchableOpacity 
-            style={[
-              styles.centerButton, 
-              styles.removeButton,
-              selectedLetters.length === 0 && styles.disabledCenterButton
-            ]}
-            onPress={() => {
-              console.log('Remove button pressed');
-              removeLetter();
-            }}
-            disabled={selectedLetters.length === 0}
-          >
-            <Text style={styles.centerButtonText}>⌫</Text>
-          </TouchableOpacity>
-
-          {/* Submit Button */}
-          <TouchableOpacity 
-            style={[
-              styles.centerButton, 
-              styles.submitCenterButton,
-              currentWord.length < 2 && styles.disabledCenterButton
-            ]}
-            onPress={() => {
-              console.log('Submit button pressed');
-              submitWord();
-            }}
-            disabled={currentWord.length < 2}
-          >
-            <Text style={[styles.centerButtonText, styles.submitButtonText]}>✓</Text>
-          </TouchableOpacity>
-
-          {/* Clear Button */}
-          <TouchableOpacity 
-            style={[
-              styles.centerButton, 
-              styles.clearButton,
-              selectedLetters.length === 0 && styles.disabledCenterButton
-            ]}
-            onPress={() => {
-              console.log('Clear button pressed');
-              resetSelection();
-            }}
-            disabled={selectedLetters.length === 0}
-          >
-            <Text style={styles.centerButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Debug Info */}
-      <View style={styles.debugContainer}>
-        <Text style={styles.debugText}>
-          Word: {currentWord} | Selected: [{selectedLetters.join(', ')}] | Valid: {isValidWord ? '✓' : '✗'}
-        </Text>
+      {/* Control Buttons outside the wheel */}
+      <View style={styles.centerControlsContainer}>
+        <TouchableOpacity 
+          style={[styles.centerButton, styles.removeButton, selectedLetters.length === 0 && styles.disabledCenterButton]}
+          onPress={removeLetter}
+          disabled={selectedLetters.length === 0}
+        >
+          <Text style={styles.centerButtonText}>⌫</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.centerButton, styles.submitCenterButton, currentWord.length < 2 && styles.disabledCenterButton]}
+          onPress={submitWord}
+          disabled={currentWord.length < 2}
+        >
+          <Text style={[styles.centerButtonText, styles.submitButtonText]}>✓</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.centerButton, styles.clearButton, selectedLetters.length === 0 && styles.disabledCenterButton]}
+          onPress={resetSelection}
+          disabled={selectedLetters.length === 0}
+        >
+          <Text style={styles.centerButtonText}>✕</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -286,24 +268,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 20,
   },
-  currentWordContainer: {
-    minHeight: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    minWidth: 250,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-    borderRadius: 15,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderWidth: 2,
-    borderColor: 'rgba(139, 92, 246, 0.15)',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   currentWord: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -312,27 +276,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 5,
   },
-  validWord: {
-    color: '#10B981',
-  },
-  instructionText: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
   wheelContainer: {
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(139, 92, 246, 0.02)',
-    borderRadius: 160,
-    marginBottom: 20,
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    elevation: 5,
+    backgroundColor: '#374151',
+    // borderRadius is applied dynamically inline
+    overflow: 'hidden',
   },
   letterHexagon: {
     position: 'absolute',
@@ -345,8 +295,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
-    includeFontPadding: false,
-    textAlignVertical: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
@@ -368,10 +316,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#fff',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
     elevation: 6,
   },
   selectionNumberText: {
@@ -380,38 +324,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   centerControlsContainer: {
-    position: 'absolute',
-    top: '48%',
-    left: '45%',
-    transform: [{ translateX: -50 }, { translateY: -20 }],
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 25,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    zIndex: 20,
+    gap: 12,
+    marginTop: 20,
   },
   centerButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   removeButton: {
     backgroundColor: '#EF4444',
@@ -428,26 +360,11 @@ const styles = StyleSheet.create({
   },
   centerButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   submitButtonText: {
-    fontSize: 18,
-  },
-  debugContainer: {
-    marginTop: 10,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(107, 114, 128, 0.08)',
-    borderRadius: 8,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(107, 114, 128, 0.1)',
-  },
-  debugText: {
-    fontSize: 11,
-    color: '#6B7280',
-    textAlign: 'center',
-    fontWeight: '500',
+    fontSize: 24,
   },
 });
