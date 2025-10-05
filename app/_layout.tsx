@@ -59,6 +59,13 @@ function LayoutWithInsets() {
         gestureEnabled: true,
       }}
     />
+     <Stack.Screen 
+      name="shop" 
+      options={{
+        headerShown: false,
+        gestureEnabled: true,
+      }}
+    />
   </Stack>
 </View>
   )}

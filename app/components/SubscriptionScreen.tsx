@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { ChevronLeft } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -11,12 +12,16 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-;
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
 const CARD_SPACING = 12;
 const SIDE_CARD_SCALE = 0.92;
+
+// Responsive values based on screen height
+const isSmallScreen = height < 700;
+const isMediumScreen = height >= 700 && height < 900;
+const isLargeScreen = height >= 900;
 
 interface CombinedStoreScreenProps {
   onNavigate: (screen: string) => void;
@@ -342,30 +347,33 @@ useEffect(() => {
         colors={['#1a1a2e', '#0f0f23']}
         style={styles.gradient}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => onNavigate('levels')}
-          >
-            <Text style={styles.backText}>← Back</Text>
+        <ScrollView 
+          style={styles.mainScrollView}
+          contentContainerStyle={styles.mainScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+           <TouchableOpacity onPress={() => onNavigate('levels')} style={styles.backButton}>
+            <ChevronLeft size={16} color={"white"} /> 
+            <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
-          
-          <View style={styles.currencyContainer}>
-            <View style={styles.currencyBadge}>
-              <View style={[styles.currencyIcon]}>
-                <Text style={styles.currencyEmoji}>💎</Text>
+            
+            <View style={styles.currencyContainer}>
+              <View style={styles.currencyBadge}>
+                <View style={[styles.currencyIcon]}>
+                  <Text style={styles.currencyEmoji}>💎</Text>
+                </View>
+                <Text style={styles.currencyText}>1245</Text>
               </View>
-              <Text style={styles.currencyText}>1245</Text>
-            </View>
-            <View style={styles.currencyBadge}>
-              <View style={[styles.currencyIcon]}>
-                <Text style={styles.currencyEmoji}>🟡</Text>
+              <View style={styles.currencyBadge}>
+                <View style={[styles.currencyIcon]}>
+                  <Text style={styles.currencyEmoji}>🟡</Text>
+                </View>
+                <Text style={styles.currencyText}>750</Text>
               </View>
-              <Text style={styles.currencyText}>750</Text>
             </View>
           </View>
-        </View>
 
         {/* Title */}
         <View style={styles.titleContainer}>
@@ -484,6 +492,7 @@ useEffect(() => {
             />
           ))}
         </View>
+        </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -497,15 +506,19 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  mainScrollView: {
+    flex: 1,
+  },
+  mainScrollContent: {
+    flexGrow: 1,
+    minHeight: height,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-  },
-  backButton: {
-    padding: 8,
   },
   backText: {
     color: '#8b5cf6',
@@ -544,24 +557,24 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: isSmallScreen ? 4 : 8,
+    marginBottom: isSmallScreen ? 8 : 16,
   },
   title: {
     color: '#fff',
-    fontSize: 36,
+    fontSize: isSmallScreen ? 28 : isMediumScreen ? 32 : 36,
     fontWeight: 'bold',
     letterSpacing: 2,
   },
   subtitle: {
     color: '#9ca3af',
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     marginTop: 4,
   },
   tabContainer: {
     flexDirection: 'row',
-    marginHorizontal: 50,
-    marginVertical: 16,
+    marginHorizontal: isSmallScreen ? 30 : 50,
+    marginVertical: isSmallScreen ? 12 : 16,
     backgroundColor: 'rgba(31, 41, 55, 0.3)',
     borderRadius: 30,
     padding: 4,
@@ -570,7 +583,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: isSmallScreen ? 10 : 12,
     alignItems: 'center',
     borderRadius: 26,
   },
@@ -587,7 +600,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: '#9ca3af',
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     fontWeight: '600',
     letterSpacing: 1,
   },
@@ -596,10 +609,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   carouselContainer: {
-    flex: 1,
+    height: isSmallScreen ? height * 0.5 : isMediumScreen ? height * 0.55 : height * 0.6,
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
+    marginVertical: isSmallScreen ? 10 : 20,
   },
   scrollContent: {
     paddingHorizontal: (width - CARD_WIDTH) / 2,
@@ -611,7 +625,7 @@ const styles = StyleSheet.create({
   offerCard: {
     width: '100%',
     borderRadius: 24,
-    padding: 50,
+    padding: isSmallScreen ? 20 : isMediumScreen ? 35 : 50,
     backgroundColor: 'rgba(31, 41, 55, 0.4)',
     borderWidth: 2,
     borderColor: 'rgba(139, 92, 246, 0.3)',
@@ -629,7 +643,7 @@ const styles = StyleSheet.create({
   subscriptionCard: {
     width: '100%',
     borderRadius: 24,
-    padding: 24,
+    padding: isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
     backgroundColor: 'rgba(31, 41, 55, 0.4)',
     borderWidth: 2,
     borderColor: 'rgba(139, 92, 246, 0.3)',
@@ -643,7 +657,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 15,
-    minHeight: 380,
+    minHeight: isSmallScreen ? 300 : isMediumScreen ? 340 : 380,
   },
   popularBadge: {
     position: 'absolute',
@@ -680,58 +694,58 @@ const styles = StyleSheet.create({
   },
   gemsHeader: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: isSmallScreen ? 8 : 12,
   },
   gemAmountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: isSmallScreen ? 12 : 16,
+    paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 20,
     gap: 8,
   },
   gemEmoji: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 16 : 20,
   },
   gemAmount: {
     color: '#10b981',
-    fontSize: 22,
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
     fontWeight: 'bold',
   },
   offerName: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 22 : 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: isSmallScreen ? 12 : 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   imageContainer: {
-    height: 180,
+    height: isSmallScreen ? 120 : isMediumScreen ? 150 : 180,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 12,
+    marginVertical: isSmallScreen ? 8 : 12,
     position: 'relative',
   },
   offerImage: {
-    width: 250,
-    height: 250,
+    width: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
+    height: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
     resizeMode: 'contain',
     zIndex: 2,
   },
   iconContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
+    marginTop: isSmallScreen ? 12 : 20,
+    marginBottom: isSmallScreen ? 12 : 16,
   },
   icon: {
-    fontSize: 60,
+    fontSize: isSmallScreen ? 40 : isMediumScreen ? 50 : 60,
   },
   subscriptionName: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 22 : 24,
     fontWeight: 'bold',
     textAlign: 'center',
     textTransform: 'uppercase',
@@ -739,87 +753,87 @@ const styles = StyleSheet.create({
   },
   period: {
     color: '#9ca3af',
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     textAlign: 'center',
     marginTop: 4,
-    marginBottom: 20,
+    marginBottom: isSmallScreen ? 16 : 20,
   },
   featuresList: {
-    marginVertical: 20,
-    paddingHorizontal: 10,
+    marginVertical: isSmallScreen ? 12 : 20,
+    paddingHorizontal: isSmallScreen ? 5 : 10,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: isSmallScreen ? 8 : 12,
   },
   checkmark: {
     color: '#10b981',
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : 18,
     fontWeight: 'bold',
-    marginRight: 12,
+    marginRight: isSmallScreen ? 8 : 12,
   },
   featureText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     flex: 1,
   },
   priceSection: {
     alignItems: 'center',
     marginTop: 'auto',
-    paddingTop: 20,
+    paddingTop: isSmallScreen ? 12 : 20,
   },
   originalPrice: {
     color: '#6b7280',
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : 16,
     textDecorationLine: 'line-through',
     marginBottom: 4,
   },
   currentPrice: {
     color: '#10b981',
-    fontSize: 32,
+    fontSize: isSmallScreen ? 24 : isMediumScreen ? 28 : 32,
     fontWeight: 'bold',
   },
   billingPeriod: {
     color: '#9ca3af',
-    fontSize: 12,
+    fontSize: isSmallScreen ? 10 : 12,
     marginTop: 4,
   },
   priceButton: {
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: isSmallScreen ? 12 : 16,
     alignItems: 'center',
-    marginTop: 34,
+    marginTop: isSmallScreen ? 16 : isMediumScreen ? 24 : 34,
   },
   priceText: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: isSmallScreen ? 22 : isMediumScreen ? 26 : 28,
     fontWeight: 'bold',
   },
   buyNowText: {
     color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : 16,
     fontWeight: '600',
     letterSpacing: 1,
     marginTop: 4,
   },
   subscribeButton: {
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: isSmallScreen ? 12 : 16,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: isSmallScreen ? 12 : 20,
   },
   subscribeText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : 18,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   navigationButton: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: isSmallScreen ? 50 : 70,
+    height: isSmallScreen ? 50 : 70,
+    borderRadius: isSmallScreen ? 25 : 35,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
@@ -827,15 +841,17 @@ const styles = StyleSheet.create({
   },
   prevButton: {
     left: 8,
-    top: 250,
+    top: '50%',
+    marginTop: isSmallScreen ? -25 : -35,
   },
   nextButton: {
     right: -5,
-    top: 250,
+    top: '50%',
+    marginTop: isSmallScreen ? -25 : -35,
   },
   navigationButtonText: {
     color: '#fff',
-    fontSize: 70,
+    fontSize: isSmallScreen ? 50 : 70,
     fontWeight: 'bold',
   },
   disabledButton: {
@@ -848,7 +864,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: isSmallScreen ? 10 : 16,
+    paddingBottom: isSmallScreen ? 20 : 30,
     gap: 8,
   },
   dot: {
@@ -860,5 +877,20 @@ const styles = StyleSheet.create({
   activeDot: {
     width: 24,
     backgroundColor: '#8b5cf6',
+  },
+   backButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
+    paddingEnd: 16,
+  },
+  backButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

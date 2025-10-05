@@ -12,10 +12,15 @@ import {
   View
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
 const CARD_SPACING = 12;
 const SIDE_CARD_SCALE = 0.92;
+
+// Responsive values based on screen height
+const isSmallScreen = height < 700;
+const isMediumScreen = height >= 700 && height < 900;
+const isLargeScreen = height >= 900;
 
 interface ShopScreenProps {
   onNavigate: (screen: string) => void;
@@ -112,67 +117,72 @@ export default function ShopScreen({ onNavigate }: ShopScreenProps) {
         colors={['#1a1a2e', '#0f0f23']}
         style={styles.gradient}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => onNavigate('levels')}
-          >
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.currencyContainer}>
-            <View style={styles.currencyBadge}>
-              <View style={[styles.currencyIcon]}>
-                <Text style={styles.currencyEmoji}>💎</Text>
+        <ScrollView 
+          style={styles.mainScrollView}
+          contentContainerStyle={styles.mainScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => onNavigate('levels')}
+            >
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.currencyContainer}>
+              <View style={styles.currencyBadge}>
+                <View style={[styles.currencyIcon]}>
+                  <Text style={styles.currencyEmoji}>💎</Text>
+                </View>
+                <Text style={styles.currencyText}>1245</Text>
               </View>
-              <Text style={styles.currencyText}>1245</Text>
-            </View>
-            <View style={styles.currencyBadge}>
-              <View style={[styles.currencyIcon]}>
-                <Text style={styles.currencyEmoji}>🟡</Text>
+              <View style={styles.currencyBadge}>
+                <View style={[styles.currencyIcon]}>
+                  <Text style={styles.currencyEmoji}>🟡</Text>
+                </View>
+                <Text style={styles.currencyText}>750</Text>
               </View>
-              <Text style={styles.currencyText}>750</Text>
             </View>
           </View>
-        </View>
 
-        {/* Title */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>SHOP</Text>
-          <Text style={styles.subtitle}>Get More Gems</Text>
-        </View>
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>SHOP</Text>
+            <Text style={styles.subtitle}>Get More Gems</Text>
+          </View>
 
-        {/* Carousel Container */}
-        <View style={styles.carouselContainer}>
-          {/* Previous Button */}
-          <TouchableOpacity 
-            style={[
-              styles.navigationButton, 
-              styles.prevButton,
-              currentIndex === 0 && styles.disabledButton
-            ]}
-            onPress={handlePrevious}
-            disabled={currentIndex === 0}
-          >
-            <Text style={[
-              styles.navigationButtonText,
-              currentIndex === 0 && styles.disabledButtonText
-            ]}>‹</Text>
-          </TouchableOpacity>
+          {/* Carousel Container */}
+          <View style={styles.carouselContainer}>
+            {/* Previous Button */}
+            <TouchableOpacity 
+              style={[
+                styles.navigationButton, 
+                styles.prevButton,
+                currentIndex === 0 && styles.disabledButton
+              ]}
+              onPress={handlePrevious}
+              disabled={currentIndex === 0}
+            >
+              <Text style={[
+                styles.navigationButtonText,
+                currentIndex === 0 && styles.disabledButtonText
+              ]}>‹</Text>
+            </TouchableOpacity>
 
-          {/* Carousel */}
-          <Animated.ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            snapToInterval={CARD_WIDTH + CARD_SPACING}
-            decelerationRate="fast"
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
+            {/* Carousel */}
+            <Animated.ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              snapToInterval={CARD_WIDTH + CARD_SPACING}
+              decelerationRate="fast"
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
             {offers.map((offer, index) => {
               const inputRange = [
                 (index - 1) * (CARD_WIDTH + CARD_SPACING),
@@ -288,6 +298,7 @@ export default function ShopScreen({ onNavigate }: ShopScreenProps) {
             />
           ))}
         </View>
+        </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -300,6 +311,13 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
+  },
+  mainScrollView: {
+    flex: 1,
+  },
+  mainScrollContent: {
+    flexGrow: 1,
+    minHeight: height,
   },
   header: {
     flexDirection: 'row',
@@ -348,25 +366,26 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: isSmallScreen ? 4 : 8,
+    marginBottom: isSmallScreen ? 8 : 16,
   },
   title: {
     color: '#fff',
-    fontSize: 36,
+    fontSize: isSmallScreen ? 28 : isMediumScreen ? 32 : 36,
     fontWeight: 'bold',
     letterSpacing: 2,
   },
   subtitle: {
     color: '#9ca3af',
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : 14,
     marginTop: 4,
   },
   carouselContainer: {
-    flex: 1,
+    height: isSmallScreen ? height * 0.6 : isMediumScreen ? height * 0.65 : height * 0.7,
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
+    marginVertical: isSmallScreen ? 10 : 20,
   },
   scrollContent: {
     paddingHorizontal: (width - CARD_WIDTH) / 2,
@@ -378,7 +397,7 @@ const styles = StyleSheet.create({
   offerCard: {
     width: '100%',
     borderRadius: 24,
-    padding: 50,
+    padding: isSmallScreen ? 20 : isMediumScreen ? 35 : 50,
     backgroundColor: 'rgba(31, 41, 55, 0.4)',
     borderWidth: 2,
     borderColor: 'rgba(139, 92, 246, 0.3)',
@@ -412,87 +431,88 @@ const styles = StyleSheet.create({
   },
   gemsHeader: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: isSmallScreen ? 8 : 12,
   },
   gemAmountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: isSmallScreen ? 12 : 16,
+    paddingVertical: isSmallScreen ? 6 : 8,
     borderRadius: 20,
     gap: 8,
   },
   gemEmoji: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 16 : 20,
   },
   gemAmount: {
     color: '#10b981',
-    fontSize: 22,
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
     fontWeight: 'bold',
   },
   offerName: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 22 : 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: isSmallScreen ? 12 : 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   imageContainer: {
-    height: 180,
+    height: isSmallScreen ? 120 : isMediumScreen ? 150 : 180,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 12,
+    marginVertical: isSmallScreen ? 8 : 12,
     position: 'relative',
   },
   offerImage: {
-    width: 250,
-    height: 250,
+    width: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
+    height: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
     resizeMode: 'contain',
     zIndex: 2,
   },
   priceButton: {
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: isSmallScreen ? 12 : 16,
     alignItems: 'center',
-    marginTop: 34,
+    marginTop: isSmallScreen ? 16 : isMediumScreen ? 24 : 34,
   },
   priceText: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: isSmallScreen ? 22 : isMediumScreen ? 26 : 28,
     fontWeight: 'bold',
   },
   buyNowText: {
     color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : 16,
     fontWeight: '600',
     letterSpacing: 1,
     marginTop: 4,
   },
   navigationButton: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: isSmallScreen ? 50 : 70,
+    height: isSmallScreen ? 50 : 70,
+    borderRadius: isSmallScreen ? 25 : 35,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
-    
   },
   prevButton: {
     left: 8,
-    top: 230,
+    top: '50%',
+    marginTop: isSmallScreen ? -25 : -35,
   },
   nextButton: {
     right: -5,
-    top: 230,
+    top: '50%',
+    marginTop: isSmallScreen ? -25 : -35,
   },
   navigationButtonText: {
     color: '#fff',
-    fontSize: 70,
+    fontSize: isSmallScreen ? 50 : 70,
     fontWeight: 'bold',
   },
   disabledButton: {
@@ -505,7 +525,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: isSmallScreen ? 10 : 20,
+    paddingBottom: isSmallScreen ? 20 : 30,
     gap: 8,
   },
   dot: {
