@@ -125,26 +125,23 @@ export default function GameScreen({
     // Could add visual feedback here if needed
   }, [hintsLeft]);
 
-  // --- SOUND STATES ---
-  const [rightWordSound, setRightWordSound] = useState<Audio.Sound | null>(
-    null
-  );
-  const [wrongWordSound, setWrongWordSound] = useState<Audio.Sound | null>(
-    null
-  );
-  const [bonusWordSound, setBonusWordSound] = useState<Audio.Sound | null>(
-    null
-  );
-  const [levelCompleteSound, setLevelCompleteSound] =
-    useState<Audio.Sound | null>(null);
+  // --- SOUND STATES (REFACTORED) ---
+  const [sounds, setSounds] = useState<{ [key: string]: Audio.Sound | null }>({
+    rightWordSound: null,
+    wrongWordSound: null,
+    bonusWordSound: null,
+    levelCompleteSound: null,
+  });
+  const isUnmounting = useRef(false);
 
   const diff = getDifficultyConfig(difficulty);
 
-  // --- LOAD AND UNLOAD SOUNDS ---
+  // --- LOAD AND UNLOAD SOUNDS (REFACTORED) ---
   useEffect(() => {
+    isUnmounting.current = false;
     let mounted = true;
-    // Only load once
-    (async () => {
+
+    const loadSounds = async () => {
       try {
         const [rightRes, wrongRes, bonusRes, levelRes] = await Promise.all([
           Audio.Sound.createAsync(
@@ -160,33 +157,50 @@ export default function GameScreen({
             require("../../assets/sounds/level-complete.mp3")
           ),
         ]);
-        if (!mounted) return;
-        setRightWordSound(rightRes.sound);
-        setWrongWordSound(wrongRes.sound);
-        setBonusWordSound(bonusRes.sound);
-        setLevelCompleteSound(levelRes.sound);
+
+        if (mounted) {
+          setSounds({
+            rightWordSound: rightRes.sound,
+            wrongWordSound: wrongRes.sound,
+            bonusWordSound: bonusRes.sound,
+            levelCompleteSound: levelRes.sound,
+          });
+        }
       } catch (error) {
         console.error("Failed to load sounds", error);
       }
-    })();
+    };
+
+    loadSounds();
+
     return () => {
       mounted = false;
-      rightWordSound?.unloadAsync();
-      wrongWordSound?.unloadAsync();
-      bonusWordSound?.unloadAsync();
-      levelCompleteSound?.unloadAsync();
+      isUnmounting.current = true; // Signal that the component is unmounting
+      // Unload all sounds
+      for (const soundKey in sounds) {
+        if (sounds[soundKey]) {
+          sounds[soundKey]?.unloadAsync();
+        }
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // empty deps so we don't recreate/unload repeatedly
 
-  // Helper function to play sounds
+  // Helper function to play sounds (REFACTORED)
   const playSound = async (soundObject: Audio.Sound | null) => {
+    // Prevent playing sound if the component is unmounting
+    if (isUnmounting.current) {
+      return;
+    }
     try {
       if (soundObject) {
         await soundObject.replayAsync();
       }
     } catch (e) {
-      console.error("Failed to play sound", e);
+      // This error might still happen in a rare edge case, but the check above should prevent most cases.
+      if (!e.message.includes("Player is not loaded")) {
+        console.error("Failed to play sound", e);
+      }
     }
   };
 
@@ -401,12 +415,12 @@ export default function GameScreen({
         foundCrosswordWords.includes(normalizedWord) ||
         foundBonusWords.includes(normalizedWord)
       ) {
-        await playSound(wrongWordSound);
+        await playSound(sounds.wrongWordSound);
         return;
       }
 
       if (crosswordWords.includes(normalizedWord)) {
-        await playSound(rightWordSound);
+        await playSound(sounds.rightWordSound);
         setFoundCrosswordWords((prev) => [...prev, normalizedWord]);
         const points = normalizedWord.length * 100;
         setScore((prev) => prev + points);
@@ -416,7 +430,7 @@ export default function GameScreen({
         if (foundCrosswordWords.length + 1 === crosswordWords.length) {
           setGameComplete(true);
           setTimeout(() => {
-            playSound(levelCompleteSound);
+            playSound(sounds.levelCompleteSound);
           }, 1000);
         }
       } else {
@@ -424,12 +438,12 @@ export default function GameScreen({
           (w) => w.toLowerCase() === normalizedWord
         );
         if (isValidBonus) {
-          await playSound(bonusWordSound);
+          await playSound(sounds.bonusWordSound);
           setFoundBonusWords((prev) => [...prev, normalizedWord]);
           const points = normalizedWord.length * 10;
           setScore((prev) => prev + points);
         } else {
-          await playSound(wrongWordSound);
+          await playSound(sounds.wrongWordSound);
         }
       }
     },
@@ -439,10 +453,7 @@ export default function GameScreen({
       foundBonusWords,
       allValidWords,
       startFloatingLetterAnimation,
-      rightWordSound,
-      wrongWordSound,
-      bonusWordSound,
-      levelCompleteSound,
+      sounds, // Depend on the sounds object
     ]
   );
 
