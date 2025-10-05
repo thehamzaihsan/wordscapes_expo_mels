@@ -1,10 +1,19 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Alert, BackHandler, Platform } from "react-native";
 import LoginScreen from "./components/Login";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 export default function LoginRoute() {
   const router = useRouter();
+  const { session, loading } = useSupabaseAuth();
+
+  // If already logged in, push to levels immediately
+  useEffect(() => {
+    if (!loading && session) {
+      router.replace("/levels");
+    }
+  }, [loading, session, router]);
 
   // Handle Android back button on login screen
   useFocusEffect(

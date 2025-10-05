@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 
 /**
  * Offline guest progress model (mirrors future remote schema subset)
@@ -181,6 +182,8 @@ export async function saveGuestProgress(
 ): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    // Fire & forget: mirror into unified snapshot for future upgrade/sync.
+    updateGuestSnapshotFromProgress(progress).catch(() => {});
   } catch (e) {
     console.warn("Failed to save guest progress", e);
   }
@@ -300,6 +303,8 @@ export async function completeLevelAndPersist(params: {
     params.attempts
   );
   await saveGuestProgress(progress);
+  // ensure snapshot captured even if saveGuestProgress short-circuits later
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
   return progress;
 }
 
@@ -313,6 +318,7 @@ export async function createNewGuestProfile(options: {
 }): Promise<GuestProgressPayload> {
   const progress = buildInitialProgress(options.levelDefs, options.playerName);
   await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
   return progress;
 }
 
@@ -325,6 +331,7 @@ export async function updateGuestName(
   progress.meta.playerName = newName;
   progress.updatedAt = new Date().toISOString();
   await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
   return progress;
 }
 
@@ -337,6 +344,7 @@ export async function updateGuestAvatar(
   progress.meta.avatar = avatar;
   progress.updatedAt = new Date().toISOString();
   await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
   return progress;
 }
 
@@ -348,6 +356,7 @@ export async function resetGuestEconomy(): Promise<GuestProgressPayload | null> 
   progress.meta.gems = defaultMeta.gems;
   progress.updatedAt = new Date().toISOString();
   await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
   return progress;
 }
 
