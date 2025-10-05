@@ -27,16 +27,6 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
-// Particle interface
-interface Particle {
-  id: number;
-  x: Animated.Value;
-  y: Animated.Value;
-  opacity: Animated.Value;
-  scale: Animated.Value;
-  color: string;
-}
-
 interface LevelData {
   level: number;
   baseWord: string;
@@ -75,56 +65,11 @@ interface LevelScreenProps {
 
 const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Forest");
-  const [particles, setParticles] = useState<Particle[]>([]);
   const [guestMeta, setGuestMeta] = useState<GuestMeta | null>(null);
   const [levelCategories, setLevelCategories] = useState<{
     [key: string]: LevelData[];
   }>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // Create floating particles
-  useEffect(() => {
-    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"];
-
-    const createParticle = (id: number): Particle => ({
-      id,
-      x: new Animated.Value(Math.random() * width),
-      y: new Animated.Value(Math.random() * height),
-      opacity: new Animated.Value(Math.random() * 0.3 + 0.1),
-      scale: new Animated.Value(Math.random() * 0.5 + 0.5),
-      color: particleColors[Math.floor(Math.random() * particleColors.length)],
-    });
-
-    const particleArray = Array.from({ length: 25 }, (_, i) =>
-      createParticle(i)
-    );
-    setParticles(particleArray);
-
-    // Animate particles
-    const animateParticle = (particle: Particle) => {
-      const duration = Math.random() * 8000 + 6000;
-
-      Animated.parallel([
-        Animated.timing(particle.x, {
-          toValue: Math.random() * width,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.y, {
-          toValue: Math.random() * height,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.opacity, {
-          toValue: Math.random() * 0.3 + 0.1,
-          duration: duration / 2,
-          useNativeDriver: true,
-        }),
-      ]).start(() => animateParticle(particle));
-    };
-
-    particleArray.forEach(animateParticle);
-  }, []);
 
   // Initialize game manager and load levels
   // Initial load + subsequent refresh when returning to this screen
@@ -229,28 +174,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     onNavigate("shop");
   };
 
-  const renderFloatingParticles = () => (
-    <View style={StyleSheet.absoluteFillObject}>
-      {particles.map((particle) => (
-        <Animated.View
-          key={particle.id}
-          style={[
-            styles.particle,
-            {
-              backgroundColor: particle.color,
-              transform: [
-                { translateX: particle.x },
-                { translateY: particle.y },
-                { scale: particle.scale },
-              ],
-              opacity: particle.opacity,
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-
   const LevelCard: React.FC<LevelCardProps> = ({
     level,
     categoryName,
@@ -335,9 +258,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
-
-      {/* Floating Particles */}
-      {renderFloatingParticles()}
 
       {/* Header */}
       <View style={styles.header}>
@@ -495,12 +415,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   backgroundColor: "transparent",
-  },
-  particle: {
-    position: "absolute",
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   header: {
   backgroundColor: "rgba(31,41,55,0.85)",

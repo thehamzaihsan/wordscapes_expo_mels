@@ -1,14 +1,14 @@
 import LetterWheel from "./inputWheel";
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
-import { upsertLocalLevel, mutateLocalStats, syncUser } from "@/lib/sync";
-import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
   generateLevelFromJSON,
   initializeGameManager,
 } from "@/hooks/game-manager";
+import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+import { mutateLocalStats, syncUser, upsertLocalLevel } from "@/lib/sync";
 import { Audio } from "expo-av";
 import { BlurView } from "expo-blur";
 import LottieView from "lottie-react-native";
@@ -36,15 +36,6 @@ interface GridCell {
   isRevealed: boolean;
   isActive: boolean;
   belongsToWords: string[];
-}
-
-interface Particle {
-  id: number;
-  x: Animated.Value;
-  y: Animated.Value;
-  opacity: Animated.Value;
-  scale: Animated.Value;
-  color: string;
 }
 
 interface AnimatingLetter {
@@ -98,7 +89,6 @@ export default function GameScreen({
   const [score, setScore] = useState(0);
   const [gameComplete, setGameComplete] = useState(false);
   const gameCompleteRef = useRef(false); // track transition
-  const [particles, setParticles] = useState<Particle[]>([]);
   const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>([]);
   const gridCellRefs = useRef<{ [key: string]: View }>({});
   const letterWheelRef = useRef<View>(null);
@@ -206,45 +196,6 @@ export default function GameScreen({
     ]).start();
   }, [score, scoreScaleAnim]);
 
-  useEffect(() => {
-    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"];
-    const createParticle = (id: number): Particle => ({
-      id,
-      x: new Animated.Value(Math.random() * width),
-      y: new Animated.Value(Math.random() * height),
-      opacity: new Animated.Value(Math.random() * 0.3 + 0.1),
-      scale: new Animated.Value(Math.random() * 0.5 + 0.5),
-      color: particleColors[Math.floor(Math.random() * particleColors.length)],
-    });
-
-    const particleArray = Array.from({ length: 20 }, (_, i) =>
-      createParticle(i)
-    );
-    setParticles(particleArray);
-
-    const animateParticle = (particle: Particle) => {
-      const duration = Math.random() * 10000 + 8000;
-      Animated.parallel([
-        Animated.timing(particle.x, {
-          toValue: Math.random() * width,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.y, {
-          toValue: Math.random() * height,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.opacity, {
-          toValue: Math.random() * 0.3 + 0.1,
-          duration: duration / 2,
-          useNativeDriver: true,
-        }),
-      ]).start(() => animateParticle(particle));
-    };
-
-    particleArray.forEach(animateParticle);
-  }, [levelData]);
 
   const createGameGrid = useCallback(
     (basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
@@ -690,32 +641,9 @@ export default function GameScreen({
     categoryName,
   ]);
 
-  const renderFloatingParticles = () => (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      {particles.map((particle) => (
-        <Animated.View
-          key={particle.id}
-          style={[
-            styles.particle,
-            {
-              backgroundColor: particle.color,
-              transform: [
-                { translateX: particle.x },
-                { translateY: particle.y },
-                { scale: particle.scale },
-              ],
-              opacity: particle.opacity,
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        {renderFloatingParticles()}
         <ActivityIndicator size="large" color="#8B5CF6" />
         <Text style={styles.loadingText}>Generating crossword...</Text>
       </View>
@@ -728,8 +656,6 @@ export default function GameScreen({
 
   return (
     <View style={styles.container} ref={containerRef}>
-      {renderFloatingParticles()}
-
       <View
         style={[StyleSheet.absoluteFillObject, { zIndex: 1 }]}
         pointerEvents="none"
@@ -921,7 +847,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     padding: 20,
-    backgroundColor: "#121213",
+    // backgroundColor: "#121213",
   },
   loadingContainer: {
     flex: 1,
@@ -932,12 +858,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: "#AAA",
-  },
-  particle: {
-    position: "absolute",
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   levelHeader: {
     paddingHorizontal: 20,
