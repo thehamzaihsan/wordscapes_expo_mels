@@ -10,8 +10,10 @@ import {
   Text,
   TouchableOpacity,
   View,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.75;
 const CARD_SPACING = 12;
@@ -20,7 +22,6 @@ const SIDE_CARD_SCALE = 0.92;
 // Responsive values based on screen height
 const isSmallScreen = height < 700;
 const isMediumScreen = height >= 700 && height < 900;
-// removed unused large screen constant
 
 interface CombinedStoreScreenProps {
   onNavigate: (screen: string) => void;
@@ -92,8 +93,7 @@ export default function CombinedStoreScreen({
       features: [
         "5000 Weekly Gems",
         "No Ads",
-        "Exclusive Levels",
-        "Double Rewards",
+        "Exclusive Levels"
       ],
       popular: false,
       colors: ["#8b5cf6", "#7c3aed"],
@@ -111,7 +111,6 @@ export default function CombinedStoreScreen({
         "Unlimited Gems",
         "No Ads",
         "Exclusive Levels",
-        "Triple Rewards",
       ],
       popular: true,
       badge: "BEST VALUE",
@@ -122,56 +121,52 @@ export default function CombinedStoreScreen({
   ];
 
   const currentIndex = activeTab === "shop" ? shopIndex : subscriptionIndex;
-  const setCurrentIndex =
-    activeTab === "shop" ? setShopIndex : setSubscriptionIndex;
   const items = activeTab === "shop" ? shopOffers : subscriptions;
   const scrollX = activeTab === "shop" ? shopScrollX : subscriptionScrollX;
-  const scrollViewRef =
-    activeTab === "shop" ? shopScrollViewRef : subscriptionScrollViewRef;
 
   useEffect(() => {
-    const targetIndex = activeTab === "shop" ? shopIndex : subscriptionIndex;
-    scrollViewRef.current?.scrollTo({
-      x: targetIndex * (CARD_WIDTH + CARD_SPACING),
-      animated: false,
-    });
-  }, [activeTab, shopIndex, subscriptionIndex, scrollViewRef]);
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      setCurrentIndex(newIndex);
-      scrollViewRef.current?.scrollTo({
-        x: newIndex * (CARD_WIDTH + CARD_SPACING),
-        animated: true,
+    // This effect snaps the carousel to the correct card when the tab is switched.
+    // It no longer depends on the index to avoid conflicts with user scrolling.
+    if (activeTab === "shop") {
+      shopScrollViewRef.current?.scrollTo({
+        x: shopIndex * (CARD_WIDTH + CARD_SPACING),
+        animated: false,
+      });
+    } else {
+      subscriptionScrollViewRef.current?.scrollTo({
+        x: subscriptionIndex * (CARD_WIDTH + CARD_SPACING),
+        animated: false,
       });
     }
-  };
+  }, [activeTab]);
 
-  const handleNext = () => {
-    if (currentIndex < items.length - 1) {
-      const newIndex = currentIndex + 1;
-      setCurrentIndex(newIndex);
-      scrollViewRef.current?.scrollTo({
-        x: newIndex * (CARD_WIDTH + CARD_SPACING),
-        animated: true,
-      });
-    }
-  };
-
+  // FIX: The listener that caused the glitching has been removed.
+  // This event handler now only drives the animations.
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
     {
       useNativeDriver: false,
-      listener: (event: any) => {
-        const x = event.nativeEvent.contentOffset.x;
-        const index = Math.round(x / (CARD_WIDTH + CARD_SPACING));
-        if (index !== currentIndex && index >= 0 && index < items.length) {
-          setCurrentIndex(index);
-        }
-      },
     }
   );
+
+  // FIX: This new function updates the index state only when the scroll animation ends.
+  const handleMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const x = event.nativeEvent.contentOffset.x;
+    const index = Math.round(x / (CARD_WIDTH + CARD_SPACING));
+    const newIndex = Math.max(0, Math.min(index, items.length - 1));
+
+    if (activeTab === "shop") {
+      if (newIndex !== shopIndex) {
+        setShopIndex(newIndex);
+      }
+    } else {
+      if (newIndex !== subscriptionIndex) {
+        setSubscriptionIndex(newIndex);
+      }
+    }
+  };
 
   const renderShopCard = (offer: any, index: number) => {
     const inputRange = [
@@ -242,7 +237,6 @@ export default function CombinedStoreScreen({
             style={styles.priceButton}
           >
             <Text style={styles.priceText}>{offer.price}</Text>
-            <Text style={styles.buyNowText}>BUY NOW</Text>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -304,7 +298,6 @@ export default function CombinedStoreScreen({
           </View>
 
           <Text style={styles.subscriptionName}>{subscription.name}</Text>
-          <Text style={styles.period}>{subscription.period}</Text>
 
           <View style={styles.featuresList}>
             {subscription.features.map((feature: string, idx: number) => (
@@ -320,9 +313,7 @@ export default function CombinedStoreScreen({
               {subscription.originalPrice}
             </Text>
             <Text style={styles.currentPrice}>{subscription.price}</Text>
-            <Text style={styles.billingPeriod}>
-              per {subscription.period.toLowerCase()}
-            </Text>
+          
           </View>
         </TouchableOpacity>
 
@@ -344,8 +335,8 @@ export default function CombinedStoreScreen({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={["#1a1a2e", "#0f0f23"]} style={styles.gradient}>
+    <LinearGradient colors={["#1a1a2e", "#0f0f23"]} style={styles.container}>
+      <View style={styles.mainContainer}>
         <ScrollView
           style={styles.mainScrollView}
           contentContainerStyle={styles.mainScrollContent}
@@ -374,15 +365,7 @@ export default function CombinedStoreScreen({
               </View>
             </View>
           </View>
-          {/* Title */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>STORE</Text>
-            <Text style={styles.subtitle}>
-              {activeTab === "shop" ? "Get More Gems" : "Unlock Everything"}
-            </Text>
-          </View>
 
-          {/* Tab Switcher */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
               style={[styles.tab, activeTab === "shop" && styles.activeTab]}
@@ -415,112 +398,60 @@ export default function CombinedStoreScreen({
             </TouchableOpacity>
           </View>
 
-          {/* Carousel Container */}
           <View style={styles.carouselContainer}>
-            {/* Previous Button */}
-            <TouchableOpacity
-              style={[
-                styles.navigationButton,
-                styles.prevButton,
-                currentIndex === 0 && styles.disabledButton,
-              ]}
-              onPress={handlePrevious}
-              disabled={currentIndex === 0}
-            >
-              <Text
-                style={[
-                  styles.navigationButtonText,
-                  currentIndex === 0 && styles.disabledButtonText,
-                ]}
-              >
-                ‹
-              </Text>
-            </TouchableOpacity>
-
-            {/* Shop Carousel */}
             {activeTab === "shop" && (
               <Animated.ScrollView
                 ref={shopScrollViewRef}
                 horizontal
-                pagingEnabled
                 snapToInterval={CARD_WIDTH + CARD_SPACING}
                 decelerationRate="fast"
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 onScroll={handleScroll}
+                onMomentumScrollEnd={handleMomentumScrollEnd} // FIX: Added this prop
                 scrollEventThrottle={16}
               >
                 {shopOffers.map(renderShopCard)}
               </Animated.ScrollView>
             )}
 
-            {/* Subscription Carousel */}
             {activeTab === "subscription" && (
               <Animated.ScrollView
                 ref={subscriptionScrollViewRef}
                 horizontal
-                pagingEnabled
                 snapToInterval={CARD_WIDTH + CARD_SPACING}
                 decelerationRate="fast"
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 onScroll={handleScroll}
+                onMomentumScrollEnd={handleMomentumScrollEnd} // FIX: Added this prop
                 scrollEventThrottle={16}
               >
                 {subscriptions.map(renderSubscriptionCard)}
               </Animated.ScrollView>
             )}
-
-            {/* Next Button */}
-            <TouchableOpacity
-              style={[
-                styles.navigationButton,
-                styles.nextButton,
-                currentIndex === items.length - 1 && styles.disabledButton,
-              ]}
-              onPress={handleNext}
-              disabled={currentIndex === items.length - 1}
-            >
-              <Text
-                style={[
-                  styles.navigationButtonText,
-                  currentIndex === items.length - 1 &&
-                    styles.disabledButtonText,
-                ]}
-              >
-                ›
-              </Text>
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.dotsContainer}>
-            {items.map((_, index) => (
-              <View
-                key={index}
-                style={[styles.dot, currentIndex === index && styles.activeDot]}
-              />
-            ))}
-          </View>
+          
         </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
   },
-  gradient: {
+  mainContainer: {
     flex: 1,
+    paddingTop: 0,
   },
   mainScrollView: {
     flex: 1,
   },
   mainScrollContent: {
-    flexGrow: 1,
-    minHeight: height,
+    flexGrow: 1
   },
   header: {
     flexDirection: "row",
@@ -618,11 +549,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   carouselContainer: {
-    height: isSmallScreen
-      ? height * 0.5
-      : isMediumScreen
-      ? height * 0.55
-      : height * 0.6,
+    height: isSmallScreen ? height * 0.6 : isMediumScreen ? height * 0.7 : height * 0.8,
     flexDirection: "row",
     alignItems: "center",
     position: "relative",
@@ -703,10 +630,7 @@ const styles = StyleSheet.create({
   gemAmountBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    paddingHorizontal: isSmallScreen ? 12 : 16,
-    paddingVertical: isSmallScreen ? 6 : 8,
-    borderRadius: 20,
+
     gap: 8,
   },
   gemEmoji: {
@@ -719,7 +643,7 @@ const styles = StyleSheet.create({
   },
   offerName: {
     color: "#fff",
-    fontSize: isSmallScreen ? 18 : isMediumScreen ? 22 : 24,
+    fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 22,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: isSmallScreen ? 12 : 16,
@@ -749,7 +673,7 @@ const styles = StyleSheet.create({
   },
   subscriptionName: {
     color: "#fff",
-    fontSize: isSmallScreen ? 18 : isMediumScreen ? 22 : 24,
+    fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 22,
     fontWeight: "bold",
     textAlign: "center",
     textTransform: "uppercase",
@@ -769,7 +693,7 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: isSmallScreen ? 8 : 12,
+    marginBottom: 4,
   },
   checkmark: {
     color: "#10b981",
@@ -781,7 +705,7 @@ const styles = StyleSheet.create({
   priceSection: {
     alignItems: "center",
     marginTop: "auto",
-    paddingTop: isSmallScreen ? 12 : 20,
+    paddingTop: 3,
   },
   originalPrice: {
     color: "#6b7280",
@@ -828,37 +752,6 @@ const styles = StyleSheet.create({
     fontSize: isSmallScreen ? 16 : 18,
     fontWeight: "bold",
     letterSpacing: 1,
-  },
-  navigationButton: {
-    position: "absolute",
-    width: isSmallScreen ? 50 : 70,
-    height: isSmallScreen ? 50 : 70,
-    borderRadius: isSmallScreen ? 25 : 35,
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  prevButton: {
-    left: 8,
-    top: "50%",
-    marginTop: isSmallScreen ? -25 : -35,
-  },
-  nextButton: {
-    right: -5,
-    top: "50%",
-    marginTop: isSmallScreen ? -25 : -35,
-  },
-  navigationButtonText: {
-    color: "#fff",
-    fontSize: isSmallScreen ? 50 : 70,
-    fontWeight: "bold",
-  },
-  disabledButton: {
-    opacity: 0.3,
-  },
-  disabledButtonText: {
-    color: "#4b5563",
   },
   dotsContainer: {
     flexDirection: "row",

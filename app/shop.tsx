@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
-import ShopScreen from './components/SubscriptionScreen';
+import StoreScreen from './components/StoreScreen'
 
 export default function ShopRoute() {
   const router = useRouter();
@@ -27,5 +27,5 @@ export default function ShopRoute() {
     }
   };
 
-  return <ShopScreen onNavigate={handleNavigate} />;
+  return <StoreScreen onNavigate={handleNavigate} />;
 }

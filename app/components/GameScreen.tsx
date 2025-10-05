@@ -1,14 +1,14 @@
 import LetterWheel from "./inputWheel";
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import { upsertLocalLevel, mutateLocalStats, syncUser } from "@/lib/sync";
+import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
   generateLevelFromJSON,
   initializeGameManager,
 } from "@/hooks/game-manager";
-import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
-import { mutateLocalStats, syncUser, upsertLocalLevel } from "@/lib/sync";
 import { Audio } from "expo-av";
 import { BlurView } from "expo-blur";
 import LottieView from "lottie-react-native";
