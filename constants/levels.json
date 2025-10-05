@@ -2,225 +2,143 @@
   "Mountain": [
     {
       "level": 1,
-      "baseWord": "FISH",
-      "letters": ["F", "I", "S", "H"],
-      "crosswordWords": ["FISH", "HIS", "IFS", "HI", "IS"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "baseWord": "ROPE",
+      "letters": ["R", "O", "P", "E"],
+      "crosswordWords": ["ROPE", "PORE", "REPO", "PROE", "ROE", "ORE", "PRO", "PEO"]
     },
     {
       "level": 2,
-      "baseWord": "PEARL",
-      "letters": ["P", "E", "A", "R", "L"],
-      "crosswordWords": ["PEARL", "REAL", "LEAP", "EARL", "PAL", "EAR", "PEA"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "baseWord": "COLD",
+      "letters": ["C", "O", "L", "D"],
+      "crosswordWords": ["COLD", "CLOD", "DOC", "OLD", "COD", "COL", "LOD"]
     },
     {
       "level": 3,
-      "baseWord": "CORAL",
-      "letters": ["C", "O", "R", "A", "L"],
-      "crosswordWords": ["CORAL", "CAR", "ARC", "ORAL", "COLA", "LAC"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "baseWord": "SNAP",
+      "letters": ["S", "N", "A", "P"],
+      "crosswordWords": ["SNAP", "SPAN", "NAPS", "PANS", "SAP", "NAP", "PAN"]
     },
     {
       "level": 4,
-      "baseWord": "WAVE",
-      "letters": ["W", "A", "V", "E"],
-      "crosswordWords": ["WAVE", "VOW", "EVA", "AVE", "WE"],
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "baseWord": "RACE",
+      "letters": ["R", "A", "C", "E"],
+      "crosswordWords": ["RACE", "CARE", "ACRE", "EAR", "CAR", "ARC", "ACE"]
     },
     {
       "level": 5,
-      "baseWord": "SHELL",
-      "letters": ["S", "H", "E", "L", "L"],
-      "crosswordWords": ["SHELL", "SHE", "ELL", "HELL", "SELL"],
-      "difficulty": "easy"
+      "difficulty": "medium",
+      "baseWord": "CLIMB",
+      "letters": ["C", "L", "I", "M", "B"],
+      "crosswordWords": ["CLIMB", "LIMB", "MIL", "LIB", "CIM", "BIL", "MIC"]
     },
     {
       "level": 6,
-      "baseWord": "SHARK",
-      "letters": ["S", "H", "A", "R", "K"],
-      "crosswordWords": ["SHARK", "ARK", "HAS", "RAH", "ASK", "SHA"],
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "baseWord": "STONE",
+      "letters": ["S", "T", "O", "N", "E"],
+      "crosswordWords": ["STONE", "TONE", "NOTE", "ONES", "SENT", "NOSE", "SET", "ONE", "TOE"]
     },
     {
       "level": 7,
-      "baseWord": "TIDES",
-      "letters": ["T", "I", "D", "E", "S"],
-      "crosswordWords": ["TIDES", "SITE", "DIET", "SIDE", "TIDE", "SET", "SIT"],
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "baseWord": "TRAIN",
+      "letters": ["T", "R", "A", "I", "N"],
+      "crosswordWords": ["TRAIN", "RAIN", "TARN", "ANTI", "RAT", "TAN", "RAN", "ART"]
     },
     {
       "level": 8,
-      "baseWord": "REEF",
-      "letters": ["R", "E", "E", "F"],
-      "crosswordWords": ["REEF", "FREE", "REF", "FEE", "REE"],
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "baseWord": "CLOUD",
+      "letters": ["C", "L", "O", "U", "D"],
+      "crosswordWords": ["CLOUD", "COULD", "CLOD", "DOC", "OLD", "CUD", "COL", "DUO"]
     },
     {
       "level": 9,
-      "baseWord": "OCEAN",
-      "letters": ["O", "C", "E", "A", "N"],
-      "crosswordWords": ["OCEAN", "CANE", "ACNE", "CON", "ONE", "CAN"],
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "baseWord": "CABIN",
+      "letters": ["C", "A", "B", "I", "N"],
+      "crosswordWords": ["CABIN", "BAN", "CAN", "CAB", "BIN", "NAB"]
     },
     {
       "level": 10,
-      "baseWord": "WHALE",
-      "letters": ["W", "H", "A", "L", "E"],
-      "crosswordWords": ["WHALE", "HEAL", "HALE", "LAW", "LEA", "HEW"],
-      "difficulty": "medium"
+      "difficulty": "hard",
+      "baseWord": "SUMMIT",
+      "letters": ["S", "U", "M", "M", "I", "T"],
+      "crosswordWords": ["SUMMIT", "MIST", "SUIT", "ITS", "SIT", "SUM", "MUM", "TUM"]
     },
     {
       "level": 11,
-      "baseWord": "ANCHOR",
-      "letters": ["A", "N", "C", "H", "O", "R"],
-      "crosswordWords": [
-        "ANCHOR",
-        "ARCH",
-        "CORN",
-        "ROAN",
-        "CHAR",
-        "RAN",
-        "CAR",
-        "ARC",
-        "OAR",
-        "NOR"
-      ],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "RIDGES",
+      "letters": ["R", "I", "D", "G", "E", "S"],
+      "crosswordWords": ["RIDGES", "GRIDS", "DIRGE", "RIDE", "SIDE", "RED", "DIG", "SIR", "RID"]
     },
     {
       "level": 12,
-      "baseWord": "CURRENT",
-      "letters": ["C", "U", "R", "R", "E", "N", "T"],
-      "crosswordWords": [
-        "CURRENT",
-        "CURE",
-        "CENT",
-        "TUNER",
-        "RUNT",
-        "CUT",
-        "NET"
-      ],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "FROZEN",
+      "letters": ["F", "R", "O", "Z", "E", "N"],
+      "crosswordWords": ["FROZEN", "ZERO", "FORE", "ZONE", "ONE", "ORE", "NOR"]
     },
     {
       "level": 13,
-      "baseWord": "SEAWAVE",
-      "letters": ["S", "E", "A", "W", "A", "V", "E"],
-      "crosswordWords": [
-        "SEAWAVE",
-        "WAVE",
-        "SAVE",
-        "EAVE",
-        "VASE",
-        "SEE",
-        "SEA"
-      ],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "TRAVEL",
+      "letters": ["T", "R", "A", "V", "E", "L"],
+      "crosswordWords": ["TRAVEL", "VALE", "VET", "ART", "EAR", "LET", "RAT"]
     },
     {
       "level": 14,
-      "baseWord": "DOLPHIN",
-      "letters": ["D", "O", "L", "P", "H", "I", "N"],
-      "crosswordWords": [
-        "DOLPHIN",
-        "HOLD",
-        "PIN",
-        "NOD",
-        "LIP",
-        "HID",
-        "POD",
-        "OIL"
-      ],
-      "difficulty": "hard"
+      "difficulty": "medium",
+      "baseWord": "GLIDER",
+      "letters": ["G", "L", "I", "D", "E", "R"],
+      "crosswordWords": ["GLIDER", "GIRDLE", "RIDE", "RED", "GEL", "RIG", "LED"]
     },
     {
       "level": 15,
-      "baseWord": "SEAGULL",
-      "letters": ["S", "E", "A", "G", "U", "L", "L"],
-      "crosswordWords": [
-        "SEAGULL",
-        "GULL",
-        "SELL",
-        "SAGE",
-        "LUG",
-        "SEA",
-        "USE",
-        "LEG"
-      ],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "HIKERS",
+      "letters": ["H", "I", "K", "E", "R", "S"],
+      "crosswordWords": ["HIKERS", "SHIRE", "HIRE", "RISK", "SHE", "SIR", "HIS"]
     },
     {
       "level": 16,
-      "baseWord": "MARINE",
-      "letters": ["M", "A", "R", "I", "N", "E"],
-      "crosswordWords": [
-        "MARINE",
-        "RAME",
-        "MAIN",
-        "MINE",
-        "RAIN",
-        "EAR",
-        "MAN"
-      ],
-      "difficulty": "hard"
+      "difficulty": "medium",
+      "baseWord": "CRATER",
+      "letters": ["C", "R", "A", "T", "E", "R"],
+      "crosswordWords": ["CRATER", "TRACE", "CARE", "RACE", "ART", "EAR", "CAT"]
     },
     {
       "level": 17,
-      "baseWord": "SEASHORE",
-      "letters": ["S", "E", "A", "S", "H", "O", "R", "E"],
-      "crosswordWords": [
-        "SEASHORE",
-        "ROSE",
-        "SHORE",
-        "HERO",
-        "EARS",
-        "SEE",
-        "SEA",
-        "HORSE"
-      ],
-      "difficulty": "hard"
+      "difficulty": "medium",
+      "baseWord": "ALTARS",
+      "letters": ["A", "L", "T", "A", "R", "S"],
+      "crosswordWords": ["ALTARS", "RATALS", "STAR", "LAST", "ART", "SALT", "ALAS"]
     },
     {
       "level": 18,
-      "baseWord": "SEAWATER",
-      "letters": ["S", "E", "A", "W", "A", "T", "E", "R"],
-      "crosswordWords": [
-        "SEAWATER",
-        "WATER",
-        "SEAT",
-        "TEAR",
-        "EAST",
-        "RAW",
-        "SEA",
-        "WET"
-      ],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "BOLDER",
+      "letters": ["B", "O", "L", "D", "E", "R"],
+      "crosswordWords": ["BOLDER", "OLDER", "ROBED", "BORE", "RED", "ROD", "LOB"]
     },
     {
       "level": 19,
-      "baseWord": "HARBOR",
-      "letters": ["H", "A", "R", "B", "O", "R"],
-      "crosswordWords": ["HARBOR", "ROAR", "BAR", "HOB", "ORB", "OAR"],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "SUMMON",
+      "letters": ["S", "U", "M", "M", "O", "N"],
+      "crosswordWords": ["SUMMON", "MOM", "SUM", "MON", "SUN", "NOM"]
     },
     {
       "level": 20,
-      "baseWord": "SUBMARINE",
-      "letters": ["S", "U", "B", "M", "A", "R", "I", "N", "E"],
-      "crosswordWords": [
-        "SUBMARINE",
-        "RUBS",
-        "MINE",
-        "RAIN",
-        "BARN",
-        "EAR",
-        "MEN",
-        "SAME",
-        "NEAR",
-        "SUM"
-      ],
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "baseWord": "PEAKED",
+      "letters": ["P", "E", "A", "K", "E", "D"],
+      "crosswordWords": ["PEAKED", "PEAK", "DEEP", "PAKE", "PAD", "APE", "PEA", "KEA"]
     }
   ],
   "Ocean": [
@@ -248,7 +166,7 @@
     {
       "level": 4,
       "baseWord": "WAVE",
-      "letters": ["W", "A", "V", "E"],
+      "letters": ["W", "A", "V", "E", "O"],
       "crosswordWords": ["WAVE", "VOW", "EVA", "AVE", "WE"],
       "difficulty": "easy"
     },

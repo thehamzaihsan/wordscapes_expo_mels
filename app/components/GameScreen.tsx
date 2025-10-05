@@ -1,5 +1,8 @@
+import LetterWheel from "./inputWheel";
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import { upsertLocalLevel, mutateLocalStats, syncUser } from "@/lib/sync";
+import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
@@ -10,6 +13,7 @@ import { Audio } from "expo-av";
 import { BlurView } from "expo-blur";
 import LottieView from "lottie-react-native";
 import { ChevronLeft } from "lucide-react-native";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,19 +22,22 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TouchableOpacity, // Import TouchableOpacity for the button
-  View,
+  TouchableOpacity,
+  View
 } from "react-native";
-import LetterWheel from "./inputWheel";
 
-// Guest progress key handled in guest-progress module
+// --- MISSING TYPES AND CONSTANTS ---
 const { width, height } = Dimensions.get("window");
-
-// Define a fixed area for the grid
 const GRID_AREA_WIDTH = width * 0.9;
 const GRID_AREA_HEIGHT = height * 0.4;
 
-// Particle interface
+interface GridCell {
+  letter: string | null;
+  isRevealed: boolean;
+  isActive: boolean;
+  belongsToWords: string[];
+}
+
 interface Particle {
   id: number;
   x: Animated.Value;
@@ -40,20 +47,11 @@ interface Particle {
   color: string;
 }
 
-// Interface for letters being animated
 interface AnimatingLetter {
   id: string;
   letter: string;
   position: Animated.ValueXY;
 }
-
-interface GridCell {
-  letter: string | null;
-  isRevealed: boolean;
-  isActive: boolean; // Can contain a letter
-  belongsToWords: string[]; // Which words this cell belongs to
-}
-
 interface WordPlacement {
   word: string;
   startRow: number;
@@ -85,8 +83,9 @@ export default function GameScreen({
   categoryName,
   levelData,
 }: GameScreenProps) {
+
+  // --- MAIN STATE ---
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
-  // baseWord tracked via levelData/baseWord props; local state not required
   const [letters, setLetters] = useState<string[]>([]);
   const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
   const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
@@ -100,16 +99,31 @@ export default function GameScreen({
   const [gameComplete, setGameComplete] = useState(false);
   const gameCompleteRef = useRef(false); // track transition
   const [particles, setParticles] = useState<Particle[]>([]);
-
-  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>(
-    []
-  );
+  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>([]);
   const gridCellRefs = useRef<{ [key: string]: View }>({});
   const letterWheelRef = useRef<View>(null);
   const containerRef = useRef<View>(null);
-
   const scoreScaleAnim = useRef(new Animated.Value(1)).current;
   const [cellSize, setCellSize] = useState(40);
+
+  // --- HINT STATE ---
+  const [hintAnim, setHintAnim] = useState<
+    | { row: number; col: number; anim: Animated.Value }
+    | null
+  >(null);
+  const [hintsLeft, setHintsLeft] = useState(1); // Only 1 hint per game
+  const [hintedWords, setHintedWords] = useState<string[]>([]);
+
+  // Handle word hint from LetterWheel
+  const handleWordHint = useCallback((hintedWord: string) => {
+    if (hintsLeft <= 0) return;
+    
+    // Add to hinted words to track what was hinted
+    setHintedWords(prev => [...prev, hintedWord]);
+    setHintsLeft(prev => prev - 1);
+    
+    // Could add visual feedback here if needed
+  }, [hintsLeft]);
 
   // --- SOUND STATES ---
   const [rightWordSound, setRightWordSound] = useState<Audio.Sound | null>(
@@ -608,22 +622,64 @@ export default function GameScreen({
     if (gameComplete && !gameCompleteRef.current) {
       gameCompleteRef.current = true;
       // Lazy import to avoid circular issues
-      import("@/hooks/guest-progress").then((mod) => {
+      (async () => {
         const levelNumber = levelData?.level || 1;
         const category = categoryName || "Forest";
-        mod
+
+        // 1. Update legacy guest progress store (kept temporarily for UI relying on it)
+        const guestMod = await import("@/hooks/guest-progress");
+        const updated = await guestMod
           .completeLevelAndPersist({
             category,
             levelNumber,
             score,
             bonusWords: foundBonusWords.length,
-            attempts: attempts + 1, // treat this finished run as an attempt
+            attempts: attempts + 1,
             levelDefs: undefined,
           })
-          .catch((err) =>
-            console.warn("Failed to persist level completion", err)
-          );
-      });
+          .catch((err) => {
+            console.warn("Failed legacy persist", err);
+            return null;
+          });
+
+        // 2. Mutate unified snapshot (offline-first) regardless of legacy success
+        await upsertLocalLevel({
+          user_id: (updated as any)?._snapshotUserId || "guest-temp", // will be remapped later if guest
+          level: levelNumber,
+          theme: category,
+          stars: 0, // stars unknown here; could map from updated if needed
+          completed: true,
+          first_completed_at: new Date().toISOString(),
+          last_completed_at: new Date().toISOString(),
+        });
+        // Add reward stats (simple estimate based on score + bonus words)
+        await mutateLocalStats((stats) => {
+          stats.xp +=
+            Math.max(1, Math.floor(score / 20)) +
+            Math.min(50, foundBonusWords.length * 5);
+          stats.coin += 50; // placeholder reward
+        });
+
+        // 3. If we have guest progress updated, mirror to snapshot via helper (ensures stars etc.)
+        if (updated) {
+          updateGuestSnapshotFromProgress(updated).catch(() => {});
+        }
+
+        // 4. Attempt background sync if user authenticated
+        try {
+          // We can't use hook here; fetch current session via supabase directly
+          const { supabase } = await import("@/lib/supabase");
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const uid = session?.user?.id;
+          if (uid) {
+            syncUser(uid).catch(() => {});
+          }
+        } catch (e) {
+          console.warn("Post-completion sync attempt failed", e);
+        }
+      })();
     }
   }, [
     gameComplete,
@@ -744,8 +800,32 @@ export default function GameScreen({
                         />
                       );
                     }
+                    // Animate the cell if it's the one revealed by hint
+                    const isHinted =
+                      hintAnim &&
+                      hintAnim.row === rowIndex &&
+                      hintAnim.col === colIndex;
+                    const animatedStyle = isHinted
+                      ? {
+                          transform: [
+                            {
+                              scale: hintAnim.anim.interpolate({
+                                inputRange: [0, 0.5, 1],
+                                outputRange: [1, 1.5, 1],
+                              }),
+                            },
+                          ],
+                          backgroundColor: hintAnim.anim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [
+                              styles.revealedCell.backgroundColor,
+                              '#ffe066',
+                            ],
+                          }),
+                        }
+                      : {};
                     return (
-                      <View
+                      <Animated.View
                         key={colIndex}
                         ref={(el) => {
                           if (el)
@@ -758,6 +838,7 @@ export default function GameScreen({
                           cell.isRevealed
                             ? styles.revealedCell
                             : styles.hiddenCell,
+                          animatedStyle,
                         ]}
                       >
                         <Text
@@ -771,7 +852,7 @@ export default function GameScreen({
                         >
                           {cell.isRevealed ? cell.letter : ""}
                         </Text>
-                      </View>
+                      </Animated.View>
                     );
                   })}
                 </View>
@@ -789,7 +870,10 @@ export default function GameScreen({
                 letters={letters}
                 onLetterSelect={handleLetterSelect}
                 onWordComplete={handleWordComplete}
-                validWords={[...crosswordWords]}
+                validWords={[...crosswordWords, ...allValidWords]}
+                foundWords={[...foundCrosswordWords, ...foundBonusWords]}
+                onHint={handleWordHint}
+                hintsLeft={hintsLeft}
               />
             ) : (
               <Text style={styles.errorText}>No letters available</Text>

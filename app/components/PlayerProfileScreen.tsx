@@ -8,6 +8,7 @@ import {
   View,
   ScrollView,
 } from "react-native";
+import { showToast } from "@/lib/toast";
 import { BlurView } from "expo-blur";
 import {
   loadGuestProgress,
@@ -43,7 +44,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
   const handleSaveName = async () => {
     if (!nameDraft.trim()) {
-      Alert.alert("Name Required", "Please enter a valid display name.");
+      showToast("Name required", "error");
       return;
     }
     setSavingName(true);
@@ -51,9 +52,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
       const sanitized = nameDraft.trim().slice(0, 20);
       const updated = await updateGuestName(sanitized);
       setProgress(updated);
-      Alert.alert("Saved", "Display name updated.");
+      showToast("Display name updated", "success");
     } catch {
-      Alert.alert("Error", "Failed to update name.");
+      showToast("Failed to update name", "error");
     } finally {
       setSavingName(false);
     }
@@ -91,9 +92,8 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
           style: "destructive",
           onPress: async () => {
             await clearGuestProgress();
-            Alert.alert("Deleted", "Account removed.", [
-              { text: "OK", onPress: () => onLogout() },
-            ]);
+            showToast("Local account data cleared", "info");
+            onLogout();
           },
         },
       ]
@@ -228,9 +228,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.outlineButton}
-                onPress={() =>
-                  Alert.alert("Coming Soon", "Cloud sync not yet implemented.")
-                }
+                onPress={() => showToast("Cloud sync coming soon", "info")}
               >
                 <Text style={styles.outlineButtonText}>Sync (Future)</Text>
               </TouchableOpacity>
