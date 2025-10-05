@@ -14,6 +14,7 @@ import { BlurView } from "expo-blur";
 import LottieView from "lottie-react-native";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -80,6 +81,34 @@ export default function GameScreen({
   const [letters, setLetters] = useState<string[]>([]);
   const [sound, setSound] = useState(true);
   const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
+
+  // Load sound preference on component mount
+  useEffect(() => {
+    const loadSoundPreference = async () => {
+      try {
+        const savedSound = await AsyncStorage.getItem('@game_sound_enabled');
+        if (savedSound !== null) {
+          setSound(JSON.parse(savedSound));
+        }
+      } catch (error) {
+        console.warn('Failed to load sound preference:', error);
+      }
+    };
+    console.log("Value of Sound on initial load:", sound);
+    loadSoundPreference();
+  }, []);
+
+  // Save sound preference when it changes
+  const handleSoundToggle = useCallback(async () => {
+    const newSoundValue = !sound;
+    setSound(newSoundValue);
+    try {
+      await AsyncStorage.setItem('@game_sound_enabled', JSON.stringify(newSoundValue));
+    } catch (error) {
+      console.warn('Failed to save sound preference:', error);
+    }
+  }, [sound]);
+  
   const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
   const [wordPlacements, setWordPlacements] = useState<WordPlacement[]>([]);
   const [foundCrosswordWords, setFoundCrosswordWords] = useState<string[]>([]);
@@ -725,7 +754,7 @@ export default function GameScreen({
                 </Animated.Text>
                 
                 <TouchableOpacity
-                  onPress={() => {setSound(!sound); console.log("The sound value after toggling is:", sound);}}
+                  onPress={handleSoundToggle}
                   style={styles.soundToggleButton}
                   activeOpacity={0.7}
                 >
