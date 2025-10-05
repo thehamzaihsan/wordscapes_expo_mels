@@ -1,3 +1,4 @@
+import { getGlobalSettings } from '@/hooks/useSettings';
 import { useEffect, useState } from "react";
 import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 
@@ -14,6 +15,7 @@ interface Particle {
 export default function BGAnimation() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [dimensions, setDimensions] = useState(() => Dimensions.get("window"));
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
   // Handle dimension changes (e.g., device rotation)
   useEffect(() => {
     const subscription = Dimensions.addEventListener("change", ({ window }) => {
@@ -22,9 +24,27 @@ export default function BGAnimation() {
     return () => subscription?.remove();
   }, []);
 
+  // Check settings periodically
+  useEffect(() => {
+    const checkSettings = () => {
+      const settings = getGlobalSettings();
+      setAnimationsEnabled(settings.backgroundAnimationsEnabled);
+    };
+    
+    checkSettings();
+    const interval = setInterval(checkSettings, 1000); // Check every second
+    
+    return () => clearInterval(interval);
+  }, []);
+
   // Create floating particles
   useEffect(() => {
-    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"];
+    if (!animationsEnabled) {
+      setParticles([]);
+      return;
+    }
+
+  const particleColors = ["#8B5CF6"];
     const createParticle = (id: number): Particle => ({
       id,
       x: new Animated.Value(Math.random() * dimensions.width),
@@ -68,7 +88,7 @@ export default function BGAnimation() {
     };
 
     particleArray.forEach(animateParticle);
-  }, [dimensions]);
+  }, [dimensions, animationsEnabled]);
   return (
     <View style={styles.container} pointerEvents="none">
   
@@ -100,17 +120,17 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: "absolute",
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    opacity: 0.1,
-    shadowColor: "#fff",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    opacity: 0.12,
+    shadowColor: "#8B5CF6",
     shadowOffset: {
       width: 0,
       height: 0,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 1,
   },
 });

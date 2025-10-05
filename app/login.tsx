@@ -44,6 +44,8 @@ export default function LoginRoute() {
       router.push("/guest-name");
     } else if (screen === "create-account") {
       router.push("/create-account");
+    } else if (screen === "settings") {
+      router.push("/settings");
     }
   };
 

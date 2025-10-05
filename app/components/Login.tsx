@@ -156,7 +156,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
             <Text style={styles.primaryButtonText}> Play Game</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => Alert.alert("Settings", "Settings menu")}
+            onPress={() => onNavigate("settings")}
             style={styles.secondaryButton}
           >
             <Settings size={18} color={"white"} />

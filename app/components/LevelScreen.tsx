@@ -174,6 +174,10 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     onNavigate("shop");
   };
 
+  const handleSettingsPress = (): void => {
+    onNavigate("settings");
+  };
+
   const LevelCard: React.FC<LevelCardProps> = ({
     level,
     categoryName,

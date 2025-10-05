@@ -17,11 +17,18 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
+import { useSettings, updateGlobalSettings } from "../hooks/useSettings";
 import BGAnimation from "./components/BackgroundAnimation";
 
 function LayoutWithInsets() {
   useAutoSync();
   const insets = useSafeAreaInsets();
+  const { settings } = useSettings();
+
+  // Update global settings when they change
+  useEffect(() => {
+    updateGlobalSettings(settings);
+  }, [settings]);
   return (
     <View
       style={{
@@ -75,6 +82,7 @@ function LayoutWithInsets() {
           <Stack.Screen name="create-account" options={{ headerShown: false, gestureEnabled: true }} />
           <Stack.Screen name="email-confirmation" options={{ headerShown: false, gestureEnabled: false }} />
           <Stack.Screen name="shop" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen name="settings" options={{ headerShown: false, gestureEnabled: true }} />
         </Stack>
       </View>
     </View>
