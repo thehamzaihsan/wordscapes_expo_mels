@@ -7,6 +7,7 @@ import { syncUser, mutateLocalProfile } from "./sync";
 export interface AuthResult {
   ok: boolean;
   error?: string;
+  emailConfirmationRequired?: boolean;
 }
 
 export async function signUpEmailPassword(params: {
@@ -18,21 +19,42 @@ export async function signUpEmailPassword(params: {
   if (!isSupabaseEnabled())
     return { ok: false, error: "Supabase not configured" };
   const { email, password, username, avatar } = params;
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) return { ok: false, error: error.message };
-  const user = data.user;
-  if (!user) return { ok: false, error: "No user returned" };
-  // Rely on database triggers to create profile & stats rows automatically.
-  // Remap snapshot if guest
-  await remapGuestSnapshotToUser(user.id);
-  // Mutate local profile username/avatar if snapshot exists
-  await mutateLocalProfile((p) => {
-    p.username = username;
-    if (avatar) p.avatar = avatar;
-  });
-  // Initial sync (fire & forget)
-  syncUser(user.id).catch(() => {});
-  return { ok: true };
+  
+  try {
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: {
+          username: username,
+          avatar: avatar || "🛡️",
+        }
+      }
+    });
+    
+    if (error) return { ok: false, error: error.message };
+    
+    const user = data.user;
+    if (!user) return { ok: false, error: "No user returned" };
+    
+    // Check if email confirmation is required
+    if (!user.email_confirmed_at) {
+      // User created but needs to confirm email
+      return { ok: true, emailConfirmationRequired: true };
+    }
+    
+    // If email is already confirmed (shouldn't happen on signup but just in case)
+    await remapGuestSnapshotToUser(user.id);
+    await mutateLocalProfile((p) => {
+      p.username = username;
+      if (avatar) p.avatar = avatar;
+    });
+    syncUser(user.id).catch(() => {});
+    
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Signup failed" };
+  }
 }
 
 export async function signInEmailPassword(
@@ -66,6 +88,23 @@ export async function resetPassword(email: string): Promise<AuthResult> {
   });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+export async function resendConfirmationEmail(email: string): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  
+  try {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+    
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to resend email" };
+  }
 }
 
 export async function signInWithGoogle(): Promise<AuthResult> {

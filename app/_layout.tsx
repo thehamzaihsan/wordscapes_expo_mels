@@ -104,6 +104,13 @@ function LayoutWithInsets() {
           }}
         />
         <Stack.Screen
+          name="email-confirmation"
+          options={{
+            headerShown: false,
+            gestureEnabled: false, // Prevent back gesture since user should confirm email
+          }}
+        />
+        <Stack.Screen
           name="shop"
           options={{
             headerShown: false,

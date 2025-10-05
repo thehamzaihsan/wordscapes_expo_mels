@@ -112,7 +112,7 @@ export default function GameScreen({
     | null
   >(null);
   const [hintsLeft, setHintsLeft] = useState(1); // Only 1 hint per game
-  const [hintedWords, setHintedWords] = useState<string[]>([]);
+  const [hintedWordss, setHintedWords] = useState<string[]>([]);
 
   // Handle word hint from LetterWheel
   const handleWordHint = useCallback((hintedWord: string) => {
