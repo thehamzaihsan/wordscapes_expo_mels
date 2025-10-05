@@ -7,8 +7,15 @@ export default function CreateAccountRoute() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string; google?: string }>();
 
-  const handleNavigate = (screen: string) => {
-    if (screen === "levels") router.push("/levels");
+  const handleNavigate = (screen: string, params?: { email?: string }) => {
+    if (screen === "levels") {
+      router.push("/levels");
+    } else if (screen === "email-confirmation") {
+      router.push({
+        pathname: "/email-confirmation",
+        params: { email: params?.email },
+      });
+    }
   };
 
   return (

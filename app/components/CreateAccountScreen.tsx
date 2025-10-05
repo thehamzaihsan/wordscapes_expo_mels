@@ -17,7 +17,7 @@ import { signUpEmailPassword } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
 
 interface CreateAccountScreenProps {
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: string, params?: { email?: string }) => void;
   onCancel: () => void;
   initialEmail?: string;
   googlePrefill?: boolean; // if coming from login google and need only name+avatar
@@ -92,8 +92,13 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
           username: name.trim(),
           avatar,
         });
-        if (!res.ok) setError(res.error || "Signup failed");
-        else onNavigate("levels");
+        if (!res.ok) {
+          setError(res.error || "Signup failed");
+        } else {
+          // Always redirect to email confirmation screen after successful signup
+          // Supabase requires email confirmation by default
+          onNavigate("email-confirmation", { email: email.trim().toLowerCase() });
+        }
       }
     } catch (e: any) {
       setError(e?.message || "Failed to create account");
