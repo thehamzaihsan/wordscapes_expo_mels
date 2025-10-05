@@ -1,21 +1,21 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import {
-  SafeAreaView,
-  Text,
-  TextInput,
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  Keyboard,
-  Platform,
-} from "react-native";
 import levelsData from "@/constants/levels.json";
 import {
   createNewGuestProfile,
   updateGuestAvatar,
 } from "@/hooks/guest-progress";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  Keyboard,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface GuestNameScreenProps {
   onNavigate: (screen: string) => void;
@@ -209,7 +209,7 @@ const GuestNameScreen: React.FC<GuestNameScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#121213" },
+  safeArea: { flex: 1, backgroundColor: "transparent" },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: "#1F2937",
+  backgroundColor: "rgba(31,41,55,0.85)",
     borderRadius: 12,
     borderWidth: 2,
     borderColor: "#374151",
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   randomButton: {
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
     borderWidth: 2,
     borderColor: "#4B5563",
     borderRadius: 12,
@@ -274,14 +274,14 @@ const styles = StyleSheet.create({
   avatarItem: {
     width: 60,
     height: 60,
-    backgroundColor: "#111827",
+  backgroundColor: "rgba(17,24,39,0.85)",
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#1f2937",
   },
-  avatarItemActive: { borderColor: "#8B5CF6", backgroundColor: "#1e1b4b" },
+  avatarItemActive: { borderColor: "#8B5CF6", backgroundColor: "rgba(30,27,75,0.7)" },
   avatarText: { fontSize: 28 },
   primaryButton: {
     backgroundColor: "#8B5CF6",

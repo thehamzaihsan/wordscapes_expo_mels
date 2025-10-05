@@ -1,39 +1,28 @@
-import { ChevronLeft, Play, Settings } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
 import {
+  resetPassword,
+  signInEmailPassword,
+  signInWithGoogle,
+} from "@/lib/auth";
+import { isSupabaseEnabled } from "@/lib/supabase";
+import { showToast } from "@/lib/toast";
+import { ChevronLeft, Play, Settings } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
   Alert,
-  Animated,
-  Dimensions,
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  ActivityIndicator,
-  Image,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Logo from "./logo";
-import {
-  signInEmailPassword,
-  signInWithGoogle,
-  resetPassword,
-} from "@/lib/auth";
-import { isSupabaseEnabled } from "@/lib/supabase";
-import { showToast } from "@/lib/toast";
 
-const { width, height } = Dimensions.get("window");
-// Particle interface
-interface Particle {
-  id: number;
-  x: Animated.Value;
-  y: Animated.Value;
-  opacity: Animated.Value;
-  scale: Animated.Value;
-  color: string;
-}
+
 
 interface LoginScreenProps {
   onNavigate: (screen: string) => void;
@@ -46,54 +35,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [googleLoading, setGoogleLoading] = useState<boolean>(false);
-  const [particles, setParticles] = useState<Particle[]>([]);
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Create floating particles
-  useEffect(() => {
-    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"]; // Purple, Red, Yellow, Green
-
-    const createParticle = (id: number): Particle => ({
-      id,
-      x: new Animated.Value(Math.random() * width),
-      y: new Animated.Value(Math.random() * height),
-      opacity: new Animated.Value(Math.random() * 0.3 + 0.1),
-      scale: new Animated.Value(Math.random() * 0.5 + 0.5),
-      color: particleColors[Math.floor(Math.random() * particleColors.length)],
-    });
-
-    const particleArray = Array.from({ length: 20 }, (_, i) =>
-      createParticle(i)
-    );
-    setParticles(particleArray);
-
-    // Animate particles
-    const animateParticle = (particle: Particle) => {
-      const duration = Math.random() * 10000 + 8000;
-
-      Animated.parallel([
-        Animated.timing(particle.x, {
-          toValue: Math.random() * width,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.y, {
-          toValue: Math.random() * height,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.timing(particle.opacity, {
-          toValue: Math.random() * 0.3 + 0.1,
-          duration: duration / 2,
-          useNativeDriver: true,
-        }),
-      ]).start(() => animateParticle(particle));
-    };
-
-    particleArray.forEach(animateParticle);
-  }, []);
 
   const handlePlayClick = (): void => {
     setShowLogin(true);
@@ -179,27 +124,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     }
   };
 
-  const renderFloatingParticles = () => (
-    <View style={StyleSheet.absoluteFillObject}>
-      {particles.map((particle) => (
-        <Animated.View
-          key={particle.id}
-          style={[
-            styles.particle,
-            {
-              backgroundColor: particle.color,
-              transform: [
-                { translateX: particle.x },
-                { translateY: particle.y },
-                { scale: particle.scale },
-              ],
-              opacity: particle.opacity,
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
+
 
   const renderMainMenu = () => (
     <View
@@ -213,8 +138,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         },
       ]}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#121213" />
-      {renderFloatingParticles()}
+      {/* <StatusBar barStyle="light-content" backgroundColor="#121213" /> */}
       <View style={styles.mainContent}>
         {/* Logo Section */}
         <View style={styles.logoContainer}>
@@ -256,7 +180,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
       ]}
     >
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
-      {renderFloatingParticles()}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
         <TouchableOpacity onPress={handleBackClick} style={styles.backButton}>
@@ -386,13 +309,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121213",
-  },
-  particle: {
-    position: "absolute",
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    backgroundColor: "transparent",
   },
   mainContent: {
     flex: 1,

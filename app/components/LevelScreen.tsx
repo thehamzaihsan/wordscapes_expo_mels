@@ -1,14 +1,14 @@
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
-import { useFocusEffect } from "expo-router";
+import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
 import {
   buildInitialProgress,
+  derivePlayerLevel,
   loadGuestProgress,
   saveGuestProgress,
-  derivePlayerLevel,
 } from "@/hooks/guest-progress";
-import type { GuestProgressPayload, GuestMeta } from "@/hooks/guest-progress";
+import { useFocusEffect } from "expo-router";
 import { User } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -494,7 +494,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121213",
+  backgroundColor: "transparent",
   },
   particle: {
     position: "absolute",
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   header: {
-    backgroundColor: "#1F2937",
+  backgroundColor: "rgba(31,41,55,0.85)",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 2,
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     gap: 4,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
     paddingEnd: 16,
   },
   backButtonText: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   resourceItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -580,17 +580,17 @@ const styles = StyleSheet.create({
   xpBarBackground: {
     width: "80%",
     height: 8,
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
     borderRadius: 4,
     overflow: "hidden",
   },
   xpBar: {
     height: "100%",
-    backgroundColor: "#8B5CF6",
+  backgroundColor: "rgba(139,92,246,0.7)",
     borderRadius: 4,
   },
   categoryContainer: {
-    backgroundColor: "#1F2937",
+  backgroundColor: "rgba(31,41,55,0.85)",
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#374151",
@@ -603,10 +603,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
   },
   categoryTabActive: {
-    backgroundColor: "#8B5CF6",
+  backgroundColor: "rgba(139,92,246,0.7)",
   },
   categoryText: {
     color: "#9CA3AF",
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   levelCard: {
-    backgroundColor: "#1F2937",
+  backgroundColor: "rgba(31,41,55,0.85)",
     borderRadius: 16,
     borderWidth: 2,
     borderColor: "#374151",
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   progressBarBackground: {
     width: "100%",
     height: 8,
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -751,7 +751,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   rewardContainer: {
-    backgroundColor: "#1F2937",
+  backgroundColor: "rgba(31,41,55,0.85)",
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
@@ -766,13 +766,13 @@ const styles = StyleSheet.create({
   },
   // statusBadge: duplicate removed
   completedBadge: {
-    backgroundColor: "#10B981",
+  backgroundColor: "rgba(16,185,129,0.7)",
   },
   inProgressBadge: {
-    backgroundColor: "#3B82F6",
+  backgroundColor: "rgba(59,130,246,0.7)",
   },
   newBadge: {
-    backgroundColor: "#8B5CF6",
+  backgroundColor: "rgba(139,92,246,0.7)",
   },
   // statusText: duplicate removed
   bottomSpacing: {

@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   hintButton: {
-    backgroundColor: '#ffd700', // gold
+  backgroundColor: 'rgba(255,215,0,0.7)', // gold
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#374151",
+  backgroundColor: "rgba(55,65,81,0.85)",
     // borderRadius is applied dynamically inline
     overflow: "hidden",
   },
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -12,
     right: -8,
-    backgroundColor: "#EF4444",
+  backgroundColor: "rgba(239,68,68,0.7)",
     borderRadius: 12,
     width: 24,
     height: 24,
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff",
+  backgroundColor: "rgba(255,255,255,0.7)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -578,19 +578,19 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
   removeButton: {
-    backgroundColor: "#EF4444",
+  backgroundColor: "rgba(239,68,68,0.7)",
   },
   shuffleButton: {
-    backgroundColor: "#F59E0B",
+  backgroundColor: "rgba(245,158,11,0.7)",
   },
   submitCenterButton: {
-    backgroundColor: "#10B981",
+  backgroundColor: "rgba(16,185,129,0.7)",
   },
   clearButton: {
-    backgroundColor: "#8B5CF6",
+  backgroundColor: "rgba(139,92,246,0.7)",
   },
   disabledCenterButton: {
-    backgroundColor: "#D1D5DB",
+  backgroundColor: "rgba(209,213,219,0.7)",
     opacity: 0.6,
   },
   centerButtonText: {
