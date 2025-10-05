@@ -1,12 +1,12 @@
+import { Difficulty, DifficultyConfig, getAllDifficulties, getDifficultyConfig } from '@/constants/difficulty';
 import React from 'react';
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
 } from 'react-native';
-import { Difficulty, DifficultyConfig, getAllDifficulties, getDifficultyConfig } from '@/constants/difficulty';
 
 interface DifficultyCardProps {
   difficulty: Difficulty;
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   difficultyCard: {
-    backgroundColor: '#FFFFFF',
+  backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 8,

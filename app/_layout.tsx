@@ -1,7 +1,6 @@
 import { initializeGameManager } from "@/hooks/game-manager";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
-import useAutoSync from "../hooks/useAutoSync";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
@@ -10,114 +9,74 @@ import {
   BackHandler,
   Platform,
   Text,
-  View,
+  View
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import useAutoSync from "../hooks/useAutoSync";
+import BGAnimation from "./components/BackgroundAnimation";
 
 function LayoutWithInsets() {
-  const insets = useSafeAreaInsets();
   useAutoSync();
-
+  const insets = useSafeAreaInsets();
   return (
     <View
       style={{
         flex: 1,
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-        backgroundColor: "#121213",
+        backgroundColor: "#121213", // Set the base background color
       }}
     >
-      {!isSupabaseEnabled() && (
-        <View
-          style={{
-            backgroundColor: "#7c2d12",
-            padding: 8,
-            borderBottomWidth: 1,
-            borderColor: "#78350f",
-          }}
-        >
-          <Text style={{ color: "#fde68a", fontSize: 12 }}>
-            Supabase disabled: set EXPO_PUBLIC_SUPABASE_URL and
-            EXPO_PUBLIC_SUPABASE_ANON_KEY in .env then restart (expo start -c).
-          </Text>
-        </View>
-      )}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          // animation: 'slide_from_right',
-          gestureEnabled: true,
+      {/* Background animation behind everything */}
+      <BGAnimation />
+      {/* App content always on top */}
+      <View 
+        style={{ 
+          flex: 1, 
+          backgroundColor: "transparent",
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
         }}
       >
-        <Stack.Screen
-          name="index"
-          options={{
+        {!isSupabaseEnabled() && (
+          <View
+            style={{
+              backgroundColor: "#7c2d12",
+              padding: 8,
+              borderBottomWidth: 1,
+              borderColor: "#78350f",
+              zIndex: 100,
+            }}
+          >
+            <Text style={{ color: "#fde68a", fontSize: 12 }}>
+              Supabase disabled: set EXPO_PUBLIC_SUPABASE_URL and
+              EXPO_PUBLIC_SUPABASE_ANON_KEY in .env then restart (expo start -c).
+            </Text>
+          </View>
+        )}
+        <Stack
+          screenOptions={{
             headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="login"
-          options={{
-            headerShown: false,
-            gestureEnabled: false,
-          }}
-        />
-        <Stack.Screen
-          name="levels"
-          options={{
-            headerShown: false,
+            // animation: 'slide_from_right',
             gestureEnabled: true,
+            contentStyle: { backgroundColor: 'transparent', zIndex: 10 }, // Ensure content is above animation
           }}
-        />
-        <Stack.Screen
-          name="game"
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="test"
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="profile"
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="create-account"
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-        <Stack.Screen
-          name="email-confirmation"
-          options={{
-            headerShown: false,
-            gestureEnabled: false, // Prevent back gesture since user should confirm email
-          }}
-        />
-        <Stack.Screen
-          name="shop"
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-          }}
-        />
-      </Stack>
+        >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="levels" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen name="game" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen name="test" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen name="profile" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen name="create-account" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen name="email-confirmation" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="shop" options={{ headerShown: false, gestureEnabled: true }} />
+        </Stack>
+      </View>
     </View>
   );
 }

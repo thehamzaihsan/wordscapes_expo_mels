@@ -1,19 +1,23 @@
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  Platform,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { Mail, CheckCircle, AlertCircle, ArrowRight } from "lucide-react-native";
 import { resendConfirmationEmail } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle,
+  Mail,
+} from "lucide-react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface EmailConfirmationScreenProps {
   onNavigate: (screen: string) => void;
@@ -58,7 +62,7 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
 
   const handleResendEmail = useCallback(async () => {
     if (resendCooldown > 0 || isResending) return;
-    
+
     setIsResending(true);
     try {
       const result = await resendConfirmationEmail(email);
@@ -103,7 +107,7 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
             <Text style={styles.subtitle}>
               Account created successfully! We've sent a confirmation email to:
             </Text>
-            
+
             <View style={styles.emailContainer}>
               <Mail size={20} color="#8B5CF6" />
               <Text style={styles.emailText}>{email}</Text>
@@ -118,7 +122,7 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
                   Check your email inbox (and spam folder)
                 </Text>
               </View>
-              
+
               <View style={styles.instructionItem}>
                 <View style={styles.stepNumber}>
                   <Text style={styles.stepNumberText}>2</Text>
@@ -127,7 +131,7 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
                   Click the confirmation link in the email
                 </Text>
               </View>
-              
+
               <View style={styles.instructionItem}>
                 <View style={styles.stepNumber}>
                   <Text style={styles.stepNumberText}>3</Text>
@@ -154,7 +158,10 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
               <Text style={styles.autoRedirectText}>
                 Automatically redirecting to login in {countdown} seconds...
               </Text>
-              <TouchableOpacity onPress={stopAutoRedirect} style={styles.cancelAutoButton}>
+              <TouchableOpacity
+                onPress={stopAutoRedirect}
+                style={styles.cancelAutoButton}
+              >
                 <Text style={styles.cancelAutoText}>Cancel auto-redirect</Text>
               </TouchableOpacity>
             </View>
@@ -173,7 +180,8 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
             <TouchableOpacity
               style={[
                 styles.secondaryButton,
-                (isResending || resendCooldown > 0) && styles.secondaryButtonDisabled
+                (isResending || resendCooldown > 0) &&
+                  styles.secondaryButtonDisabled,
               ]}
               onPress={handleResendEmail}
               disabled={isResending || resendCooldown > 0}
@@ -182,10 +190,9 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
                 <ActivityIndicator size="small" color="#D1D5DB" />
               ) : (
                 <Text style={styles.secondaryButtonText}>
-                  {resendCooldown > 0 
-                    ? `Resend Email (${resendCooldown}s)` 
-                    : "Resend Email"
-                  }
+                  {resendCooldown > 0
+                    ? `Resend Email (${resendCooldown}s)`
+                    : "Resend Email"}
                 </Text>
               )}
             </TouchableOpacity>
@@ -194,10 +201,13 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
           {/* Footer */}
           <View style={styles.footerContainer}>
             <Text style={styles.footerText}>
-              Didn't receive an email? Check your spam folder or try resending.
+              {
+                "Didn't receive an email? Check your spam folder or try resending."
+              }
             </Text>
             <Text style={styles.footerSubtext}>
-              Make sure to check all email folders including promotions and social tabs.
+              Make sure to check all email folders including promotions and
+              social tabs.
             </Text>
           </View>
         </View>
@@ -209,7 +219,7 @@ const EmailConfirmationScreen: React.FC<EmailConfirmationScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#121213",
+    backgroundColor: "transparent",
   },
   scroll: {
     flexGrow: 1,
@@ -257,7 +267,7 @@ const styles = StyleSheet.create({
   emailContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1F2937",
+    backgroundColor: "rgba(31,41,55,0.85)",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
@@ -285,7 +295,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#8B5CF6",
+    backgroundColor: "rgba(139,92,246,0.7)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -321,7 +331,7 @@ const styles = StyleSheet.create({
   },
   autoRedirectContainer: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
+    backgroundColor: "rgba(31,41,55,0.85)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -350,7 +360,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   primaryButton: {
-    backgroundColor: "#8B5CF6",
+    backgroundColor: "rgba(139,92,246,0.7)",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
@@ -367,7 +377,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   secondaryButton: {
-    backgroundColor: "#374151",
+    backgroundColor: "rgba(55,65,81,0.85)",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
