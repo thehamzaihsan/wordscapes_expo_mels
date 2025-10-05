@@ -1,4 +1,7 @@
 import { initializeGameManager } from "@/hooks/game-manager";
+import { isSupabaseEnabled } from "@/lib/supabase";
+import { ToastHost } from "@/lib/toast";
+import useAutoSync from "../hooks/useAutoSync";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
@@ -17,6 +20,7 @@ import {
 
 function LayoutWithInsets() {
   const insets = useSafeAreaInsets();
+  useAutoSync();
 
   return (
     <View
@@ -29,6 +33,21 @@ function LayoutWithInsets() {
         backgroundColor: "#121213",
       }}
     >
+      {!isSupabaseEnabled() && (
+        <View
+          style={{
+            backgroundColor: "#7c2d12",
+            padding: 8,
+            borderBottomWidth: 1,
+            borderColor: "#78350f",
+          }}
+        >
+          <Text style={{ color: "#fde68a", fontSize: 12 }}>
+            Supabase disabled: set EXPO_PUBLIC_SUPABASE_URL and
+            EXPO_PUBLIC_SUPABASE_ANON_KEY in .env then restart (expo start -c).
+          </Text>
+        </View>
+      )}
       <Stack
         screenOptions={{
           headerShown: false,
@@ -82,6 +101,13 @@ function LayoutWithInsets() {
           options={{
             headerShown: false,
             gestureEnabled: true,
+          }}
+        />
+        <Stack.Screen
+          name="email-confirmation"
+          options={{
+            headerShown: false,
+            gestureEnabled: false, // Prevent back gesture since user should confirm email
           }}
         />
         <Stack.Screen
@@ -155,6 +181,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <LayoutWithInsets />
+        <ToastHost />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
