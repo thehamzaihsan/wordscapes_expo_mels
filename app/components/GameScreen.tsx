@@ -12,7 +12,7 @@ import { mutateLocalStats, syncUser, upsertLocalLevel } from "@/lib/sync";
 import { Audio } from "expo-av";
 import { BlurView } from "expo-blur";
 import LottieView from "lottie-react-native";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -78,6 +78,7 @@ export default function GameScreen({
   // --- MAIN STATE ---
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
   const [letters, setLetters] = useState<string[]>([]);
+  const [sound, setSound] = useState(true);
   const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
   const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
   const [wordPlacements, setWordPlacements] = useState<WordPlacement[]>([]);
@@ -176,8 +177,10 @@ export default function GameScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // empty deps so we don't recreate/unload repeatedly
 
-  // Helper function to play sounds (REFACTORED)
-  const playSound = async (soundObject: Audio.Sound | null) => {
+  // Helper function to play sounds (FIXED WITH CALLBACK)
+  const playSound = useCallback(async (soundObject: Audio.Sound | null) => {
+    if (!sound) return; // Use the sound state variable
+    
     // Prevent playing sound if the component is unmounting
     if (isUnmounting.current) {
       return;
@@ -192,7 +195,7 @@ export default function GameScreen({
         console.error("Failed to play sound", e);
       }
     }
-  };
+  }, [sound]); // Add sound as dependency
 
   useEffect(() => {
     if (score === 0) return;
@@ -405,6 +408,7 @@ export default function GameScreen({
       allValidWords,
       startFloatingLetterAnimation,
       sounds, // Depend on the sounds object
+      playSound, // Add playSound dependency
     ]
   );
 
@@ -708,16 +712,30 @@ export default function GameScreen({
             </TouchableOpacity>
 
             <View style={styles.levelTitleContainer}>
-              <Animated.Text
-                style={[
-                  styles.scoreText,
-                  {
-                    transform: [{ scale: scoreScaleAnim }],
-                  },
-                ]}
-              >
-                Score: {score}
-              </Animated.Text>
+              <View style={styles.scoreContainer}>
+                <Animated.Text
+                  style={[
+                    styles.scoreText,
+                    {
+                      transform: [{ scale: scoreScaleAnim }],
+                    },
+                  ]}
+                >
+                  Score: {score}
+                </Animated.Text>
+                
+                <TouchableOpacity
+                  onPress={() => {setSound(!sound); console.log("The sound value after toggling is:", sound);}}
+                  style={styles.soundToggleButton}
+                  activeOpacity={0.7}
+                >
+                  {sound ? (
+                    <Volume2 size={20} color="#8B5CF6" />
+                  ) : (
+                    <VolumeX size={20} color="#6B7280" />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -882,14 +900,36 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   levelTitleContainer: {
-    // flex: 1,
-    // alignItems: "center",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   scoreText: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#00ff33ff",
     textAlign: "center",
+  },
+  soundToggleButton: {
+    padding: 8,
+    backgroundColor: "rgba(55,65,81,0.8)",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#374151",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   gridContainer: {
     width: GRID_AREA_WIDTH,
