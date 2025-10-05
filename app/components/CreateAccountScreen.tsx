@@ -13,16 +13,8 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import levelsData from "@/constants/levels.json";
-import {
-  createNewGuestProfile,
-  updateGuestAvatar,
-} from "@/hooks/guest-progress";
-import {
-  createLocalAccount,
-  createGoogleAccount,
-  mockGoogleSignIn,
-} from "@/hooks/account";
+import { signUpEmailPassword } from "@/lib/auth";
+import { isSupabaseEnabled } from "@/lib/supabase";
 
 interface CreateAccountScreenProps {
   onNavigate: (screen: string) => void;
@@ -91,60 +83,31 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     setError(null);
     setLoading(true);
     try {
-      await createLocalAccount({
-        name: name.trim(),
-        email: email.trim(),
-        password,
-      });
-      await createNewGuestProfile({
-        playerName: name.trim(),
-        levelDefs: levelsData as any,
-      });
-      await updateGuestAvatar(avatar);
-      onNavigate("levels");
-    } catch {
-      setError("Failed to create account");
+      if (!isSupabaseEnabled()) {
+        setError("Supabase not configured");
+      } else {
+        const res = await signUpEmailPassword({
+          email: email.trim().toLowerCase(),
+          password,
+          username: name.trim(),
+          avatar,
+        });
+        if (!res.ok) setError(res.error || "Signup failed");
+        else onNavigate("levels");
+      }
+    } catch (e: any) {
+      setError(e?.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await mockGoogleSignIn();
-      setGoogleEmail(res.email);
-      setStep("googleName");
-      requestAnimationFrame(() => nameRef.current?.focus());
-    } catch {
-      setError("Google sign-in failed");
-    } finally {
-      setLoading(false);
-    }
+    setError("Use Google from login screen");
   };
 
   const handleGoogleComplete = async () => {
-    const nameErr = validateCommon(name);
-    if (nameErr) {
-      setError(nameErr);
-      return;
-    }
-    setError(null);
-    setLoading(true);
-    try {
-      await createGoogleAccount({ name: name.trim(), email: googleEmail });
-      await createNewGuestProfile({
-        playerName: name.trim(),
-        levelDefs: levelsData as any,
-      });
-      await updateGuestAvatar(avatar);
-      onNavigate("levels");
-    } catch {
-      setError("Failed finishing account");
-    } finally {
-      setLoading(false);
-    }
+    setError("Complete Google flow via OAuth return (not implemented here)");
   };
 
   const AvatarPicker = (

@@ -1,5 +1,7 @@
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import { upsertLocalLevel, mutateLocalStats, syncUser } from "@/lib/sync";
+import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
@@ -608,22 +610,64 @@ export default function GameScreen({
     if (gameComplete && !gameCompleteRef.current) {
       gameCompleteRef.current = true;
       // Lazy import to avoid circular issues
-      import("@/hooks/guest-progress").then((mod) => {
+      (async () => {
         const levelNumber = levelData?.level || 1;
         const category = categoryName || "Forest";
-        mod
+
+        // 1. Update legacy guest progress store (kept temporarily for UI relying on it)
+        const guestMod = await import("@/hooks/guest-progress");
+        const updated = await guestMod
           .completeLevelAndPersist({
             category,
             levelNumber,
             score,
             bonusWords: foundBonusWords.length,
-            attempts: attempts + 1, // treat this finished run as an attempt
+            attempts: attempts + 1,
             levelDefs: undefined,
           })
-          .catch((err) =>
-            console.warn("Failed to persist level completion", err)
-          );
-      });
+          .catch((err) => {
+            console.warn("Failed legacy persist", err);
+            return null;
+          });
+
+        // 2. Mutate unified snapshot (offline-first) regardless of legacy success
+        await upsertLocalLevel({
+          user_id: (updated as any)?._snapshotUserId || "guest-temp", // will be remapped later if guest
+          level: levelNumber,
+          theme: category,
+          stars: 0, // stars unknown here; could map from updated if needed
+          completed: true,
+          first_completed_at: new Date().toISOString(),
+          last_completed_at: new Date().toISOString(),
+        });
+        // Add reward stats (simple estimate based on score + bonus words)
+        await mutateLocalStats((stats) => {
+          stats.xp +=
+            Math.max(1, Math.floor(score / 20)) +
+            Math.min(50, foundBonusWords.length * 5);
+          stats.coin += 50; // placeholder reward
+        });
+
+        // 3. If we have guest progress updated, mirror to snapshot via helper (ensures stars etc.)
+        if (updated) {
+          updateGuestSnapshotFromProgress(updated).catch(() => {});
+        }
+
+        // 4. Attempt background sync if user authenticated
+        try {
+          // We can't use hook here; fetch current session via supabase directly
+          const { supabase } = await import("@/lib/supabase");
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const uid = session?.user?.id;
+          if (uid) {
+            syncUser(uid).catch(() => {});
+          }
+        } catch (e) {
+          console.warn("Post-completion sync attempt failed", e);
+        }
+      })();
     }
   }, [
     gameComplete,

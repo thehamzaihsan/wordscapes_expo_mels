@@ -16,13 +16,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Logo from "./logo";
-import { mockGoogleSignIn, getAccountByEmail } from "@/hooks/account";
 import {
-  loadGuestProgress,
-  createNewGuestProfile,
-  updateGuestAvatar,
-} from "@/hooks/guest-progress";
-import levelsData from "@/constants/levels.json";
+  signInEmailPassword,
+  signInWithGoogle,
+  resetPassword,
+} from "@/lib/auth";
+import { isSupabaseEnabled } from "@/lib/supabase";
+import { showToast } from "@/lib/toast";
 
 const { width, height } = Dimensions.get("window");
 // Particle interface
@@ -47,6 +47,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [googleLoading, setGoogleLoading] = useState<boolean>(false);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Create floating particles
   useEffect(() => {
@@ -102,27 +105,37 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     setPassword("");
   };
 
-  const handleLogin = (): void => {
+  const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      showToast("Email & password required", "error");
       return;
     }
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await signInEmailPassword(
+        email.trim().toLowerCase(),
+        password
+      );
+      if (!res.ok) {
+        showToast(res.error || "Login failed", "error");
+      } else {
+        showToast("Welcome back", "success");
+        onNavigate("levels");
+      }
+    } catch (e: any) {
+      showToast(e?.message || "Login error", "error");
+    } finally {
       setIsLoading(false);
-      Alert.alert("Success", "Login successful!");
-    }, 2000);
+    }
   };
 
   const handleGuestLogin = (): void => {
     onNavigate("guest-name");
   };
 
-  const handleForgotPassword = (): void => {
-    Alert.alert(
-      "Forgot Password",
-      "Password reset link would be sent to your email"
-    );
+  const handleForgotPassword = () => {
+    setResetEmail(email);
+    setShowReset(true);
   };
 
   const handleCreateAccount = (): void => {
@@ -131,33 +144,38 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
   const handleGoogleLogin = async (): Promise<void> => {
     if (googleLoading) return;
+    if (!isSupabaseEnabled()) {
+      showToast("Supabase not configured", "error");
+      return;
+    }
     setGoogleLoading(true);
     try {
-      const res = await mockGoogleSignIn();
-      const existing = await getAccountByEmail(res.email);
-      if (existing) {
-        // If we already have guest progress just navigate; else create with existing name
-        const gp = await loadGuestProgress();
-        if (!gp) {
-          await createNewGuestProfile({
-            playerName: existing.name,
-            levelDefs: levelsData as any,
-          });
-          if (existing.name) await updateGuestAvatar("🛡️");
-        }
-        Alert.alert("Welcome Back", existing.name, [
-          { text: "OK", onPress: () => onNavigate("levels") },
-        ]);
-      } else {
-        // Need name/avatar step; navigate with email + google flag
-        onNavigate(
-          "create-account?email=" + encodeURIComponent(res.email) + "&google=1"
-        );
-      }
-    } catch {
-      Alert.alert("Google Sign-In Failed", "Please try again");
+      const res = await signInWithGoogle();
+      if (!res.ok) showToast(res.error || "Google sign-in failed", "error");
+    } catch (e: any) {
+      showToast(e?.message || "Google error", "error");
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleSendReset = async () => {
+    if (!resetEmail.trim()) {
+      showToast("Enter email", "error");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const res = await resetPassword(resetEmail.trim().toLowerCase());
+      if (!res.ok) showToast(res.error || "Failed to send reset", "error");
+      else {
+        showToast("Reset email sent", "success");
+        setShowReset(false);
+      }
+    } catch (e: any) {
+      showToast(e?.message || "Error sending reset", "error");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -327,6 +345,37 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
             <Text style={styles.createAccountLink}>CREATE ACCOUNT</Text>
           </TouchableOpacity>
         </View>
+        {showReset && (
+          <View style={styles.resetCard}>
+            <Text style={styles.resetTitle}>Reset Password</Text>
+            <TextInput
+              style={styles.input}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={resetEmail}
+              onChangeText={setResetEmail}
+              placeholder="you@example.com"
+              placeholderTextColor="#6B7280"
+            />
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <TouchableOpacity
+                style={[styles.loginButton, { flex: 1 }]}
+                disabled={resetLoading}
+                onPress={handleSendReset}
+              >
+                <Text style={styles.loginButtonText}>
+                  {resetLoading ? "SENDING..." : "SEND LINK"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.guestButton, { flex: 1 }]}
+                onPress={() => setShowReset(false)}
+              >
+                <Text style={styles.guestButtonText}>CANCEL</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -574,6 +623,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     letterSpacing: 1,
+  },
+  resetCard: {
+    backgroundColor: "#1F2937",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: "#374151",
+    marginTop: 10,
+    gap: 14,
+  },
+  resetTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    textAlign: "center",
   },
 });
 
