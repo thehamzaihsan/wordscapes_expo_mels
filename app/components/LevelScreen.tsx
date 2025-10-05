@@ -1,8 +1,15 @@
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ChevronLeft } from "lucide-react-native";
+import { useFocusEffect } from "expo-router";
+import {
+  buildInitialProgress,
+  loadGuestProgress,
+  saveGuestProgress,
+  derivePlayerLevel,
+} from "@/hooks/guest-progress";
+import type { GuestProgressPayload, GuestMeta } from "@/hooks/guest-progress";
+import { User } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -16,7 +23,7 @@ import {
   View,
 } from "react-native";
 
-const GUEST_PROGRESS_KEY = "wordscapes_guest_progress";
+// Storage key managed by guest-progress hook
 
 const { width, height } = Dimensions.get("window");
 
@@ -69,8 +76,7 @@ interface LevelScreenProps {
 const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Forest");
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [playerGems] = useState<number>(1245);
-  const [playerEnergy] = useState<number>(75);
+  const [guestMeta, setGuestMeta] = useState<GuestMeta | null>(null);
   const [levelCategories, setLevelCategories] = useState<{
     [key: string]: LevelData[];
   }>({});
@@ -121,54 +127,58 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   }, []);
 
   // Initialize game manager and load levels
-  useEffect(() => {
-    const loadLevels = async () => {
-      setIsLoading(true);
-      initializeGameManager();
-
-      try {
-        // Try to get saved progress from local storage
-        const savedProgressJSON = await AsyncStorage.getItem(
-          GUEST_PROGRESS_KEY
-        );
-
-        if (savedProgressJSON) {
-          // If data exists, parse it and set it as our state
-          const savedProgress = JSON.parse(savedProgressJSON);
-          setLevelCategories(savedProgress);
-        } else {
-          // If no data exists (first time playing), load from JSON and set initial state
-          const initialCategories: { [key: string]: LevelData[] } = {};
-
-          Object.keys(levelsData).forEach((category) => {
-            initialCategories[category] = (levelsData as any)[category].map(
-              (level: any, index: number) => ({
-                ...level,
-                isUnlocked: index < 3, // Unlock the first 3 levels
-                isCompleted: false,
-                stars: 0,
-              })
+  // Initial load + subsequent refresh when returning to this screen
+  useFocusEffect(
+    React.useCallback(() => {
+      let isMounted = true;
+      const load = async () => {
+        setIsLoading(true);
+        initializeGameManager();
+        try {
+          const existing = await loadGuestProgress();
+          let progressToUse: GuestProgressPayload | null = existing;
+          // Validate shape; if corrupted or missing categories rebuild
+          if (
+            !progressToUse ||
+            !progressToUse.categories ||
+            typeof progressToUse.categories !== "object" ||
+            Array.isArray(progressToUse.categories) ||
+            Object.keys(progressToUse.categories).length === 0
+          ) {
+            console.warn(
+              "Guest progress missing or invalid, rebuilding initial structure"
             );
+            progressToUse = buildInitialProgress(levelsData as any);
+            await saveGuestProgress(progressToUse);
+          }
+          if (!isMounted) return;
+          const mapped: { [key: string]: LevelData[] } = {};
+          Object.keys(progressToUse.categories).forEach((cat) => {
+            mapped[cat] = progressToUse!.categories[cat].map((l) => ({
+              level: l.level,
+              baseWord: l.baseWord,
+              letters: [],
+              crosswordWords: [],
+              difficulty: l.difficulty as Difficulty,
+              isUnlocked: l.isUnlocked,
+              isCompleted: l.isCompleted,
+              stars: l.stars,
+            }));
           });
-
-          setLevelCategories(initialCategories);
-
-          // Save this initial state to local storage for the next session
-          await AsyncStorage.setItem(
-            GUEST_PROGRESS_KEY,
-            JSON.stringify(initialCategories)
-          );
+          setLevelCategories(mapped);
+          setGuestMeta(progressToUse.meta);
+        } catch (e) {
+          console.error("Failed to refresh guest progress", e);
+        } finally {
+          if (isMounted) setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Failed to load levels:", error);
-        setLevelCategories({});
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadLevels();
-  }, []);
+      };
+      load();
+      return () => {
+        isMounted = false;
+      };
+    }, [])
+  );
 
   const getDifficultyColor = (difficulty: Difficulty): string => {
     const config = getDifficultyConfig(difficulty);
@@ -177,7 +187,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   const handleLevelPress = (level: LevelData, categoryName: string): void => {
     if (level.isUnlocked) {
-      if (playerEnergy < 10) {
+      if ((guestMeta?.energy ?? 0) < 10) {
         Alert.alert(
           "Not enough energy!",
           "Wait or buy more energy to continue playing."
@@ -188,15 +198,24 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         );
         console.log(`📊 Level data:`, level);
 
-        // Navigate to game with complete level data from JSON
+        // Retrieve full level definition (letters + crossword words) from static levels.json
+        const categoryDefs: any[] = (levelsData as any)[categoryName] || [];
+        const fullDef = categoryDefs.find((d) => d.level === level.level);
+        const resolvedLetters: string[] =
+          fullDef?.letters || fullDef?.baseWord?.split("") || [];
+        const resolvedCrosswordWords: string[] = fullDef?.crosswordWords || [];
+
+        // Navigate to game with complete level data
         onNavigate("game", {
           baseWord: level.baseWord,
           difficulty: level.difficulty,
           levelTitle: `${level.baseWord} - Level ${level.level}`,
+          categoryName,
           levelData: {
+            level: level.level,
             baseWord: level.baseWord,
-            letters: level.letters || [],
-            crosswordWords: level.crosswordWords || [],
+            letters: resolvedLetters,
+            crosswordWords: resolvedCrosswordWords,
             difficulty: level.difficulty,
           },
         });
@@ -204,10 +223,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     } else {
       Alert.alert("Locked", "Complete the previous level to unlock this one.");
     }
-  };
-
-  const handleBackPress = (): void => {
-    onNavigate("login");
   };
 
   const handleShopPress = (): void => {
@@ -327,9 +342,12 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-            <ChevronLeft size={16} color={"white"} />
-            <Text style={styles.backButtonText}>Back</Text>
+          <TouchableOpacity
+            onPress={() => onNavigate("profile")}
+            style={styles.backButton}
+          >
+            <User size={16} color={"white"} />
+            <Text style={styles.backButtonText}>Profile</Text>
           </TouchableOpacity>
 
           <View style={styles.resourcesContainer}>
@@ -339,7 +357,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               activeOpacity={0.7}
             >
               <Text style={styles.resourceIcon}>💎</Text>
-              <Text style={styles.resourceText}>{playerGems}</Text>
+              <Text style={styles.resourceText}>{guestMeta?.gems ?? 0}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -351,28 +369,55 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               <Text
                 style={[
                   styles.resourceText,
-                  { color: playerEnergy > 50 ? "#10B981" : "#EF4444" },
+                  {
+                    color:
+                      (guestMeta?.energy ?? 0) > 50 ? "#10B981" : "#EF4444",
+                  },
                 ]}
               >
-                {playerEnergy}/100
+                {guestMeta?.energy ?? 0}/100
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.playerInfo}>
-          <Text style={styles.playerName}>SHADOW_HUNTER</Text>
-          <Text style={styles.playerLevel}>Level 87</Text>
+          <Text
+            style={styles.playerName}
+            onLongPress={async () => {
+              const gp = await loadGuestProgress();
+              console.log("[DEBUG] Guest progress:", gp);
+              Alert.alert("Debug", "Guest progress logged to console.");
+            }}
+          >
+            {(guestMeta?.playerName || "Guest").toUpperCase()}
+          </Text>
+          <Text style={styles.playerLevel}>
+            Lvl {guestMeta?.playerLevel ?? 0}
+          </Text>
         </View>
 
         {/* Progress Bar */}
         <View style={styles.xpContainer}>
-          <Text style={styles.xpLabel}>7450/10000 XP</Text>
-          <View style={styles.xpBarContainer}>
-            <View style={styles.xpBarBackground}>
-              <View style={[styles.xpBar, { width: "74.5%" }]} />
-            </View>
-          </View>
+          {(() => {
+            const xp = guestMeta?.xp ?? 0;
+            const derived = derivePlayerLevel(xp);
+            const within = derived.levelXp;
+            const needed = derived.nextLevelXp;
+            const pct = Math.min(100, Math.max(0, (within / needed) * 100));
+            return (
+              <>
+                <Text style={styles.xpLabel}>
+                  {within}/{needed} XP (Total {xp})
+                </Text>
+                <View style={styles.xpBarContainer}>
+                  <View style={styles.xpBarBackground}>
+                    <View style={[styles.xpBar, { width: `${pct}%` }]} />
+                  </View>
+                </View>
+              </>
+            );
+          })()}
         </View>
       </View>
 

@@ -1,6 +1,5 @@
-
-import { ChevronLeft, Play, Settings } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { ChevronLeft, Play, Settings } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Animated,
@@ -11,12 +10,21 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Logo from './logo';
+  View,
+  ActivityIndicator,
+  Image,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Logo from "./logo";
+import { mockGoogleSignIn, getAccountByEmail } from "@/hooks/account";
+import {
+  loadGuestProgress,
+  createNewGuestProfile,
+  updateGuestAvatar,
+} from "@/hooks/guest-progress";
+import levelsData from "@/constants/levels.json";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 // Particle interface
 interface Particle {
   id: number;
@@ -27,12 +35,6 @@ interface Particle {
   color: string;
 }
 
-interface LetterTileProps {
-  letter: string;
-  size?: 'large' | 'small';
-  index: number;
-}
-
 interface LoginScreenProps {
   onNavigate: (screen: string) => void;
 }
@@ -40,15 +42,16 @@ interface LoginScreenProps {
 const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const insets = useSafeAreaInsets();
   const [showLogin, setShowLogin] = useState<boolean>(false);
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [googleLoading, setGoogleLoading] = useState<boolean>(false);
   const [particles, setParticles] = useState<Particle[]>([]);
 
   // Create floating particles
   useEffect(() => {
-    const particleColors = ['#8B5CF6', '#EF4444', '#F59E0B', '#10B981']; // Purple, Red, Yellow, Green
-    
+    const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"]; // Purple, Red, Yellow, Green
+
     const createParticle = (id: number): Particle => ({
       id,
       x: new Animated.Value(Math.random() * width),
@@ -58,13 +61,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
       color: particleColors[Math.floor(Math.random() * particleColors.length)],
     });
 
-    const particleArray = Array.from({ length: 20 }, (_, i) => createParticle(i));
+    const particleArray = Array.from({ length: 20 }, (_, i) =>
+      createParticle(i)
+    );
     setParticles(particleArray);
 
     // Animate particles
     const animateParticle = (particle: Particle) => {
       const duration = Math.random() * 10000 + 8000;
-      
+
       Animated.parallel([
         Animated.timing(particle.x, {
           toValue: Math.random() * width,
@@ -93,62 +98,72 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
   const handleBackClick = (): void => {
     setShowLogin(false);
-    setEmail('');
-    setPassword('');
+    setEmail("");
+    setPassword("");
   };
 
   const handleLogin = (): void => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert('Success', 'Login successful!');
+      Alert.alert("Success", "Login successful!");
     }, 2000);
   };
 
   const handleGuestLogin = (): void => {
-  onNavigate('levels');
+    onNavigate("guest-name");
   };
 
   const handleForgotPassword = (): void => {
-    Alert.alert('Forgot Password', 'Password reset link would be sent to your email');
+    Alert.alert(
+      "Forgot Password",
+      "Password reset link would be sent to your email"
+    );
   };
 
   const handleCreateAccount = (): void => {
-    Alert.alert('Create Account', 'Redirecting to sign up...');
+    onNavigate("create-account");
   };
 
-  const getTileColors = (index: number): string => {
-    const colors = ['#8B5CF6', '#F59E0B', '#EF4444', '#10B981'];
-    return colors[index % colors.length];
-  };
-
-  const LetterTile: React.FC<LetterTileProps> = ({ letter, size = 'large', index }) => {
-    const tileSize = size === 'large' ? 60 : 40;
-    const fontSize = size === 'large' ? 24 : 18;
-    
-    return (
-      <View
-        style={[
-          styles.letterTile,
-          {
-            width: tileSize,
-            height: tileSize,
-            backgroundColor: getTileColors(index),
-          },
-        ]}
-      >
-        <Text style={[styles.letterText, { fontSize }]}>{letter}</Text>
-      </View>
-    );
+  const handleGoogleLogin = async (): Promise<void> => {
+    if (googleLoading) return;
+    setGoogleLoading(true);
+    try {
+      const res = await mockGoogleSignIn();
+      const existing = await getAccountByEmail(res.email);
+      if (existing) {
+        // If we already have guest progress just navigate; else create with existing name
+        const gp = await loadGuestProgress();
+        if (!gp) {
+          await createNewGuestProfile({
+            playerName: existing.name,
+            levelDefs: levelsData as any,
+          });
+          if (existing.name) await updateGuestAvatar("🛡️");
+        }
+        Alert.alert("Welcome Back", existing.name, [
+          { text: "OK", onPress: () => onNavigate("levels") },
+        ]);
+      } else {
+        // Need name/avatar step; navigate with email + google flag
+        onNavigate(
+          "create-account?email=" + encodeURIComponent(res.email) + "&google=1"
+        );
+      }
+    } catch {
+      Alert.alert("Google Sign-In Failed", "Please try again");
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const renderFloatingParticles = () => (
     <View style={StyleSheet.absoluteFillObject}>
-      {particles.map(particle => (
+      {particles.map((particle) => (
         <Animated.View
           key={particle.id}
           style={[
@@ -169,12 +184,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   );
 
   const renderMainMenu = () => (
-    <View style={[styles.container, {
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-    }]}
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
     >
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
       {renderFloatingParticles()}
@@ -187,12 +206,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         </View>
         {/* Menu Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={handlePlayClick} style={styles.primaryButton}>
-            <Play  size={18} color={'white'}/>
+          <TouchableOpacity
+            onPress={handlePlayClick}
+            style={styles.primaryButton}
+          >
+            <Play size={18} color={"white"} />
             <Text style={styles.primaryButtonText}> Play Game</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => Alert.alert('Settings', 'Settings menu')} style={styles.secondaryButton}>
-            <Settings size={18} color={'white'} />
+          <TouchableOpacity
+            onPress={() => Alert.alert("Settings", "Settings menu")}
+            style={styles.secondaryButton}
+          >
+            <Settings size={18} color={"white"} />
             <Text style={styles.secondaryButtonText}> Settings</Text>
           </TouchableOpacity>
         </View>
@@ -201,19 +226,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   );
 
   const renderLoginScreen = () => (
-    <View style={[styles.container, {
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-    }]}
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
     >
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
       {renderFloatingParticles()}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Back Button */}
         <TouchableOpacity onPress={handleBackClick} style={styles.backButton}>
-          <ChevronLeft size={16} color={"white"} /> 
+          <ChevronLeft size={16} color={"white"} />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         {/* Compact Logo */}
@@ -246,22 +275,50 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
               secureTextEntry
             />
           </View>
-          <TouchableOpacity 
-            onPress={handleLogin} 
+          <TouchableOpacity
+            onPress={handleLogin}
             disabled={isLoading}
-            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+            style={[
+              styles.loginButton,
+              isLoading && styles.loginButtonDisabled,
+            ]}
           >
             <Text style={styles.loginButtonText}>
-              {isLoading ? 'CONNECTING...' : 'LOGIN'}
+              {isLoading ? "CONNECTING..." : "LOGIN"}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
+          <TouchableOpacity
+            onPress={handleForgotPassword}
+            style={styles.forgotPassword}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
         {/* Guest Login */}
         <TouchableOpacity onPress={handleGuestLogin} style={styles.guestButton}>
           <Text style={styles.guestButtonText}>CONTINUE AS GUEST</Text>
+        </TouchableOpacity>
+        {/* Google Login */}
+        <TouchableOpacity
+          onPress={handleGoogleLogin}
+          disabled={googleLoading}
+          style={styles.googleLoginButton}
+        >
+          {googleLoading ? (
+            <ActivityIndicator color="#111827" />
+          ) : (
+            <View style={styles.googleContentRow}>
+              <Image
+                source={{
+                  uri: "https://developers.google.com/identity/images/g-logo.png",
+                }}
+                style={styles.googleIcon}
+              />
+              <Text style={styles.googleLoginButtonText}>
+                SIGN IN WITH GOOGLE
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         {/* Create Account */}
         <View style={styles.createAccountContainer}>
@@ -280,146 +337,144 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121213',
+    backgroundColor: "#121213",
   },
   particle: {
-    position: 'absolute',
+    position: "absolute",
     width: 6,
     height: 6,
     borderRadius: 3,
   },
   mainContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 60,
   },
   logoSection: {
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
   },
   letterRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   letterTile: {
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginHorizontal: 4,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   letterText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
   },
   betaTag: {
-    position: 'absolute',
+    position: "absolute",
     top: -10,
     right: -30,
-    backgroundColor: '#EF4444',
+    backgroundColor: "#EF4444",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    transform: [{ rotate: '15deg' }],
+    transform: [{ rotate: "15deg" }],
   },
   betaText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   buttonContainer: {
-    width: '100%',
+    width: "100%",
     maxWidth: 300,
   },
   primaryButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#7C3AED',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#7C3AED",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 8,
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   secondaryButton: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#4B5563',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#4B5563",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 8,
-
   },
   secondaryButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-
+    fontWeight: "bold",
+    textAlign: "center",
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingVertical: 20,
   },
- backButton: {
+  backButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     gap: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#374151',
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
+    alignSelf: "flex-start",
     paddingEnd: 16,
   },
   backButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   compactLogoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 40,
   },
   compactLetterRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 4,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   loginForm: {
-    backgroundColor: '#1F2937',
+    backgroundColor: "#1F2937",
     borderRadius: 16,
     padding: 24,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#374151',
+    borderColor: "#374151",
   },
   loginTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    textAlign: "center",
     marginBottom: 24,
     letterSpacing: 1,
   },
@@ -428,77 +483,96 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#8B5CF6',
+    fontWeight: "bold",
+    color: "#8B5CF6",
     marginBottom: 8,
     letterSpacing: 1,
   },
   input: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     borderRadius: 8,
     padding: 14,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     borderWidth: 2,
-    borderColor: '#4B5563',
+    borderColor: "#4B5563",
     paddingStart: 20,
   },
   loginButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
     paddingVertical: 16,
     borderRadius: 8,
     marginTop: 8,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#7C3AED',
+    borderColor: "#7C3AED",
   },
   loginButtonDisabled: {
-    backgroundColor: '#4B5563',
-    borderColor: '#6B7280',
+    backgroundColor: "#4B5563",
+    borderColor: "#6B7280",
   },
   loginButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     letterSpacing: 1,
   },
   forgotPassword: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   forgotPasswordText: {
-    color: '#8B5CF6',
+    color: "#8B5CF6",
     fontSize: 14,
   },
   guestButton: {
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
     paddingVertical: 14,
     borderRadius: 8,
     marginBottom: 24,
     borderWidth: 2,
-    borderColor: '#4B5563',
+    borderColor: "#4B5563",
   },
+  googleLoginButton: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: -8,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleLoginButtonText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  googleContentRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  googleIcon: { width: 18, height: 18, resizeMode: "contain" },
   guestButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     letterSpacing: 1,
   },
   createAccountContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   createAccountText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
   },
   createAccountLink: {
-    color: '#8B5CF6',
+    color: "#8B5CF6",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 1,
   },
 });

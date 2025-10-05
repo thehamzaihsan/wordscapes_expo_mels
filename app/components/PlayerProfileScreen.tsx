@@ -1,0 +1,394 @@
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ScrollView,
+} from "react-native";
+import { BlurView } from "expo-blur";
+import {
+  loadGuestProgress,
+  updateGuestName,
+  clearGuestProgress,
+  updateGuestAvatar,
+  aggregateGuestStats,
+  derivePlayerLevel,
+  type GuestProgressPayload,
+} from "@/hooks/guest-progress";
+
+interface PlayerProfileScreenProps {
+  onNavigate: (screen: string) => void;
+  onLogout: () => void;
+}
+
+const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
+  onNavigate,
+  onLogout,
+}) => {
+  const [progress, setProgress] = useState<GuestProgressPayload | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const gp = await loadGuestProgress();
+      setProgress(gp);
+      if (gp?.meta.playerName) setNameDraft(gp.meta.playerName);
+    })();
+  }, []);
+
+  const handleSaveName = async () => {
+    if (!nameDraft.trim()) {
+      Alert.alert("Name Required", "Please enter a valid display name.");
+      return;
+    }
+    setSavingName(true);
+    try {
+      const sanitized = nameDraft.trim().slice(0, 20);
+      const updated = await updateGuestName(sanitized);
+      setProgress(updated);
+      Alert.alert("Saved", "Display name updated.");
+    } catch {
+      Alert.alert("Error", "Failed to update name.");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  // --- Avatar Handling ---
+  const avatars = [
+    "🧩",
+    "🐺",
+    "🦊",
+    "🦉",
+    "🐉",
+    "⚡",
+    "🔥",
+    "🌙",
+    "⭐",
+    "🛡️",
+    "🧠",
+    "🎯",
+  ];
+
+  const handleSelectAvatar = async (icon: string) => {
+    const updated = await updateGuestAvatar(icon);
+    setProgress(updated);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "This will remove all your local progress and profile data. Are you sure?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await clearGuestProgress();
+            Alert.alert("Deleted", "Account removed.", [
+              { text: "OK", onPress: () => onLogout() },
+            ]);
+          },
+        },
+      ]
+    );
+  };
+
+  const stats = progress ? aggregateGuestStats(progress) : null;
+  const derived = progress ? derivePlayerLevel(progress.meta.xp) : null;
+
+  return (
+    <View style={styles.container}>
+      <BlurView intensity={50} tint="dark" style={styles.header}>
+        <Text style={styles.title}>PLAYER PROFILE</Text>
+        <Text style={styles.subtitle}>Account & Progress Overview</Text>
+      </BlurView>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Identity Section */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Identity</Text>
+          <View style={styles.rowGap}>
+            <TextInput
+              style={styles.input}
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              placeholder="Display Name"
+              placeholderTextColor="#6B7280"
+              maxLength={20}
+              returnKeyType="done"
+              blurOnSubmit
+              onSubmitEditing={handleSaveName}
+            />
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleSaveName}
+              disabled={savingName}
+            >
+              <Text style={styles.primaryButtonText}>
+                {savingName ? "Saving..." : "Save Name"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {progress && (
+            <Text style={styles.muted}>
+              {progress.meta.avatar || "🧩"} Player Level:{" "}
+              {progress.meta.playerLevel} • Total XP: {progress.meta.xp}
+            </Text>
+          )}
+          {derived && (
+            <View style={styles.xpBarWrapper}>
+              <View style={styles.xpBarBackground}>
+                <View
+                  style={[
+                    styles.xpBarFill,
+                    {
+                      width: `${
+                        (derived.levelXp / derived.nextLevelXp) * 100
+                      }%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.xpCaption}>
+                {derived.levelXp}/{derived.nextLevelXp} XP to next level
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Stats Section */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Stats</Text>
+          {stats ? (
+            <View style={styles.statsGrid}>
+              <Stat
+                label="Levels"
+                value={`${stats.completedLevels}/${stats.totalLevels}`}
+              />
+              <Stat label="Completion" value={`${stats.completionPercent}%`} />
+              <Stat label="Stars" value={`${stats.totalStars}`} />
+              <Stat label="Avg Stars" value={`${stats.averageStars}`} />
+              <Stat label="Attempts" value={`${stats.totalAttempts}`} />
+              <Stat label="Categories" value={`${stats.categories}`} />
+            </View>
+          ) : (
+            <Text style={styles.muted}>Loading stats...</Text>
+          )}
+        </View>
+
+        {/* Avatar Selection */}
+        {progress && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Avatar</Text>
+            <View style={styles.avatarGrid}>
+              {avatars.map((a) => {
+                const active = progress.meta.avatar === a;
+                return (
+                  <TouchableOpacity
+                    key={a}
+                    style={[
+                      styles.avatarItem,
+                      active && styles.avatarItemActive,
+                    ]}
+                    onPress={() => handleSelectAvatar(a)}
+                  >
+                    <Text style={styles.avatarText}>{a}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Account Management */}
+        <View style={styles.card}>
+          <TouchableOpacity onPress={() => setShowAdvanced((v) => !v)}>
+            <Text style={styles.sectionTitle}>
+              {showAdvanced ? "Account ▲" : "Account ▼"}
+            </Text>
+          </TouchableOpacity>
+          {showAdvanced && (
+            <View style={styles.rowGap}>
+              <TouchableOpacity
+                style={styles.dangerButton}
+                onPress={handleDeleteAccount}
+              >
+                <Text style={styles.dangerButtonText}>
+                  Delete Account (Local)
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.outlineButton}
+                onPress={() =>
+                  Alert.alert("Coming Soon", "Cloud sync not yet implemented.")
+                }
+              >
+                <Text style={styles.outlineButtonText}>Sync (Future)</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* Logout */}
+        <View style={styles.footerSpace} />
+        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+          <Text style={styles.logoutButtonText}>Log Out</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+};
+
+const Stat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <View style={styles.statBox}>
+    <Text style={styles.statValue}>{value}</Text>
+    <Text style={styles.statLabel}>{label}</Text>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#121213" },
+  header: {
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#27272a",
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+  subtitle: { color: "#9CA3AF", fontSize: 12, marginTop: 4 },
+  scroll: { padding: 20, paddingBottom: 120, gap: 20 },
+  card: {
+    backgroundColor: "#1F2937",
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#374151",
+    gap: 12,
+  },
+  sectionTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  rowGap: { gap: 12 },
+  input: {
+    backgroundColor: "#374151",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  primaryButton: {
+    backgroundColor: "#8B5CF6",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+  secondaryButton: {
+    backgroundColor: "#334155",
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 12,
+    alignItems: "center",
+  },
+  secondaryButtonText: { color: "#FBBF24", fontSize: 13, fontWeight: "600" },
+  dangerButton: {
+    backgroundColor: "#DC2626",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  dangerButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  outlineButton: {
+    borderWidth: 1,
+    borderColor: "#8B5CF6",
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  outlineButtonText: { color: "#8B5CF6", fontSize: 13, fontWeight: "600" },
+  logoutButton: {
+    backgroundColor: "#475569",
+    paddingVertical: 14,
+    marginHorizontal: 20,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  logoutButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  muted: { color: "#9CA3AF", fontSize: 12 },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 16,
+    columnGap: 12,
+  },
+  statBox: {
+    width: "30%",
+    backgroundColor: "#111827",
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#1f2937",
+  },
+  statValue: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  statLabel: { color: "#9CA3AF", fontSize: 11, marginTop: 4 },
+  inlineStats: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  resourcePill: {
+    flexDirection: "row",
+    backgroundColor: "#111827",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+  },
+  resourceEmoji: { fontSize: 14 },
+  resourceText: { color: "#F1F5F9", fontSize: 13, fontWeight: "600" },
+  xpBarWrapper: { marginTop: 10, gap: 6 },
+  xpBarBackground: {
+    height: 8,
+    backgroundColor: "#374151",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  xpBarFill: { height: "100%", backgroundColor: "#8B5CF6" },
+  xpCaption: { color: "#9CA3AF", fontSize: 11 },
+  footerSpace: { height: 40 },
+  avatarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  avatarItem: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "#111827",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#1f2937",
+  },
+  avatarItemActive: {
+    borderColor: "#8B5CF6",
+    backgroundColor: "#1e1b4b",
+  },
+  avatarText: { fontSize: 26 },
+});
+
+export default PlayerProfileScreen;

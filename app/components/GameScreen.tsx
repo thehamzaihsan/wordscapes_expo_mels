@@ -23,7 +23,7 @@ import {
 } from "react-native";
 import LetterWheel from "./inputWheel";
 
-const GUEST_PROGRESS_KEY = "wordscapes_guest_progress";
+// Guest progress key handled in guest-progress module
 const { width, height } = Dimensions.get("window");
 
 // Define a fixed area for the grid
@@ -86,7 +86,7 @@ export default function GameScreen({
   levelData,
 }: GameScreenProps) {
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
-  const [baseWordState, setBaseWord] = useState("");
+  // baseWord tracked via levelData/baseWord props; local state not required
   const [letters, setLetters] = useState<string[]>([]);
   const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
   const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
@@ -95,11 +95,10 @@ export default function GameScreen({
   const [foundBonusWords, setFoundBonusWords] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [attempts, setAttempts] = useState(0);
-  const [feedback, setFeedback] = useState("");
+  const [attempts] = useState(0); // placeholder for future attempt tracking
   const [score, setScore] = useState(0);
   const [gameComplete, setGameComplete] = useState(false);
-  const [isAnimationFinished, setIsAnimationFinished] = useState(false); // State for the button
+  const gameCompleteRef = useRef(false); // track transition
   const [particles, setParticles] = useState<Particle[]>([]);
 
   const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>(
@@ -129,42 +128,42 @@ export default function GameScreen({
 
   // --- LOAD AND UNLOAD SOUNDS ---
   useEffect(() => {
-    const loadSounds = async () => {
+    let mounted = true;
+    // Only load once
+    (async () => {
       try {
-        const { sound: rightSound } = await Audio.Sound.createAsync(
-          require("../../assets/sounds/correct-word.mp3") // Adjust path
-        );
-        setRightWordSound(rightSound);
-
-        const { sound: wrongSound } = await Audio.Sound.createAsync(
-          require("../../assets/sounds/wrong-word.mp3") // Adjust path
-        );
-        setWrongWordSound(wrongSound);
-
-        const { sound: bonusSound } = await Audio.Sound.createAsync(
-          require("../../assets/sounds/bonus-word.mp3") // Adjust path
-        );
-        setBonusWordSound(bonusSound);
-
-        const { sound: levelComplete } = await Audio.Sound.createAsync(
-          require("../../assets/sounds/level-complete.mp3") // Adjust path
-        );
-        setLevelCompleteSound(levelComplete);
+        const [rightRes, wrongRes, bonusRes, levelRes] = await Promise.all([
+          Audio.Sound.createAsync(
+            require("../../assets/sounds/correct-word.mp3")
+          ),
+          Audio.Sound.createAsync(
+            require("../../assets/sounds/wrong-word.mp3")
+          ),
+          Audio.Sound.createAsync(
+            require("../../assets/sounds/bonus-word.mp3")
+          ),
+          Audio.Sound.createAsync(
+            require("../../assets/sounds/level-complete.mp3")
+          ),
+        ]);
+        if (!mounted) return;
+        setRightWordSound(rightRes.sound);
+        setWrongWordSound(wrongRes.sound);
+        setBonusWordSound(bonusRes.sound);
+        setLevelCompleteSound(levelRes.sound);
       } catch (error) {
         console.error("Failed to load sounds", error);
       }
-    };
-
-    loadSounds();
-
-    // Cleanup function to unload sounds
+    })();
     return () => {
+      mounted = false;
       rightWordSound?.unloadAsync();
       wrongWordSound?.unloadAsync();
       bonusWordSound?.unloadAsync();
       levelCompleteSound?.unloadAsync();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // empty deps so we don't recreate/unload repeatedly
 
   // Helper function to play sounds
   const playSound = async (soundObject: Audio.Sound | null) => {
@@ -191,7 +190,7 @@ export default function GameScreen({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [score]);
+  }, [score, scoreScaleAnim]);
 
   useEffect(() => {
     const particleColors = ["#8B5CF6", "#EF4444", "#F59E0B", "#10B981"];
@@ -231,7 +230,7 @@ export default function GameScreen({
     };
 
     particleArray.forEach(animateParticle);
-  }, []);
+  }, [levelData]);
 
   const createGameGrid = useCallback(
     (basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
@@ -382,17 +381,13 @@ export default function GameScreen({
     async (word: string) => {
       const normalizedWord = word.toLowerCase().trim();
       if (normalizedWord.length < 2) {
-        setFeedback("Word must be at least 2 letters long");
-        setTimeout(() => setFeedback(""), 2000);
         return;
       }
       if (
         foundCrosswordWords.includes(normalizedWord) ||
         foundBonusWords.includes(normalizedWord)
       ) {
-        setFeedback("Word already found!");
         await playSound(wrongWordSound);
-        setTimeout(() => setFeedback(""), 2000);
         return;
       }
 
@@ -401,9 +396,6 @@ export default function GameScreen({
         setFoundCrosswordWords((prev) => [...prev, normalizedWord]);
         const points = normalizedWord.length * 100;
         setScore((prev) => prev + points);
-        setFeedback(
-          `🎉 CROSSWORD WORD! "${normalizedWord.toUpperCase()}" (+${points} points)`
-        );
 
         startFloatingLetterAnimation(normalizedWord);
 
@@ -413,8 +405,6 @@ export default function GameScreen({
             playSound(levelCompleteSound);
           }, 1000);
         }
-
-        setTimeout(() => setFeedback(""), 4000);
       } else {
         const isValidBonus = allValidWords.some(
           (w) => w.toLowerCase() === normalizedWord
@@ -424,14 +414,8 @@ export default function GameScreen({
           setFoundBonusWords((prev) => [...prev, normalizedWord]);
           const points = normalizedWord.length * 10;
           setScore((prev) => prev + points);
-          setFeedback(
-            `✨ Bonus word! "${normalizedWord.toUpperCase()}" (+${points} points)`
-          );
-          setTimeout(() => setFeedback(""), 3000);
         } else {
           await playSound(wrongWordSound);
-          setFeedback(`"${normalizedWord.toUpperCase()}" is not a valid word`);
-          setTimeout(() => setFeedback(""), 2000);
         }
       }
     },
@@ -578,7 +562,6 @@ export default function GameScreen({
             ];
             const allWords = [...availableWords, ...allBonusWords];
 
-            setBaseWord(levelDataToUse.baseWord);
             setLetters(levelDataToUse.letters.map((l) => l.toLowerCase()));
             setCrosswordWords(availableWords);
             setAllValidWords(allWords);
@@ -587,7 +570,7 @@ export default function GameScreen({
             success = true;
           }
         }
-      } catch (e) {
+      } catch {
         setError("Failed to generate level. Please try again.");
       }
       currentAttempts++;
@@ -606,6 +589,50 @@ export default function GameScreen({
   useEffect(() => {
     init();
   }, [init]);
+
+  // Debug: log incoming levelData once on mount
+  useEffect(() => {
+    if (levelData) {
+      console.log("[INIT] GameScreen received levelData:", levelData);
+      console.log(
+        "[INIT] Letters length:",
+        levelData.letters?.length,
+        "Crossword words length:",
+        levelData.crosswordWords?.length
+      );
+    }
+  }, [levelData]);
+
+  // Persist completion when it first toggles to true
+  useEffect(() => {
+    if (gameComplete && !gameCompleteRef.current) {
+      gameCompleteRef.current = true;
+      // Lazy import to avoid circular issues
+      import("@/hooks/guest-progress").then((mod) => {
+        const levelNumber = levelData?.level || 1;
+        const category = categoryName || "Forest";
+        mod
+          .completeLevelAndPersist({
+            category,
+            levelNumber,
+            score,
+            bonusWords: foundBonusWords.length,
+            attempts: attempts + 1, // treat this finished run as an attempt
+            levelDefs: undefined,
+          })
+          .catch((err) =>
+            console.warn("Failed to persist level completion", err)
+          );
+      });
+    }
+  }, [
+    gameComplete,
+    score,
+    foundBonusWords.length,
+    attempts,
+    levelData,
+    categoryName,
+  ]);
 
   const renderFloatingParticles = () => (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
@@ -779,7 +806,6 @@ export default function GameScreen({
         visible={gameComplete}
         onRequestClose={() => {
           setGameComplete(false);
-          setIsAnimationFinished(false);
         }}
       >
         <View style={styles.modalContainer}>
@@ -791,9 +817,6 @@ export default function GameScreen({
               autoPlay
               loop={false}
               style={styles.lottieAnimation}
-              onAnimationFinish={() => {
-                setIsAnimationFinished(true);
-              }}
             />
             <TouchableOpacity
               style={styles.nextLevelButton}
