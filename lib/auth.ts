@@ -1,8 +1,8 @@
-import { supabase, isSupabaseEnabled } from "./supabase";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 import { remapGuestSnapshotToUser } from "./guestSnapshot";
-import { syncUser, mutateLocalProfile } from "./sync";
+import { isSupabaseEnabled, supabase } from "./supabase";
+import { mutateLocalProfile, syncUser } from "./sync";
 
 export interface AuthResult {
   ok: boolean;
@@ -15,6 +15,7 @@ export async function signUpEmailPassword(params: {
   password: string;
   username: string;
   avatar?: string;
+
 }): Promise<AuthResult> {
   if (!isSupabaseEnabled())
     return { ok: false, error: "Supabase not configured" };
@@ -25,6 +26,7 @@ export async function signUpEmailPassword(params: {
       email, 
       password,
       options: {
+        emailRedirectTo: "com.hexadevs.word://auth", // 👈 add this line
         data: {
           username: username,
           avatar: avatar || "🛡️",

@@ -4,12 +4,13 @@
     "slug": "wordscapes-expo",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "com.hexadevs.word",
     "icon": "./assets/images/icon.png",
-    "scheme": "wordscapesexpo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.wordscapesexpo"
     },
     "android": {
       "adaptiveIcon": {
@@ -48,8 +49,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "63ff3375-4024-4af6-b617-ce371e35b429"
+        "projectId": "5a93eb4b-90fb-41d2-9f27-5eb2cfd1a6ab"
       }
-    }
+    },
+    "owner": "hamzaihsan"
   }
 }
