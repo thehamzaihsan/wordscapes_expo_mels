@@ -8,13 +8,13 @@ import {
   loadGuestProgress,
   saveGuestProgress,
 } from "@/hooks/guest-progress";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { getLocalSnapshot } from "@/lib/sync";
 import { useFocusEffect } from "expo-router";
 import { User } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
-  Animated,
-  Dimensions,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -24,8 +24,6 @@ import {
 } from "react-native";
 
 // Storage key managed by guest-progress hook
-
-const { width, height } = Dimensions.get("window");
 
 interface LevelData {
   level: number;
@@ -70,6 +68,35 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     [key: string]: LevelData[];
   }>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [snapshotProfileName, setSnapshotProfileName] = useState<string | null>(
+    null
+  );
+  const { user } = useSupabaseAuth();
+
+  const authDisplayName = React.useMemo(() => {
+    const meta = (user?.user_metadata ?? {}) as Record<string, any>;
+    const candidate =
+      meta?.username || meta?.display_name || meta?.full_name || meta?.name;
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+    return null;
+  }, [user]);
+
+  const displayName = React.useMemo(() => {
+    const candidates = [
+      authDisplayName,
+      snapshotProfileName?.trim(),
+      guestMeta?.playerName?.trim(),
+      user?.email ? user.email.split("@")[0] : null,
+    ].filter((v): v is string => !!v && v.length > 0);
+    return (candidates[0] || "Guest").toUpperCase();
+  }, [
+    authDisplayName,
+    snapshotProfileName,
+    guestMeta?.playerName,
+    user?.email,
+  ]);
 
   // Initialize game manager and load levels
   // Initial load + subsequent refresh when returning to this screen
@@ -80,6 +107,9 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         setIsLoading(true);
         initializeGameManager();
         try {
+          const snapshot = await getLocalSnapshot();
+          if (!isMounted) return;
+          setSnapshotProfileName(snapshot?.profile?.username ?? null);
           const existing = await loadGuestProgress();
           let progressToUse: GuestProgressPayload | null = existing;
           // Validate shape; if corrupted or missing categories rebuild
@@ -93,7 +123,23 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             console.warn(
               "Guest progress missing or invalid, rebuilding initial structure"
             );
-            progressToUse = buildInitialProgress(levelsData as any);
+            const preferredName =
+              authDisplayName || snapshot?.profile?.username || undefined;
+            progressToUse = buildInitialProgress(
+              levelsData as any,
+              preferredName
+            );
+            await saveGuestProgress(progressToUse);
+          }
+
+          if (
+            isMounted &&
+            progressToUse &&
+            authDisplayName &&
+            progressToUse.meta.playerName !== authDisplayName
+          ) {
+            progressToUse.meta.playerName = authDisplayName;
+            progressToUse.updatedAt = new Date().toISOString();
             await saveGuestProgress(progressToUse);
           }
           if (!isMounted) return;
@@ -122,7 +168,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, [authDisplayName])
   );
 
   const getDifficultyColor = (difficulty: Difficulty): string => {
@@ -172,10 +218,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   const handleShopPress = (): void => {
     onNavigate("shop");
-  };
-
-  const handleSettingsPress = (): void => {
-    onNavigate("settings");
   };
 
   const LevelCard: React.FC<LevelCardProps> = ({
@@ -314,7 +356,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               Alert.alert("Debug", "Guest progress logged to console.");
             }}
           >
-            {(guestMeta?.playerName || "Guest").toUpperCase()}
+            {displayName}
           </Text>
           <Text style={styles.playerLevel}>
             Lvl {guestMeta?.playerLevel ?? 0}
@@ -418,10 +460,10 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  backgroundColor: "transparent",
+    backgroundColor: "transparent",
   },
   header: {
-  backgroundColor: "rgba(31,41,55,0.85)",
+    backgroundColor: "rgba(31,41,55,0.85)",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 2,
@@ -440,7 +482,7 @@ const styles = StyleSheet.create({
     gap: 4,
     flexDirection: "row",
     alignItems: "center",
-  backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "rgba(55,65,81,0.85)",
     paddingEnd: 16,
   },
   backButtonText: {
@@ -455,7 +497,7 @@ const styles = StyleSheet.create({
   resourceItem: {
     flexDirection: "row",
     alignItems: "center",
-  backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "rgba(55,65,81,0.85)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -498,17 +540,17 @@ const styles = StyleSheet.create({
   xpBarBackground: {
     width: "80%",
     height: 8,
-  backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "rgba(55,65,81,0.85)",
     borderRadius: 4,
     overflow: "hidden",
   },
   xpBar: {
     height: "100%",
-  backgroundColor: "rgba(139,92,246,0.7)",
+    backgroundColor: "rgba(139,92,246,0.7)",
     borderRadius: 4,
   },
   categoryContainer: {
-  backgroundColor: "rgba(31,41,55,0.85)",
+    backgroundColor: "rgba(31,41,55,0.85)",
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#374151",
@@ -521,10 +563,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-  backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "rgba(55,65,81,0.85)",
   },
   categoryTabActive: {
-  backgroundColor: "rgba(139,92,246,0.7)",
+    backgroundColor: "rgba(139,92,246,0.7)",
   },
   categoryText: {
     color: "#9CA3AF",
@@ -542,7 +584,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   levelCard: {
-  backgroundColor: "rgba(31,41,55,0.85)",
+    backgroundColor: "rgba(31,41,55,0.85)",
     borderRadius: 16,
     borderWidth: 2,
     borderColor: "#374151",
@@ -648,7 +690,7 @@ const styles = StyleSheet.create({
   progressBarBackground: {
     width: "100%",
     height: 8,
-  backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "rgba(55,65,81,0.85)",
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -669,7 +711,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   rewardContainer: {
-  backgroundColor: "rgba(31,41,55,0.85)",
+    backgroundColor: "rgba(31,41,55,0.85)",
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 8,
@@ -684,13 +726,13 @@ const styles = StyleSheet.create({
   },
   // statusBadge: duplicate removed
   completedBadge: {
-  backgroundColor: "rgba(16,185,129,0.7)",
+    backgroundColor: "rgba(16,185,129,0.7)",
   },
   inProgressBadge: {
-  backgroundColor: "rgba(59,130,246,0.7)",
+    backgroundColor: "rgba(59,130,246,0.7)",
   },
   newBadge: {
-  backgroundColor: "rgba(139,92,246,0.7)",
+    backgroundColor: "rgba(139,92,246,0.7)",
   },
   // statusText: duplicate removed
   bottomSpacing: {

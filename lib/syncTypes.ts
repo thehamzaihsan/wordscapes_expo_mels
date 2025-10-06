@@ -1,14 +1,21 @@
 // Shared types mirroring remote Postgres tables (profiles, user_stats, level_progress)
 // and a consolidated LocalSnapshot for offline-first sync.
 
+// Subscription tiers encoded inside 'status' column (DDL: status text)
+export type SubscriptionTier = "free" | "weekly" | "monthly";
+
 export interface ProfileRow {
   id: string; // uuid
-  username: string;
-  avatar?: string | null;
-  status?: string | null;
-  is_guest: boolean;
-  created_at: string; // ISO
-  updated_at: string; // ISO
+  username: string; // NOT NULL
+  avatar?: string | null; // optional avatar URL / key
+  /**
+   * Backend stores subscription tier in the generic 'status' column.
+   * Valid values: 'free' | 'weekly' | 'monthly'. (Legacy values like 'active' are tolerated.)
+   */
+  status?: SubscriptionTier | string | null;
+  is_guest: boolean; // mirrors DB default false (we set explicitly)
+  created_at: string; // timestamptz (ISO string locally)
+  updated_at: string; // timestamptz (ISO string locally)
 }
 
 export interface UserStatsRow {

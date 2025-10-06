@@ -48,8 +48,31 @@ async function saveSnapshot(s: LocalUserSnapshot) {
 export async function updateGuestSnapshotFromProgress(
   progress: GuestProgressPayload
 ) {
-  const guestId = await getOrCreateGuestId();
   const existing = await loadSnapshot();
+  const now = new Date().toISOString();
+  if (existing && !existing.profile.is_guest) {
+    let changed = false;
+    const desiredName = progress.meta.playerName || existing.profile.username;
+    if (desiredName && desiredName !== existing.profile.username) {
+      existing.profile.username = desiredName;
+      changed = true;
+    }
+    if (
+      progress.meta.avatar &&
+      progress.meta.avatar !== existing.profile.avatar
+    ) {
+      existing.profile.avatar = progress.meta.avatar;
+      changed = true;
+    }
+    if (changed) {
+      existing.profile.updated_at = now;
+      existing.local_revision = (existing.local_revision || 0) + 1;
+      await saveSnapshot(existing);
+    }
+    return;
+  }
+
+  const guestId = await getOrCreateGuestId();
 
   // Profile row (guest). Keep prior created_at if exists for continuity.
   const profile: ProfileRow = {
@@ -58,8 +81,8 @@ export async function updateGuestSnapshotFromProgress(
     avatar: progress.meta.avatar,
     status: "guest",
     is_guest: true,
-    created_at: existing?.profile.created_at || new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: existing?.profile.created_at || now,
+    updated_at: now,
   };
 
   const stats: UserStatsRow = {
@@ -68,7 +91,7 @@ export async function updateGuestSnapshotFromProgress(
     coin: progress.meta.coins,
     gems: progress.meta.gems,
     last_streak_date: null,
-    updated_at: new Date().toISOString(),
+    updated_at: now,
   };
 
   // Flatten categories -> levels. Use category name as theme.
@@ -127,11 +150,19 @@ export async function updateGuestSnapshotFromProgress(
 export async function remapGuestSnapshotToUser(newUserId: string) {
   const snapshot = await loadSnapshot();
   if (!snapshot) return;
-  if (!snapshot.profile.is_guest) return; // nothing to do
+  if (snapshot.profile.id === newUserId) return;
 
+  const wasGuest = snapshot.profile.is_guest;
+
+  console.info("[guestSnapshot] remapping guest snapshot", {
+    oldId: snapshot.profile.id,
+    newUserId,
+    levelCount: snapshot.levels.length,
+    wasGuest,
+  });
   snapshot.profile.id = newUserId;
   snapshot.profile.is_guest = false;
-  snapshot.profile.status = "active";
+  snapshot.profile.status = "free";
   snapshot.profile.updated_at = new Date().toISOString();
   snapshot.stats.user_id = newUserId;
   snapshot.levels.forEach((l) => {
@@ -139,4 +170,8 @@ export async function remapGuestSnapshotToUser(newUserId: string) {
   });
   snapshot.local_revision++;
   await saveSnapshot(snapshot);
+  console.info("[guestSnapshot] remap complete", {
+    newUserId,
+    username: snapshot.profile.username,
+  });
 }
