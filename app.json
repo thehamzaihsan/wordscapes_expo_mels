@@ -20,7 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.wordscapesexpo"
+      "package": "com.hexadevs.word"
     },
     "web": {
       "output": "static",
