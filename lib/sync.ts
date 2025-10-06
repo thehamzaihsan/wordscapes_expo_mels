@@ -8,6 +8,7 @@ import type {
   SyncResult,
   SyncOptions,
   LevelConflict,
+  SubscriptionTier,
 } from "./syncTypes";
 
 const LOCAL_USER_SNAPSHOT_KEY = "wordscapes_user_snapshot_v1";
@@ -16,6 +17,18 @@ const LOCAL_USER_SNAPSHOT_KEY = "wordscapes_user_snapshot_v1";
 
 function nowISO() {
   return new Date().toISOString();
+}
+
+// Valid subscription tiers we persist for authenticated users
+const VALID_SUB_TIERS: SubscriptionTier[] = ["free", "weekly", "monthly"];
+
+function sanitizeStatus(p: ProfileRow) {
+  // For authenticated (is_guest false) profiles ensure status is one of valid tiers.
+  if (!p.is_guest) {
+    if (!p.status || !VALID_SUB_TIERS.includes(p.status as SubscriptionTier)) {
+      p.status = "free";
+    }
+  }
 }
 
 async function loadSnapshot(): Promise<LocalUserSnapshot | null> {
@@ -30,6 +43,26 @@ async function loadSnapshot(): Promise<LocalUserSnapshot | null> {
 
 async function saveSnapshot(s: LocalUserSnapshot) {
   await AsyncStorage.setItem(LOCAL_USER_SNAPSHOT_KEY, JSON.stringify(s));
+}
+
+export async function getLocalSnapshot(): Promise<LocalUserSnapshot | null> {
+  return loadSnapshot();
+}
+
+function logSupabaseWarning(
+  context: string,
+  error: unknown,
+  payload?: Record<string, unknown>
+) {
+  if (!error) return;
+  const msg =
+    typeof error === "object" && error !== null && "message" in error
+      ? (error as any).message
+      : String(error);
+  console.warn(`[sync] ${context} failed: ${msg}`, {
+    error,
+    payload,
+  });
 }
 
 // Build a snapshot from guest progress (migration path)
@@ -56,7 +89,7 @@ export async function createInitialSnapshotFromGuest(
     id: userId,
     username: params.guestName,
     avatar: params.avatar,
-    status: "active",
+    status: "free", // treat all new accounts as free tier by default
     is_guest: false,
     created_at: nowISO(),
     updated_at: nowISO(),
@@ -90,6 +123,91 @@ export async function createInitialSnapshotFromGuest(
   };
   await saveSnapshot(snapshot);
   return snapshot;
+}
+
+// Create a brand‑new default snapshot for a freshly authenticated user with no remote rows yet.
+export async function createDefaultSnapshot(
+  userId: string
+): Promise<LocalUserSnapshot> {
+  const profile: ProfileRow = {
+    id: userId,
+    username: "Player",
+    avatar: null,
+    status: "free",
+    is_guest: false,
+    created_at: nowISO(),
+    updated_at: nowISO(),
+  };
+  const stats: UserStatsRow = {
+    user_id: userId,
+    xp: 0,
+    coin: 0,
+    gems: 0,
+    last_streak_date: null,
+    updated_at: nowISO(),
+  };
+  const snapshot: LocalUserSnapshot = {
+    profile,
+    stats,
+    levels: [],
+    local_revision: 1,
+    last_pulled_at: undefined,
+    last_pushed_at: undefined,
+  };
+  await saveSnapshot(snapshot);
+  return snapshot;
+}
+
+// Ensure remote profile + stats rows exist (idempotent bootstrap)
+async function ensureRemoteProfileAndStats(snapshot: LocalUserSnapshot) {
+  const uid = snapshot.profile.id;
+  console.info("[sync] ensureRemoteProfileAndStats", {
+    uid,
+    username: snapshot.profile.username,
+  });
+  try {
+    const { data: prof, error: pErr } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", uid)
+      .maybeSingle();
+    if (pErr) {
+      logSupabaseWarning("fetch profile", pErr, { uid });
+    }
+    if (!prof && !pErr) {
+      const insertProfile = { ...snapshot.profile, is_guest: false };
+      const { error: insertErr } = await supabase
+        .from("profiles")
+        .insert(insertProfile as any);
+      logSupabaseWarning("insert profile", insertErr, insertProfile);
+      if (!insertErr) {
+        console.info("[sync] inserted missing profile row", {
+          uid,
+        });
+      }
+    }
+    const { data: stats, error: sErr } = await supabase
+      .from("user_stats")
+      .select("user_id")
+      .eq("user_id", uid)
+      .maybeSingle();
+    if (sErr) {
+      logSupabaseWarning("fetch stats", sErr, { uid });
+    }
+    if (!stats && !sErr) {
+      const { error: insertStatsErr } = await supabase
+        .from("user_stats")
+        .insert(snapshot.stats as any);
+      logSupabaseWarning("insert stats", insertStatsErr, snapshot.stats as any);
+      if (!insertStatsErr) {
+        console.info("[sync] inserted missing stats row", {
+          uid,
+        });
+      }
+    }
+  } catch (e: any) {
+    console.warn("bootstrap ensureRemoteProfileAndStats error", e?.message);
+  }
 }
 
 // Pull remote data (full refresh) ------------------------------------------------
@@ -126,6 +244,8 @@ export async function pullRemote(
     last_pulled_at: nowISO(),
     last_pushed_at: undefined,
   };
+  // Normalize status for authenticated profiles
+  sanitizeStatus(snapshot.profile);
   await saveSnapshot(snapshot);
   return snapshot;
 }
@@ -161,8 +281,14 @@ export async function pushLocal(
   userId: string,
   options: SyncOptions = {}
 ): Promise<SyncResult> {
+  console.info("[sync] pushLocal start", { userId });
   const snapshot = await loadSnapshot();
   if (!snapshot || snapshot.profile.id !== userId) {
+    console.info("[sync] pushLocal skipped", {
+      hasSnapshot: !!snapshot,
+      snapshotUserId: snapshot?.profile.id,
+      expectedUserId: userId,
+    });
     return {
       pushed: 0,
       updatedStats: false,
@@ -173,13 +299,17 @@ export async function pushLocal(
     };
   }
 
+  // Normalize status + ensure base rows exist remotely before we diff
+  sanitizeStatus(snapshot.profile);
+  await ensureRemoteProfileAndStats(snapshot);
+
   // Pull remote to compare (light) - could optimize later with updated_after filter
   const { data: remoteLevels, error: rlErr } = await supabase
     .from("level_progress")
     .select("*")
     .eq("user_id", userId);
   if (rlErr) {
-    console.warn("pushLocal remoteLevels error", rlErr);
+    logSupabaseWarning("fetch level_progress", rlErr, { userId });
     return {
       pushed: 0,
       updatedStats: false,
@@ -218,7 +348,9 @@ export async function pushLocal(
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
-  if (!rsErr && remoteStats) {
+  if (rsErr) {
+    logSupabaseWarning("fetch user_stats", rsErr, { userId });
+  } else if (remoteStats) {
     if (
       new Date(snapshot.stats.updated_at).getTime() >
       new Date(remoteStats.updated_at).getTime()
@@ -228,8 +360,14 @@ export async function pushLocal(
         .update(snapshot.stats)
         .eq("user_id", userId);
       if (!error) updatedStats = true;
-      else console.warn("update stats error", error);
+      else logSupabaseWarning("update stats", error, snapshot.stats as any);
     }
+  } else {
+    const { error } = await supabase
+      .from("user_stats")
+      .insert(snapshot.stats as any);
+    if (!error) updatedStats = true;
+    else logSupabaseWarning("insert stats", error, snapshot.stats as any);
   }
 
   // Update profile basic fields if changed (username/avatar/status)
@@ -239,7 +377,9 @@ export async function pushLocal(
     .select("*")
     .eq("id", userId)
     .maybeSingle();
-  if (!rpErr && remoteProfile) {
+  if (rpErr) {
+    logSupabaseWarning("fetch profile row", rpErr, { userId });
+  } else if (remoteProfile) {
     const fields: (keyof ProfileRow)[] = ["username", "avatar", "status"];
     const changed = fields.some(
       (f) => (snapshot.profile as any)[f] !== (remoteProfile as any)[f]
@@ -256,8 +396,17 @@ export async function pushLocal(
         .update(partial)
         .eq("id", userId);
       if (!error) profileUpdated = true;
-      else console.warn("update profile error", error);
+      else logSupabaseWarning("update profile", error, partial as any);
     }
+  } else {
+    const newProfile: ProfileRow = {
+      ...snapshot.profile,
+      updated_at: nowISO(),
+      is_guest: false,
+    };
+    const { error } = await supabase.from("profiles").insert(newProfile as any);
+    if (!error) profileUpdated = true;
+    else logSupabaseWarning("insert profile", error, newProfile as any);
   }
 
   snapshot.last_pushed_at = nowISO();
@@ -279,10 +428,27 @@ export async function syncUser(
   userId: string,
   options: SyncOptions = {}
 ): Promise<SyncResult> {
+  console.info("[sync] syncUser start", { userId });
   let snapshot = await loadSnapshot();
+  console.info("[sync] syncUser loaded snapshot", {
+    hasSnapshot: !!snapshot,
+    snapshotUserId: snapshot?.profile.id,
+    isGuest: snapshot?.profile.is_guest,
+  });
   if (!snapshot) {
     snapshot = await pullRemote(userId);
-    if (!snapshot)
+    console.info("[sync] pullRemote result", {
+      fromRemote: !!snapshot,
+    });
+    if (!snapshot) {
+      // No remote data; seed a default snapshot locally and bootstrap rows remotely
+      snapshot = await createDefaultSnapshot(userId);
+      console.info("[sync] created default snapshot", {
+        userId,
+        username: snapshot.profile.username,
+      });
+      await ensureRemoteProfileAndStats(snapshot);
+      await saveSnapshot(snapshot);
       return {
         pushed: 0,
         updatedStats: false,
@@ -291,6 +457,7 @@ export async function syncUser(
         pullInserted: 0,
         pullUpdated: 0,
       };
+    }
     return {
       pushed: 0,
       updatedStats: false,
@@ -302,6 +469,7 @@ export async function syncUser(
   }
   // Push changes
   const pushRes = await pushLocal(userId, options);
+  console.info("[sync] pushLocal result", pushRes);
 
   // Optional: re-pull remote to incorporate anything new (basic approach)
   const { data: remoteLevels, error: lErr } = await supabase
@@ -374,6 +542,13 @@ export async function mutateLocalProfile(mutator: (p: ProfileRow) => void) {
   snapshot.profile.updated_at = nowISO();
   snapshot.local_revision++;
   await saveSnapshot(snapshot);
+}
+
+// Helper to set subscription tier (stored in 'status')
+export async function setSubscription(tier: SubscriptionTier) {
+  await mutateLocalProfile((p) => {
+    p.status = tier;
+  });
 }
 
 export async function clearLocalSnapshot() {

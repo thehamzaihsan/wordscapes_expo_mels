@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import levelsData from "@/constants/levels.json";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 
 /**
@@ -327,12 +328,16 @@ export async function updateGuestName(
   newName: string
 ): Promise<GuestProgressPayload | null> {
   const progress = await loadGuestProgress();
-  if (!progress) return null;
-  progress.meta.playerName = newName;
-  progress.updatedAt = new Date().toISOString();
-  await saveGuestProgress(progress);
-  updateGuestSnapshotFromProgress(progress).catch(() => {});
-  return progress;
+  let working = progress;
+  if (!working) {
+    working = buildInitialProgress(levelsData as any, newName);
+  } else {
+    working.meta.playerName = newName;
+  }
+  working.updatedAt = new Date().toISOString();
+  await saveGuestProgress(working);
+  updateGuestSnapshotFromProgress(working).catch(() => {});
+  return working;
 }
 
 /** Update avatar */
@@ -340,12 +345,15 @@ export async function updateGuestAvatar(
   avatar: string
 ): Promise<GuestProgressPayload | null> {
   const progress = await loadGuestProgress();
-  if (!progress) return null;
-  progress.meta.avatar = avatar;
-  progress.updatedAt = new Date().toISOString();
-  await saveGuestProgress(progress);
-  updateGuestSnapshotFromProgress(progress).catch(() => {});
-  return progress;
+  let working = progress;
+  if (!working) {
+    working = buildInitialProgress(levelsData as any);
+  }
+  working.meta.avatar = avatar;
+  working.updatedAt = new Date().toISOString();
+  await saveGuestProgress(working);
+  updateGuestSnapshotFromProgress(working).catch(() => {});
+  return working;
 }
 
 /** Reset currencies to starting amounts while preserving levels */
