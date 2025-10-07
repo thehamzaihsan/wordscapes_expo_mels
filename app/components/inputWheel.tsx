@@ -6,9 +6,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path, Polygon } from "react-native-svg";
-
 interface LetterWheelProps {
   letters?: string[];
   onWordComplete?: (word: string) => void;
@@ -33,6 +32,15 @@ interface AnimatedLetter {
   index: number;
 }
 
+const { width, height } = Dimensions.get("window");
+
+
+// Responsive values based on screen height
+const isSmallScreen = height < 700;
+const isMediumScreen = height >= 700 && height < 900;
+const isLargeScreen = height >= 900;
+
+
 const LetterWheel: React.FC<LetterWheelProps> = ({
   letters = [],
   onWordComplete,
@@ -51,12 +59,12 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [isShuffling, setIsShuffling] = useState(false);
   const letterPositions = useRef<LetterPosition[]>([]);
 
-  // --- REFINED DYNAMIC SIZING ---
-  const hexagonSize = 35;
+  // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
+  const hexagonSize = isSmallScreen ? 28 : isMediumScreen ? 32 : 35;
   // Increased padding to create more space, especially for more letters
-  const hexagonPadding = 25;
+  const hexagonPadding = isSmallScreen ? 18 : isMediumScreen ? 22 : 25;
   // A reasonable minimum radius for a small number of letters
-  const minRadius = 75;
+  const minRadius = isSmallScreen ? 60 : isMediumScreen ? 70 : 75;
 
   // Calculate radius based on the circumference needed for the letters
   const radius = useMemo(() => {
@@ -76,13 +84,16 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
     // Use the calculated radius, but ensure it doesn't shrink below the minimum
     return Math.max(minRadius, radiusFromCircumference);
-  }, [shuffledLetters.length]);
+  }, [shuffledLetters.length, hexagonSize, hexagonPadding, minRadius]);
 
   // Calculate the total wheel size based on the dynamic radius
   const wheelSize = useMemo(() => {
     // Diameter is (radius + hexagon size) * 2, plus some overall padding for the container
-    return (radius + hexagonSize) * 2 + 20;
-  }, [radius]);
+    const baseSize = (radius + hexagonSize) * 2 + 20;
+    // Ensure it doesn't exceed screen dimensions, leave some margin
+    const maxSize = Math.min(width * 0.9, height * 0.4);
+    return Math.min(baseSize, maxSize);
+  }, [radius, hexagonSize, width, height]);
 
   const wheelCenter = wheelSize / 2;
 
@@ -309,7 +320,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             onPress={shuffleLetters}
             disabled={isShuffling}
           >
-            <Shuffle size={24} color="#ffffff" />
+            <Shuffle size={isSmallScreen ? 20 : 24} color="#ffffff" />
           </TouchableOpacity>
           
           <View
@@ -417,7 +428,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             onPress={handleHint}
             disabled={hintsLeft <= 0}
           >
-            <Lightbulb size={24} color="#ffffff" />
+            <Lightbulb size={isSmallScreen ? 20 : 24} color="#ffffff" />
             <Text style={styles.hintCountText}>{hintsLeft}</Text>
           </TouchableOpacity>
         </View>
@@ -433,7 +444,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             onPress={removeLetter}
             disabled={selectedLetters.length === 0}
           >
-            <Eraser size={24} color="#ffffff" />
+            <Eraser size={isSmallScreen ? 20 : 24} color="#ffffff" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -445,7 +456,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             onPress={submitWord}
             disabled={currentWord.length < 2}
           >
-            <Check size={24} color="#ffffff" />
+            <Check size={isSmallScreen ? 20 : 24} color="#ffffff" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -457,7 +468,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             onPress={resetSelection}
             disabled={selectedLetters.length === 0}
           >
-            <X size={24} color="#ffffff" />
+            <X size={isSmallScreen ? 20 : 24} color="#ffffff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -470,42 +481,42 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 20,
+    paddingVertical: isSmallScreen ? 10 : 20,
   },
   rowWithShuffle: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     width: '100%',
-    marginBottom: 8,
+    marginBottom: isSmallScreen ? 4 : 8,
   },
   leftShuffleButton: {
-    marginRight: 16,
+    marginRight: isSmallScreen ? 8 : 16,
   },
   rightHintButton: {
-    marginLeft: 16,
+    marginLeft: isSmallScreen ? 8 : 16,
   },
   hintButton: {
   backgroundColor: 'rgba(255,215,0,0.7)', // gold
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
-    minWidth: 60,
+    paddingHorizontal: isSmallScreen ? 4 : 6,
+    minWidth: isSmallScreen ? 50 : 60,
   },
   hintCountText: {
     color: '#fffbe6',
     fontWeight: 'bold',
     marginLeft: 4,
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : 16,
   },
   currentWord: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : 18,
     fontWeight: "bold",
     color: "#8B5CF6",
     textAlign: "center",
     textTransform: "uppercase",
-    marginBottom: 30,
+    marginBottom: isSmallScreen ? 20 : 30,
     fontFamily: 'Helvetica',
   },
   wheelContainer: {
@@ -523,7 +534,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   letterText: {
-    fontSize: 22,
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
     fontWeight: "bold",
     color: "#ffffff",
     textAlign: "center",
@@ -533,17 +544,17 @@ const styles = StyleSheet.create({
   },
   letterTextSelected: {
     color: "#000000",
-    fontSize: 24,
+    fontSize: isSmallScreen ? 20 : isMediumScreen ? 22 : 24,
     textShadowColor: "rgba(255, 255, 255, 0.5)",
   },
   selectionNumber: {
     position: "absolute",
-    top: -12,
-    right: -8,
+    top: isSmallScreen ? -10 : -12,
+    right: isSmallScreen ? -6 : -8,
   backgroundColor: "rgba(239,68,68,0.7)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    borderRadius: isSmallScreen ? 10 : 12,
+    width: isSmallScreen ? 20 : 24,
+    height: isSmallScreen ? 20 : 24,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -552,20 +563,20 @@ const styles = StyleSheet.create({
   },
   selectionNumberText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: isSmallScreen ? 10 : 12,
     fontWeight: "bold",
   },
   centerControlsContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
-    marginTop: 20,
+    gap: isSmallScreen ? 8 : 12,
+    marginTop: isSmallScreen ? 15 : 20,
   },
   centerButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: isSmallScreen ? 40 : 48,
+    height: isSmallScreen ? 40 : 48,
+    borderRadius: isSmallScreen ? 20 : 24,
     justifyContent: "center",
     alignItems: "center",
   backgroundColor: "rgba(255,255,255,0.7)",
@@ -595,11 +606,11 @@ const styles = StyleSheet.create({
   },
   centerButtonText: {
     color: "#ffffff",
-    fontSize: 22,
+    fontSize: isSmallScreen ? 18 : 22,
     fontWeight: "bold",
     textAlign: "center",
   },
   submitButtonText: {
-    fontSize: 24,
+    fontSize: isSmallScreen ? 20 : 24,
   },
 });
