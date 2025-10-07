@@ -57,6 +57,81 @@ const defaultMeta: GuestMeta = {
 };
 
 /**
+ * Calculate XP required to unlock a specific category level
+ * Category 0 (Mountain): Always unlocked (0 XP)
+ * Category 1 (Ocean): Unlock at player level 2 (1100 XP total)
+ * Category 2 (Forest): Unlock at player level 4 (2800 XP total)
+ */
+export function xpNeededToUnlockCategory(categoryLevel: number): number {
+  if (categoryLevel === 0) return 0; // First category (Mountain) is always unlocked
+  
+  // Explicit mapping to ensure proper progression
+  const unlockLevels = [0, 2, 4, 6, 8]; // Player levels required for each category
+  const requiredPlayerLevel = unlockLevels[categoryLevel] || (categoryLevel * 2);
+  
+  // Calculate total XP needed to reach the required player level
+  let totalXP = 0;
+  for (let i = 0; i < requiredPlayerLevel; i++) {
+    totalXP += xpNeededForLevel(i);
+  }
+  
+  return totalXP;
+}
+
+/**
+ * Get category order from levels.json
+ */
+export function getCategoryOrder(): string[] {
+  return Object.keys(levelsData);
+}
+
+/**
+ * Determine which categories should be unlocked based on player level
+ */
+export function getUnlockedCategories(playerLevel: number): string[] {
+  const categoryOrder = getCategoryOrder();
+  const unlockedCategories: string[] = [];
+  
+  for (let i = 0; i < categoryOrder.length; i++) {
+    const requiredXP = xpNeededToUnlockCategory(i);
+    const requiredLevel = derivePlayerLevelFromXP(requiredXP).level;
+    
+    if (playerLevel >= requiredLevel) {
+      unlockedCategories.push(categoryOrder[i]);
+    } else {
+      break; // Categories unlock in order
+    }
+  }
+  
+  return unlockedCategories.length > 0 ? unlockedCategories : [categoryOrder[0]]; // Always unlock first category
+}
+
+/**
+ * Helper function to get player level from XP requirement
+ */
+function derivePlayerLevelFromXP(targetXP: number): { level: number } {
+  if (targetXP === 0) return { level: 0 };
+  
+  let accumulatedXP = 0;
+  let level = 0;
+  
+  // Calculate what level this amount of XP corresponds to
+  while (accumulatedXP < targetXP) {
+    const xpForNextLevel = xpNeededForLevel(level);
+    if (accumulatedXP + xpForNextLevel <= targetXP) {
+      accumulatedXP += xpForNextLevel;
+      level++;
+    } else {
+      break;
+    }
+    
+    // Prevent infinite loop
+    if (level > 1000) break;
+  }
+  
+  return { level };
+}
+/**
  * XP curve utilities
  * Level 0 -> 1 requires 500 xp, and each subsequent level requires +100 xp more than the previous.
  * (i.e. incremental requirements: 500, 600, 700, ...)
@@ -281,6 +356,26 @@ export function applyLevelCompletion(
   // Recalculate playerLevel from total xp
   const derived = derivePlayerLevel(progress.meta.xp);
   progress.meta.playerLevel = derived.level;
+
+  // Check if new categories should be unlocked
+  const unlockedCategories = getUnlockedCategories(progress.meta.playerLevel);
+  const categoryOrder = getCategoryOrder();
+  
+  // Add any newly unlocked categories to progress
+  unlockedCategories.forEach(categoryName => {
+    if (!progress.categories[categoryName] && levelsData[categoryName]) {
+      progress.categories[categoryName] = levelsData[categoryName].map((lvl: any, idx: number) => ({
+        level: lvl.level ?? idx + 1,
+        baseWord: lvl.baseWord,
+        difficulty: lvl.difficulty,
+        isUnlocked: idx < 3, // unlock first 3 levels of new category
+        isCompleted: false,
+        bestScore: 0,
+        attempts: 0,
+      }));
+      console.log(`[Category Unlock] Player level ${progress.meta.playerLevel} unlocked category: ${categoryName}`);
+    }
+  });
 
   progress.updatedAt = new Date().toISOString();
   return progress;
