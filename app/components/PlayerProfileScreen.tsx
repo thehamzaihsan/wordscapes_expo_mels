@@ -155,6 +155,18 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
           )}
           {derived && (
             <View style={styles.xpBarWrapper}>
+              <View style={styles.xpLabelRow}>
+                <Text style={styles.xpCaption}>
+                  {derived.levelXp}/{derived.nextLevelXp} XP to next level
+                </Text>
+                <TouchableOpacity 
+                  style={styles.buyXpButton}
+                  onPress={() => onNavigate('xpshop')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.buyXpText}>⚡ Buy XP</Text>
+                </TouchableOpacity>
+              </View>
               <View style={styles.xpBarBackground}>
                 <View
                   style={[
@@ -167,9 +179,6 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                   ]}
                 />
               </View>
-              <Text style={styles.xpCaption}>
-                {derived.levelXp}/{derived.nextLevelXp} XP to next level
-              </Text>
             </View>
           )}
         </View>
@@ -365,6 +374,25 @@ const styles = StyleSheet.create({
   resourceEmoji: { fontSize: 14 },
   resourceText: { color: "#F1F5F9", fontSize: 13, fontWeight: "600" },
   xpBarWrapper: { marginTop: 10, gap: 6 },
+  xpLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  buyXpButton: {
+    backgroundColor: "rgba(139,92,246,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(139,92,246,0.4)",
+  },
+  buyXpText: {
+    color: "#8B5CF6",
+    fontSize: 10,
+    fontWeight: "600",
+  },
   xpBarBackground: {
     height: 8,
     backgroundColor: "#374151",

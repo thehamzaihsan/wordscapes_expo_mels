@@ -8,6 +8,7 @@ interface LevelHeaderProps {
   onBackPress: () => void;
   onShopPress: () => void;
   onProfilePress: () => void;
+  onNavigate: (screen: string) => void;
 }
 
 const LevelHeader: React.FC<LevelHeaderProps> = ({
@@ -16,6 +17,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
   onBackPress,
   onShopPress,
   onProfilePress,
+  onNavigate,
 }) => {
   const { derivePlayerLevel } = require('@/hooks/guest-progress');
   
@@ -79,11 +81,35 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
           const within = derived.levelXp;
           const needed = derived.nextLevelXp;
           const pct = Math.min(100, Math.max(0, (within / needed) * 100));
+          
+          // Check next category unlock
+          const { getCategoryOrder, getUnlockedCategories, xpNeededToUnlockCategory } = require('@/hooks/guest-progress');
+          const categoryOrder = getCategoryOrder();
+          const unlockedCategories = getUnlockedCategories(guestMeta?.playerLevel || 0);
+          const nextCategoryIndex = unlockedCategories.length;
+          const nextCategory = categoryOrder[nextCategoryIndex];
+          const nextCategoryXP = nextCategory ? xpNeededToUnlockCategory(nextCategoryIndex) : 0;
+          const nextCategoryRemaining = Math.max(0, nextCategoryXP - xp);
+          
           return (
             <>
-              <Text style={styles.xpLabel}>
-                {within}/{needed} XP 
-              </Text>
+              <View style={styles.xpLabelContainer}>
+                <Text style={styles.xpLabel}>
+                  {within}/{needed} XP (Total {xp})
+                </Text>
+                <TouchableOpacity 
+                  style={styles.buyXpButton}
+                  onPress={() => onNavigate('xpshop')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.buyXpText}>⚡ Buy XP</Text>
+                </TouchableOpacity>
+              </View>
+              {nextCategory && nextCategoryRemaining > 0 && (
+                <Text style={styles.nextUnlockText}>
+                  {nextCategoryRemaining} XP to unlock {nextCategory}
+                </Text>
+              )}
               <View style={styles.xpBarContainer}>
                 <View style={styles.xpBarBackground}>
                   <View style={[styles.xpBar, { width: `${pct}%` }]} />
@@ -176,10 +202,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  xpLabelContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
   xpLabel: {
     color: "#9CA3AF",
     fontSize: 12,
+    textAlign: "left",
+    flex: 1,
+  },
+  buyXpButton: {
+    backgroundColor: "rgba(139,92,246,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(139,92,246,0.4)",
+  },
+  buyXpText: {
+    color: "#8B5CF6",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  nextUnlockText: {
+    color: "#8B5CF6",
+    fontSize: 10,
     textAlign: "center",
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  nextUnlockText: {
+    color: "#8B5CF6",
+    fontSize: 10,
+    textAlign: "center",
+    fontWeight: "600",
     marginBottom: 4,
   },
   xpBarContainer: {

@@ -216,6 +216,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         onBackPress={() => onNavigate("index")}
         onShopPress={handleShopPress}
         onProfilePress={() => onNavigate("profile")}
+        onNavigate={onNavigate}
       />
 
       <CategoryTabs

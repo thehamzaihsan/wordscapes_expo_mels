@@ -39,6 +39,10 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           const isUnlocked = unlockedCategories.includes(category);
           const requiredXP = xpNeededToUnlockCategory(index);
           const requiredLevel = requiredXP > 0 ? derivePlayerLevel(requiredXP).level : 0;
+          const currentXP = guestMeta?.xp || 0;
+          const xpProgress = Math.min(currentXP, requiredXP);
+          const xpRemaining = Math.max(0, requiredXP - currentXP);
+          const progressPercent = requiredXP > 0 ? (xpProgress / requiredXP) * 100 : 100;
           
           // Category emoji mapping
           const getCategoryEmoji = (cat: string) => {
@@ -70,7 +74,16 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 {getCategoryEmoji(category)} {category}
               </Text>
               {!isUnlocked && (
-                <Text style={styles.categoryLockText}>Lvl {requiredLevel}</Text>
+                <View style={styles.lockInfo}>
+                  <Text style={styles.categoryLockText}>Lvl {requiredLevel}</Text>
+                  <Text style={styles.xpRemainingText}>
+                    {xpRemaining} XP needed
+                  </Text>
+                  {/* Mini progress bar */}
+                  <View style={styles.miniProgressBar}>
+                    <View style={[styles.miniProgress, { width: `${progressPercent}%` }]} />
+                  </View>
+                </View>
               )}
             </TouchableOpacity>
           );
@@ -139,19 +152,42 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(55,65,81,0.25)",
     borderColor: "rgba(75,85,99,0.2)",
     opacity: 0.6,
+    minHeight: 80,
   },
   categoryTextLocked: {
     color: "#6B7280",
     fontSize: 13,
     fontWeight: "500",
   },
+  lockInfo: {
+    alignItems: "center",
+    marginTop: 4,
+    gap: 2,
+  },
   categoryLockText: {
     color: "#6B7280",
     fontSize: 10,
     fontWeight: "500",
-    marginTop: 4,
-    opacity: 0.8,
     fontStyle: "italic",
+  },
+  xpRemainingText: {
+    color: "#8B5CF6",
+    fontSize: 9,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  miniProgressBar: {
+    width: 60,
+    height: 3,
+    backgroundColor: "rgba(55,65,81,0.5)",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginTop: 2,
+  },
+  miniProgress: {
+    height: "100%",
+    backgroundColor: "rgba(139,92,246,0.7)",
+    borderRadius: 2,
   },
 });
 

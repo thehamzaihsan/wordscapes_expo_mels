@@ -7,7 +7,11 @@ import PlayerProfileScreen from "./components/PlayerProfileScreen";
 export default function ProfileRoute() {
   const router = useRouter();
   const handleNavigate = (screen: string) => {
-    if (screen === "levels") router.back();
+    if (screen === "levels") {
+      router.back();
+    } else if (screen === "xpshop") {
+      router.push("/xpshop");
+    }
   };
   const handleLogout = async () => {
     const res = await signOutSupabase();

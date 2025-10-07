@@ -62,6 +62,8 @@ export default function LevelsRoute() {
       }
     } else if (screen === "shop") {
       router.push("/shop");
+    } else if (screen === "xpshop") {
+      router.push("/xpshop");
     } else if (screen === "profile") {
       router.push("/profile");
     } else if (screen === "settings") {

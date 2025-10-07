@@ -55,18 +55,45 @@ const LevelGrid: React.FC<LevelGridProps> = ({
             <Text style={styles.lockSubtitle}>
               Play more levels to unlock {selectedCategory}!
             </Text>
-            <Text style={styles.lockRequirement}>
-              Required: Player Level {(() => {
-                const { getCategoryOrder, xpNeededToUnlockCategory, derivePlayerLevel } = require('@/hooks/guest-progress');
-                const categoryOrder = getCategoryOrder();
-                const categoryIndex = categoryOrder.indexOf(selectedCategory);
-                const requiredXP = xpNeededToUnlockCategory(categoryIndex);
-                return requiredXP > 0 ? derivePlayerLevel(requiredXP).level : 0;
-              })()}
-            </Text>
-            <Text style={styles.currentLevel}>
-              Current Level: {guestMeta?.playerLevel || 0}
-            </Text>
+            
+            {(() => {
+              const { getCategoryOrder, xpNeededToUnlockCategory, derivePlayerLevel } = require('@/hooks/guest-progress');
+              const categoryOrder = getCategoryOrder();
+              const categoryIndex = categoryOrder.indexOf(selectedCategory);
+              const requiredXP = xpNeededToUnlockCategory(categoryIndex);
+              const requiredLevel = requiredXP > 0 ? derivePlayerLevel(requiredXP).level : 0;
+              const currentXP = guestMeta?.xp || 0;
+              const xpRemaining = Math.max(0, requiredXP - currentXP);
+              const progressPercent = requiredXP > 0 ? Math.min(100, (currentXP / requiredXP) * 100) : 100;
+              
+              return (
+                <View style={styles.progressInfo}>
+                  <Text style={styles.lockRequirement}>
+                    Required: Player Level {requiredLevel}
+                  </Text>
+                  <Text style={styles.currentLevel}>
+                    Current Level: {guestMeta?.playerLevel || 0}
+                  </Text>
+                  
+                  <View style={styles.xpSection}>
+                    <Text style={styles.xpNeedText}>
+                      {xpRemaining} XP needed
+                    </Text>
+                    <Text style={styles.xpCurrentText}>
+                      {currentXP} / {requiredXP} XP
+                    </Text>
+                    
+                    {/* XP Progress Bar */}
+                    <View style={styles.xpProgressContainer}>
+                      <View style={styles.xpProgressBackground}>
+                        <View style={[styles.xpProgressBar, { width: `${progressPercent}%` }]} />
+                      </View>
+                      <Text style={styles.xpProgressText}>{Math.round(progressPercent)}%</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })()}
           </View>
         </BlurView>
       )}
@@ -106,11 +133,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   lockOverlay: {
-    backgroundColor: "rgba(0,0,0,0.8)",
+    backgroundColor: "rgba(0,0,0,0.85)",
     padding: 40,
     borderRadius: 20,
     alignItems: "center",
     marginHorizontal: 20,
+    borderWidth: 2,
+    borderColor: "rgba(139,92,246,0.3)",
   },
   lockIcon: {
     fontSize: 48,
@@ -127,7 +156,11 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 16,
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  progressInfo: {
+    alignItems: "center",
+    width: "100%",
   },
   lockRequirement: {
     color: "#8B5CF6",
@@ -140,6 +173,54 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 14,
     textAlign: "center",
+    marginBottom: 16,
+  },
+  xpSection: {
+    width: "100%",
+    alignItems: "center",
+    gap: 8,
+  },
+  xpNeedText: {
+    color: "#F59E0B",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  xpCurrentText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  xpProgressContainer: {
+    width: "100%",
+    alignItems: "center",
+    gap: 4,
+  },
+  xpProgressBackground: {
+    width: "100%",
+    height: 12,
+    backgroundColor: "rgba(55,65,81,0.7)",
+    borderRadius: 6,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(75,85,99,0.5)",
+  },
+  xpProgressBar: {
+    height: "100%",
+    backgroundColor: "rgba(139,92,246,0.8)",
+    borderRadius: 5,
+    shadowColor: "#8B5CF6",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  xpProgressText: {
+    color: "#8B5CF6",
+    fontSize: 12,
+    fontWeight: "600",
   },
   scrollContainer: {
     flex: 1,
