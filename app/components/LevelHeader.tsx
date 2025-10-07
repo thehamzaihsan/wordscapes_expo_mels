@@ -1,6 +1,7 @@
 import { ChevronLeft } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import economy from "../../constants/economy.json";
 
 interface LevelHeaderProps {
   displayName: string;
@@ -45,7 +46,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
             onPress={onShopPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.resourceIcon}>🟡</Text>
+            <Text style={styles.resourceIcon}>⚡</Text>
             <Text
               style={[
                 styles.resourceText,
@@ -55,7 +56,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
                 },
               ]}
             >
-              {guestMeta?.energy ?? 0}/100
+              {guestMeta?.energy ?? 0}/{economy.dailyLogin.maxEnergy}
             </Text>
           </TouchableOpacity>
 

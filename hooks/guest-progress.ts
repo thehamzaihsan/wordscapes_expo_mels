@@ -351,7 +351,7 @@ export function applyLevelCompletion(
   }
   
   // Always deduct energy (regardless of first completion or not)
-  progress.meta.energy = Math.max(0, progress.meta.energy - 5); // small energy cost
+  progress.meta.energy = Math.max(0, progress.meta.energy - economy.energy.payPerLevel); // Dynamic energy cost from economy config
 
   // Recalculate playerLevel from total xp
   const derived = derivePlayerLevel(progress.meta.xp);
