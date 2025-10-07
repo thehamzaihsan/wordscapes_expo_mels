@@ -13,7 +13,8 @@
     "earnPerLevel": 5
   },
   "gems": {
-    "earnPerLevel": 50,
+    "startingAmount": 100,
+    "earnPerLevel": 10,
     "earnPerAd": 100,
     "earnPerBonusWord": 5,
     "usedFor": {

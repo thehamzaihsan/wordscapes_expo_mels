@@ -30,7 +30,6 @@ export interface LevelProgressRow {
   user_id: string; // FK -> profiles.id (part of PK)
   level: number; // part of PK
   theme?: string | null;
-  stars: number; // 0..3
   completed: boolean;
   first_completed_at?: string | null; // timestamptz
   last_completed_at?: string | null; // timestamptz

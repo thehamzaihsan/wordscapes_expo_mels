@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import levelsData from "@/constants/levels.json";
+import economy from "@/constants/economy.json";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 
 /**
@@ -11,7 +12,6 @@ export interface GuestLevelProgress {
   difficulty: string;
   isUnlocked: boolean;
   isCompleted: boolean;
-  stars: number; // 0-3
   bestScore: number; // Highest score achieved
   attempts: number; // Total attempts (completions + failures if tracked)
   lastCompletedAt?: string; // ISO timestamp
@@ -44,11 +44,11 @@ export interface GuestProgressPayload {
 }
 
 const STORAGE_KEY = "wordscapes_guest_progress";
-const CURRENT_VERSION = 4; // Incremented for coin removal migration
+const CURRENT_VERSION = 5; // Incremented for star removal migration
 
 /** Default meta for a new guest profile */
 const defaultMeta: GuestMeta = {
-  gems: 5100, // starting gems (combined previous coins + gems)
+  gems: economy.gems.startingAmount, // Dynamic starting gems from economy config
   xp: 0,
   energy: 100,
   playerName: "Guest",
@@ -100,8 +100,6 @@ export interface GuestAggregateStats {
   totalLevels: number;
   completedLevels: number;
   completionPercent: number;
-  totalStars: number;
-  averageStars: number;
   totalAttempts: number;
   categories: number;
   highestLevelReached: number; // max level index completed or unlocked
@@ -112,7 +110,6 @@ export function aggregateGuestStats(
 ): GuestAggregateStats {
   let totalLevels = 0;
   let completedLevels = 0;
-  let totalStars = 0;
   let totalAttempts = 0;
   let highestLevelReached = 0;
   Object.values(progress.categories).forEach((levels) => {
@@ -125,22 +122,16 @@ export function aggregateGuestStats(
         // unlocked but not completed still counts for reachable tracking
         highestLevelReached = Math.max(highestLevelReached, l.level - 1);
       }
-      totalStars += l.stars;
       totalAttempts += l.attempts;
     });
   });
   const completionPercent = totalLevels
     ? Math.round((completedLevels / totalLevels) * 100)
     : 0;
-  const averageStars = completedLevels
-    ? parseFloat((totalStars / completedLevels).toFixed(2))
-    : 0;
   return {
     totalLevels,
     completedLevels,
     completionPercent,
-    totalStars,
-    averageStars,
     totalAttempts,
     categories: Object.keys(progress.categories).length,
     highestLevelReached,
@@ -171,6 +162,18 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
         parsed.meta.gems = oldCoins + oldGems; // Combine both currencies
         delete (parsed.meta as any).coins; // Remove old coins property
         console.log(`[Migration] Combined ${oldCoins} coins + ${oldGems} gems = ${parsed.meta.gems} gems`);
+      }
+      
+      // Migration for version 5: Remove stars from level progress
+      if (parsed.version < 5 && parsed.categories) {
+        Object.values(parsed.categories).forEach((levels: any[]) => {
+          levels.forEach((level: any) => {
+            if (level.stars !== undefined) {
+              delete level.stars; // Remove stars property
+            }
+          });
+        });
+        console.log(`[Migration] Removed stars from level progress data`);
       }
       
       parsed.version = CURRENT_VERSION;
@@ -214,7 +217,6 @@ export function buildInitialProgress(
       difficulty: lvl.difficulty,
       isUnlocked: idx < 3, // unlock first 3
       isCompleted: false,
-      stars: 0,
       bestScore: 0,
       attempts: 0,
     }));
@@ -244,14 +246,14 @@ export function applyLevelCompletion(
   if (idx === -1) return progress;
 
   const lvl = categoryLevels[idx];
-  // Simple star calc: base on score & bonus words diversity
-  const stars = calculateStars(score, bonusWordsFound);
+  
+  // Check if this is the first time completing this level
+  const isFirstCompletion = !lvl.isCompleted;
 
   const updated: GuestLevelProgress = {
     ...lvl,
     isCompleted: true,
     bestScore: Math.max(lvl.bestScore, score),
-    stars: Math.max(lvl.stars, stars),
     attempts: lvl.attempts + attemptsThisRun,
     lastCompletedAt: new Date().toISOString(),
   };
@@ -262,12 +264,18 @@ export function applyLevelCompletion(
     categoryLevels[idx + 1] = { ...categoryLevels[idx + 1], isUnlocked: true };
   }
 
-  // Reward meta (tuned): gems & xp scale with performance
-  progress.meta.gems += stars * 50; // reward gems instead of coins
-  // XP: 1 per 20 score points (so early levels feel faster)
-  progress.meta.xp += Math.max(1, Math.floor(score / 20));
-  // Bonus flat xp for bonus words diversity
-  progress.meta.xp += Math.min(50, bonusWordsFound * 5);
+  // Only reward on first completion
+  if (isFirstCompletion) {
+    // Reward meta (tuned): gems & xp scale with performance
+    progress.meta.gems += economy.gems.earnPerLevel; // Fixed gem reward from economy config
+    progress.meta.gems += bonusWordsFound * economy.bonusWord.rewardGems; // Additional gems for bonus words
+    // XP: 1 per 20 score points (so early levels feel faster)
+    progress.meta.xp += Math.max(1, Math.floor(score / 20));
+    // Bonus flat xp for bonus words diversity
+    progress.meta.xp += Math.min(50, bonusWordsFound * 5);
+  }
+  
+  // Always deduct energy (regardless of first completion or not)
   progress.meta.energy = Math.max(0, progress.meta.energy - 5); // small energy cost
 
   // Recalculate playerLevel from total xp
@@ -276,16 +284,6 @@ export function applyLevelCompletion(
 
   progress.updatedAt = new Date().toISOString();
   return progress;
-}
-
-function calculateStars(score: number, bonusWords: number): number {
-  // Dynamic & forgiving thresholds for early game.
-  // Typical early crossword total base score ~ (numWords * avgLen * 100) ≈ 600-1200.
-  // We'll set flexible tiers & allow bonus words to bump stars.
-  const adjustedScore = score + bonusWords * 50; // treat bonus diversity as pseudo-score
-  if (adjustedScore >= 900) return 3;
-  if (adjustedScore >= 550) return 2;
-  return 1;
 }
 
 /** Convenience wrapper to load, modify, and persist */

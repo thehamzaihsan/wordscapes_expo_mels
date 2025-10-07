@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import economy from "@/constants/economy.json";
 import { supabase } from "./supabase";
 import type {
   LocalUserSnapshot,
@@ -73,7 +74,6 @@ export interface GuestToUserParams {
   guestXp: number;
   guestLevels: {
     level: number;
-    stars: number;
     completed: boolean;
     lastCompletedAt?: string;
     theme?: string;
@@ -104,7 +104,6 @@ export async function createInitialSnapshotFromGuest(
     user_id: userId,
     level: l.level,
     theme: l.theme || null,
-    stars: l.stars,
     completed: l.completed,
     first_completed_at: l.completed ? l.lastCompletedAt || nowISO() : null,
     last_completed_at: l.completed ? l.lastCompletedAt || nowISO() : null,
@@ -139,7 +138,7 @@ export async function createDefaultSnapshot(
   const stats: UserStatsRow = {
     user_id: userId,
     xp: 0,
-    gems: 5100, // starting gems (combined amount)
+    gems: economy.gems.startingAmount, // Dynamic starting gems from economy config
     last_streak_date: null,
     updated_at: nowISO(),
   };

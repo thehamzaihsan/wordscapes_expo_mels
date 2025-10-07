@@ -102,7 +102,6 @@ export async function updateGuestSnapshotFromProgress(
         user_id: guestId,
         level: lvl.level,
         theme: category, // category name as theme value
-        stars: lvl.stars,
         completed: !!lvl.isCompleted,
         first_completed_at: lvl.isCompleted
           ? lvl.lastCompletedAt || progress.updatedAt

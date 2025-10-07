@@ -1,6 +1,7 @@
 import LetterWheel from "./inputWheel";
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import economy from "@/constants/economy.json";
 import { generateCrossword } from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
@@ -621,8 +622,14 @@ export default function GameScreen({
         const levelNumber = levelData?.level || 1;
         const category = categoryName || "Forest";
 
-        // 1. Update legacy guest progress store (kept temporarily for UI relying on it)
+        // Check if this is a first completion before updating progress
         const guestMod = await import("@/hooks/guest-progress");
+        const levelProgress = await guestMod.loadGuestProgress();
+        const categoryLevels = levelProgress?.categories[category];
+        const currentLevel = categoryLevels?.find(l => l.level === levelNumber);
+        const isFirstCompletion = !currentLevel?.isCompleted;
+
+        // 1. Update legacy guest progress store (kept temporarily for UI relying on it)
         const updated = await guestMod
           .completeLevelAndPersist({
             category,
@@ -642,18 +649,21 @@ export default function GameScreen({
           user_id: (updated as any)?._snapshotUserId || "guest-temp", // will be remapped later if guest
           level: levelNumber,
           theme: category,
-          stars: 0, // stars unknown here; could map from updated if needed
           completed: true,
           first_completed_at: new Date().toISOString(),
           last_completed_at: new Date().toISOString(),
         });
-        // Add reward stats (simple estimate based on score + bonus words)
-        await mutateLocalStats((stats) => {
-          stats.xp +=
-            Math.max(1, Math.floor(score / 20)) +
-            Math.min(50, foundBonusWords.length * 5);
-          stats.gems += 50; // gem reward for completion
-        });
+        
+        // Add reward stats (XP only - gems are handled by guest progress system)
+        // Only reward XP if this is a first completion
+        if (isFirstCompletion) {
+          await mutateLocalStats((stats) => {
+            stats.xp +=
+              Math.max(1, Math.floor(score / 20)) +
+              Math.min(50, foundBonusWords.length * 5);
+            // Note: Gems are rewarded through the guest progress system to avoid double-rewarding
+          });
+        }
 
         // 3. If we have guest progress updated, mirror to snapshot via helper (ensures stars etc.)
         if (updated) {

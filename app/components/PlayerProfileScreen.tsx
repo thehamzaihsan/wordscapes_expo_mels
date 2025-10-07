@@ -184,8 +184,6 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 value={`${stats.completedLevels}/${stats.totalLevels}`}
               />
               <Stat label="Completion" value={`${stats.completionPercent}%`} />
-              <Stat label="Stars" value={`${stats.totalStars}`} />
-              <Stat label="Avg Stars" value={`${stats.averageStars}`} />
               <Stat label="Attempts" value={`${stats.totalAttempts}`} />
               <Stat label="Categories" value={`${stats.categories}`} />
             </View>

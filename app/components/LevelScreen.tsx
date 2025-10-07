@@ -1,4 +1,5 @@
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
 import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
@@ -33,7 +34,6 @@ interface LevelData {
   difficulty: Difficulty;
   isUnlocked?: boolean;
   isCompleted?: boolean;
-  stars?: number;
 }
 
 interface LevelCardProps {
@@ -153,7 +153,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               difficulty: l.difficulty as Difficulty,
               isUnlocked: l.isUnlocked,
               isCompleted: l.isCompleted,
-              stars: l.stars,
             }));
           });
           setLevelCategories(mapped);
@@ -269,13 +268,16 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           {/* Level Info */}
           <View style={styles.levelInfo}>
             <Text style={styles.levelNumber}>Level {level.level}</Text>
-            {level.isCompleted && level.stars && (
-              <View style={styles.starsContainer}>
-                {Array.from({ length: 3 }, (_, i) => (
-                  <Text key={i} style={styles.star}>
-                    {i < (level.stars ?? 0) ? "⭐" : "☆"}
-                  </Text>
-                ))}
+            {/* Reward Info - only show for uncompleted levels */}
+            {!level.isCompleted && (
+              <View style={styles.rewardContainer}>
+                <Text style={styles.rewardText}>+{economy.gems.earnPerLevel} 💎</Text>
+              </View>
+            )}
+            {/* Completed indicator */}
+            {level.isCompleted && (
+              <View style={styles.completedRewardContainer}>
+                <Text style={styles.completedRewardText}>Completed ✓</Text>
               </View>
             )}
           </View>
@@ -284,7 +286,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           <View style={styles.statusSection}>
             {level.isCompleted ? (
               <View style={[styles.statusBadge, styles.completedBadge]}>
-                <Text style={styles.statusText}>✓ Completed</Text>
+                <Text style={styles.statusText}>✓ Replay Available</Text>
               </View>
             ) : level.isUnlocked ? (
               <View style={[styles.statusBadge, styles.newBadge]}>
@@ -713,13 +715,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  starsContainer: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  star: {
-    fontSize: 20,
-  },
   rewardContainer: {
     backgroundColor: "rgba(31,41,55,0.85)",
     paddingVertical: 6,
@@ -728,6 +723,19 @@ const styles = StyleSheet.create({
   },
   rewardText: {
     color: "#F59E0B",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  completedRewardContainer: {
+    backgroundColor: "rgba(16,185,129,0.15)",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(16,185,129,0.3)",
+  },
+  completedRewardText: {
+    color: "#10B981",
     fontSize: 15,
     fontWeight: "600",
   },
