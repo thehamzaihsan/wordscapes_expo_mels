@@ -11,7 +11,7 @@ import {
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { getLocalSnapshot } from "@/lib/sync";
 import { useFocusEffect } from "expo-router";
-import { User } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   Alert,
@@ -307,15 +307,16 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
       {/* Header */}
       <View style={styles.header}>
+        {/* Top Row: Back Button on left, Resources and Avatar on right */}
         <View style={styles.headerTop}>
           <TouchableOpacity
-            onPress={() => onNavigate("profile")}
             style={styles.backButton}
+            onPress={() => onNavigate("index")}
           >
-            <User size={16} color={"white"} />
-            <Text style={styles.backButtonText}>Profile</Text>
+            <ChevronLeft size={20} color="white" />
+            <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
-
+          
           <View style={styles.resourcesContainer}>
             <TouchableOpacity
               style={styles.resourceItem}
@@ -343,6 +344,14 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               >
                 {guestMeta?.energy ?? 0}/100
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => onNavigate("profile")}
+              style={styles.avatarButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.avatarIcon}>{guestMeta?.avatar || "🧩"}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -482,7 +491,7 @@ const styles = StyleSheet.create({
     gap: 4,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "#374151",
     paddingEnd: 16,
   },
   backButtonText: {
@@ -492,12 +501,13 @@ const styles = StyleSheet.create({
   },
   resourcesContainer: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
+    alignItems: "center",
   },
   resourceItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(55,65,81,0.85)",
+    backgroundColor: "#374151",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -767,6 +777,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
+  },
+
+  avatarButton: {
+    width: 37,
+    height: 37,
+    borderRadius: 100,
+    backgroundColor: "#374151",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#8B5CF6",
+  },
+  avatarIcon: {
+    fontSize: 20,
   },
 });
 

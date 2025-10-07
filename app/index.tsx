@@ -11,7 +11,7 @@ export default function Index() {
         style={{
           flex: 1,
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "center",   
           backgroundColor: "#121213",
         }}
       >

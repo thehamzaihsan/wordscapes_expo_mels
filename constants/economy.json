@@ -1,0 +1,54 @@
+{
+  "dailyLogin": {
+    "energyReward": 20,
+    "maxEnergy": 100,
+    "coinReward": {
+      "min": 10,
+      "max": 200
+    }
+  },
+  "energy": {
+    "refillCost": 20,
+    "refillMax": 100,
+    "earnPerLevel": 5
+  },
+  "coins": {
+    "earnPerLevel": 10,
+    "earnPerAd": 100,
+    "earnPerBonusWord": 5,
+    "usedFor": {
+      "energyRefill": 20,
+      "buyHint": 250,
+      "buyXpPackage": 100
+    },
+    "purchaseOptions": [
+      { "usd": 1, "coins": 500 },
+      { "usd": 4, "coins": 3000 },
+      { "usd": 10, "coins": 15000 }
+    ]
+  },
+  "xp": {
+    "gainPerWord": 20,
+    "gainPerBonusWord": 1,
+    "buyRate": {
+      "xp": 200,
+      "coins": 100
+    },
+    "categoryUnlockCost": {
+      "initial": 500,
+      "perLevel": 250
+    }
+  },
+  "hints": {
+    "cost": 250,
+    "quantity": 3
+  },
+  "ads": {
+    "rewardCoins": 100,
+    "watchToEarn": true
+  },
+  "bonusWord": {
+    "rewardCoins": 5,
+    "rewardXp": 1
+  }
+}

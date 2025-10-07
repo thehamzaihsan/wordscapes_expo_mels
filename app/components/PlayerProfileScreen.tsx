@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { showToast } from "@/lib/toast";
 import { BlurView } from "expo-blur";
+import { ChevronLeft } from "lucide-react-native";
 import {
   loadGuestProgress,
   updateGuestName,
@@ -106,6 +107,14 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
   return (
     <View style={styles.container}>
       <BlurView intensity={50} tint="dark" style={styles.header}>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => onNavigate("levels")}
+        >
+          <ChevronLeft size={20} color="white" />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>PLAYER PROFILE</Text>
         <Text style={styles.subtitle}>Account & Progress Overview</Text>
       </BlurView>
@@ -387,6 +396,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#1e1b4b",
   },
   avatarText: { fontSize: 26 },
+  backButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
+    alignSelf: "flex-start",
+    paddingEnd: 16,
+    marginBottom: 16,
+  },
+  backButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
 
 export default PlayerProfileScreen;
