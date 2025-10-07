@@ -29,7 +29,7 @@
     ]
   },
   "xp": {
-    "gainPerWord": 20,
+    "gainPerWord": 5,
     "gainPerBonusWord": 1,
     "buyRate": {
       "xp": 200,

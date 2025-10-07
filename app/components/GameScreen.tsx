@@ -636,6 +636,7 @@ export default function GameScreen({
             levelNumber,
             score,
             bonusWords: foundBonusWords.length,
+            crosswordWords: foundCrosswordWords.length, // Add crossword words count
             attempts: attempts + 1,
             levelDefs: undefined,
           })
@@ -658,9 +659,9 @@ export default function GameScreen({
         // Only reward XP if this is a first completion
         if (isFirstCompletion) {
           await mutateLocalStats((stats) => {
-            stats.xp +=
-              Math.max(1, Math.floor(score / 20)) +
-              Math.min(50, foundBonusWords.length * 5);
+            // Dynamic XP calculation using economy config
+            stats.xp += foundCrosswordWords.length * economy.xp.gainPerWord; // XP per crossword word found
+            stats.xp += foundBonusWords.length * economy.xp.gainPerBonusWord; // XP per bonus word found
             // Note: Gems are rewarded through the guest progress system to avoid double-rewarding
           });
         }

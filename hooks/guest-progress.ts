@@ -238,6 +238,7 @@ export function applyLevelCompletion(
   levelNumber: number,
   score: number,
   bonusWordsFound: number,
+  crosswordWordsFound: number, // Add crossword words count parameter
   attemptsThisRun: number
 ): GuestProgressPayload {
   const categoryLevels = progress.categories[category];
@@ -269,10 +270,9 @@ export function applyLevelCompletion(
     // Reward meta (tuned): gems & xp scale with performance
     progress.meta.gems += economy.gems.earnPerLevel; // Fixed gem reward from economy config
     progress.meta.gems += bonusWordsFound * economy.bonusWord.rewardGems; // Additional gems for bonus words
-    // XP: 1 per 20 score points (so early levels feel faster)
-    progress.meta.xp += Math.max(1, Math.floor(score / 20));
-    // Bonus flat xp for bonus words diversity
-    progress.meta.xp += Math.min(50, bonusWordsFound * 5);
+    // Dynamic XP calculation using economy config
+    progress.meta.xp += crosswordWordsFound * economy.xp.gainPerWord; // XP per crossword word found
+    progress.meta.xp += bonusWordsFound * economy.xp.gainPerBonusWord; // XP per bonus word found
   }
   
   // Always deduct energy (regardless of first completion or not)
@@ -292,6 +292,7 @@ export async function completeLevelAndPersist(params: {
   levelNumber: number;
   score: number;
   bonusWords: number;
+  crosswordWords: number; // Add crossword words count
   attempts: number;
   levelDefs?: { [category: string]: any[] }; // fallback if empty
 }): Promise<GuestProgressPayload | null> {
@@ -306,6 +307,7 @@ export async function completeLevelAndPersist(params: {
     params.levelNumber,
     params.score,
     params.bonusWords,
+    params.crosswordWords, // Pass crossword words count
     params.attempts
   );
   await saveGuestProgress(progress);
