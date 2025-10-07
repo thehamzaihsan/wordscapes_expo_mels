@@ -652,7 +652,7 @@ export default function GameScreen({
           stats.xp +=
             Math.max(1, Math.floor(score / 20)) +
             Math.min(50, foundBonusWords.length * 5);
-          stats.coin += 50; // placeholder reward
+          stats.gems += 50; // gem reward for completion
         });
 
         // 3. If we have guest progress updated, mirror to snapshot via helper (ensures stars etc.)

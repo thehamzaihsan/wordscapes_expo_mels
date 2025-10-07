@@ -22,9 +22,7 @@ export interface GuestCategoryProgress {
 }
 
 export interface GuestMeta {
-  /** Soft currency */
-  coins: number;
-  /** Premium currency */
+  /** Premium currency (previously had separate coins) */
   gems: number;
   /** Accumulated XP used to derive playerLevel */
   xp: number;
@@ -46,12 +44,11 @@ export interface GuestProgressPayload {
 }
 
 const STORAGE_KEY = "wordscapes_guest_progress";
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4; // Incremented for coin removal migration
 
 /** Default meta for a new guest profile */
 const defaultMeta: GuestMeta = {
-  coins: 5000, // base starting coins
-  gems: 100, // base starting gems
+  gems: 5100, // starting gems (combined previous coins + gems)
   xp: 0,
   energy: 100,
   playerName: "Guest",
@@ -166,6 +163,16 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
           (parsed as any).playerLevel ?? parsed.meta?.playerLevel ?? 0,
         avatar: parsed.meta?.avatar || defaultMeta.avatar,
       };
+      
+      // Migration for version 4: Combine coins + gems into single gems currency
+      if (parsed.version < 4 && (parsed.meta as any).coins !== undefined) {
+        const oldCoins = (parsed.meta as any).coins || 0;
+        const oldGems = parsed.meta.gems || 0;
+        parsed.meta.gems = oldCoins + oldGems; // Combine both currencies
+        delete (parsed.meta as any).coins; // Remove old coins property
+        console.log(`[Migration] Combined ${oldCoins} coins + ${oldGems} gems = ${parsed.meta.gems} gems`);
+      }
+      
       parsed.version = CURRENT_VERSION;
       parsed.updatedAt = new Date().toISOString();
       // Persist migrated structure (fire & forget)
@@ -255,8 +262,8 @@ export function applyLevelCompletion(
     categoryLevels[idx + 1] = { ...categoryLevels[idx + 1], isUnlocked: true };
   }
 
-  // Reward meta (tuned): coins & xp scale with performance
-  progress.meta.coins += stars * 50; // a bit more generous
+  // Reward meta (tuned): gems & xp scale with performance
+  progress.meta.gems += stars * 50; // reward gems instead of coins
   // XP: 1 per 20 score points (so early levels feel faster)
   progress.meta.xp += Math.max(1, Math.floor(score / 20));
   // Bonus flat xp for bonus words diversity
@@ -356,11 +363,10 @@ export async function updateGuestAvatar(
   return working;
 }
 
-/** Reset currencies to starting amounts while preserving levels */
+/** Reset currency to starting amounts while preserving levels */
 export async function resetGuestEconomy(): Promise<GuestProgressPayload | null> {
   const progress = await loadGuestProgress();
   if (!progress) return null;
-  progress.meta.coins = defaultMeta.coins;
   progress.meta.gems = defaultMeta.gems;
   progress.updatedAt = new Date().toISOString();
   await saveGuestProgress(progress);

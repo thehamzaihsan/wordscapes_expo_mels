@@ -21,8 +21,7 @@ export interface ProfileRow {
 export interface UserStatsRow {
   user_id: string; // uuid FK -> profiles.id
   xp: number;
-  coin: number; // you chose singular 'coin'
-  gems: number;
+  gems: number; // using gems as the single currency
   last_streak_date?: string | null; // ISO date (YYYY-MM-DD)
   updated_at: string; // ISO
 }

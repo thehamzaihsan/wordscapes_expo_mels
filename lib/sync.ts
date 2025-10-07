@@ -69,7 +69,6 @@ function logSupabaseWarning(
 export interface GuestToUserParams {
   guestName: string;
   avatar?: string;
-  guestCoins: number;
   guestGems: number;
   guestXp: number;
   guestLevels: {
@@ -97,7 +96,6 @@ export async function createInitialSnapshotFromGuest(
   const stats: UserStatsRow = {
     user_id: userId,
     xp: params.guestXp,
-    coin: params.guestCoins,
     gems: params.guestGems,
     last_streak_date: null,
     updated_at: nowISO(),
@@ -141,8 +139,7 @@ export async function createDefaultSnapshot(
   const stats: UserStatsRow = {
     user_id: userId,
     xp: 0,
-    coin: 0,
-    gems: 0,
+    gems: 5100, // starting gems (combined amount)
     last_streak_date: null,
     updated_at: nowISO(),
   };

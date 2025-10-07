@@ -88,7 +88,6 @@ export async function updateGuestSnapshotFromProgress(
   const stats: UserStatsRow = {
     user_id: guestId,
     xp: progress.meta.xp,
-    coin: progress.meta.coins,
     gems: progress.meta.gems,
     last_streak_date: null,
     updated_at: now,
