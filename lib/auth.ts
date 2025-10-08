@@ -1,13 +1,12 @@
 import { supabase, isSupabaseEnabled } from "./supabase";
 import * as Linking from "expo-linking";
-import { Platform } from "react-native";
+import { Platform, NativeModules } from "react-native";
 import { remapGuestSnapshotToUser } from "./guestSnapshot";
 import { syncUser, mutateLocalProfile } from "./sync";
 import { updateGuestAvatar, updateGuestName } from "@/hooks/guest-progress";
-import {
-  GoogleSignin,
-  statusCodes as GoogleStatusCodes,
-} from "@react-native-google-signin/google-signin";
+
+type GoogleSignInModule =
+  typeof import("@react-native-google-signin/google-signin");
 
 export interface AuthResult {
   ok: boolean;
@@ -19,17 +18,41 @@ const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
 let googleConfigured = false;
+let googleModule: GoogleSignInModule | null | undefined;
 
-function ensureGoogleConfigured() {
-  if (googleConfigured || Platform.OS === "web") return;
+async function loadGoogleSignInModule(): Promise<GoogleSignInModule | null> {
+  if (Platform.OS === "web") return null;
+  if (googleModule !== undefined) return googleModule;
+  if (!(NativeModules as any)?.RNGoogleSignin) {
+    console.warn(
+      "[auth] RNGoogleSignin native module missing; using browser OAuth"
+    );
+    googleModule = null;
+    return googleModule;
+  }
+  try {
+    googleModule = await import("@react-native-google-signin/google-signin");
+  } catch (error) {
+    console.warn(
+      "[auth] Google Sign-In native module unavailable, falling back to browser flow",
+      error instanceof Error ? error.message : error
+    );
+    googleModule = null;
+  }
+  return googleModule;
+}
 
+async function prepareGoogleModule(): Promise<GoogleSignInModule | null> {
+  const module = await loadGoogleSignInModule();
+  if (!module) return null;
+  if (googleConfigured) return module;
   if (!googleWebClientId) {
     console.warn(
-      "[auth] Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID; Google Sign-In will fail"
+      "[auth] Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID; falling back to browser OAuth"
     );
+    return module;
   }
-
-  GoogleSignin.configure({
+  module.GoogleSignin.configure({
     scopes: ["profile", "email"],
     offlineAccess: true,
     webClientId: googleWebClientId,
@@ -37,6 +60,35 @@ function ensureGoogleConfigured() {
     forceCodeForRefreshToken: false,
   });
   googleConfigured = true;
+  return module;
+}
+
+async function startSupabaseGoogleOAuth(
+  skipBrowserRedirect: boolean
+): Promise<AuthResult> {
+  try {
+    const redirectTo = Linking.createURL("/auth-callback", {
+      scheme: Platform.select({ default: "wordscapesexpo" }),
+    });
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        skipBrowserRedirect,
+      },
+    });
+    if (error) return { ok: false, error: error.message };
+    if (skipBrowserRedirect) {
+      if (data?.url) {
+        await Linking.openURL(data.url);
+        return { ok: true };
+      }
+      return { ok: false, error: "No OAuth URL returned" };
+    }
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Google auth failed" };
+  }
 }
 
 export async function signUpEmailPassword(params: {
@@ -156,7 +208,8 @@ export async function signOutSupabase(): Promise<AuthResult> {
   if (error) return { ok: false, error: error.message };
   if (Platform.OS !== "web") {
     try {
-      await GoogleSignin.signOut();
+      const module = await loadGoogleSignInModule();
+      await module?.GoogleSignin?.signOut();
     } catch (googleError) {
       console.warn("[auth] Failed to sign out of Google", googleError);
     }
@@ -195,98 +248,93 @@ export async function signInWithGoogle(): Promise<AuthResult> {
   if (!isSupabaseEnabled())
     return { ok: false, error: "Supabase not configured" };
   if (Platform.OS === "web") {
+    return startSupabaseGoogleOAuth(false);
+  }
+
+  const nativeClientConfigured = !!googleWebClientId;
+  let module: GoogleSignInModule | null = null;
+  if (nativeClientConfigured) {
+    module = await prepareGoogleModule();
+  } else {
+    await loadGoogleSignInModule();
+    console.warn(
+      "[auth] EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID not set; defaulting to browser OAuth flow"
+    );
+  }
+
+  if (module && nativeClientConfigured) {
+    const { GoogleSignin, statusCodes: googleStatusCodes } = module;
     try {
-      const redirectTo = Linking.createURL("/auth-callback");
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-          skipBrowserRedirect: false,
-        },
+      await GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
       });
-      if (error) return { ok: false, error: error.message };
-      if (!data?.url) {
-        return { ok: false, error: "No OAuth URL returned" };
-      }
-      await Linking.openURL(data.url);
-      return { ok: true };
-    } catch (err: any) {
-      return { ok: false, error: err?.message || "Google auth failed" };
-    }
-  }
-
-  if (!googleWebClientId) {
-    return {
-      ok: false,
-      error: "Google client ID missing. Set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.",
-    };
-  }
-
-  try {
-    ensureGoogleConfigured();
-    await GoogleSignin.hasPlayServices({
-      showPlayServicesUpdateDialog: true,
-    });
-    const account = await GoogleSignin.signIn();
-    const idToken = account?.data?.idToken ?? (account as any)?.idToken;
-    if (!idToken) {
-      return { ok: false, error: "Google returned no ID token" };
-    }
-
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: "google",
-      token: idToken,
-    });
-    if (error) {
-      return { ok: false, error: error.message };
-    }
-
-    const user = data.user ?? data.session?.user;
-    if (user) {
-      console.info("[auth] signInWithGoogle success", { userId: user.id });
-      await remapGuestSnapshotToUser(user.id);
-      console.info("[auth] remapped snapshot after Google signin", {
-        userId: user.id,
-      });
-      const meta = (user.user_metadata ?? {}) as Record<string, any>;
-      const metaUsername =
-        typeof meta?.username === "string" && meta.username.trim().length > 0
-          ? meta.username.trim()
-          : null;
-      const metaAvatar =
-        typeof meta?.avatar === "string" && meta.avatar.trim().length > 0
-          ? meta.avatar.trim()
-          : null;
-      if (metaUsername) {
-        try {
-          await updateGuestName(metaUsername);
-        } catch (identityErr) {
-          console.warn(
-            "Failed to sync guest name from metadata (google)",
-            identityErr
+      const account = await GoogleSignin.signIn();
+      const idToken = account?.data?.idToken ?? (account as any)?.idToken;
+      if (!idToken) {
+        console.warn(
+          "[auth] Google Sign-In returned no ID token; using browser OAuth fallback"
+        );
+      } else {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: idToken,
+        });
+        if (error) {
+          return { ok: false, error: error.message };
+        }
+        const user = data.user ?? data.session?.user;
+        if (user) {
+          console.info("[auth] signInWithGoogle success", { userId: user.id });
+          await remapGuestSnapshotToUser(user.id);
+          console.info("[auth] remapped snapshot after Google signin", {
+            userId: user.id,
+          });
+          const meta = (user.user_metadata ?? {}) as Record<string, any>;
+          const metaUsername =
+            typeof meta?.username === "string" &&
+            meta.username.trim().length > 0
+              ? meta.username.trim()
+              : null;
+          const metaAvatar =
+            typeof meta?.avatar === "string" && meta.avatar.trim().length > 0
+              ? meta.avatar.trim()
+              : null;
+          if (metaUsername) {
+            try {
+              await updateGuestName(metaUsername);
+            } catch (identityErr) {
+              console.warn(
+                "Failed to sync guest name from metadata (google)",
+                identityErr
+              );
+            }
+            await mutateLocalProfile((p) => {
+              p.username = metaUsername;
+              if (metaAvatar) p.avatar = metaAvatar;
+            });
+          }
+          syncUser(user.id).catch((err) =>
+            console.warn("[auth] syncUser after google signin failed", err)
           );
         }
-        await mutateLocalProfile((p) => {
-          p.username = metaUsername;
-          if (metaAvatar) p.avatar = metaAvatar;
-        });
+        return { ok: true };
       }
-      syncUser(user.id).catch((err) =>
-        console.warn("[auth] syncUser after google signin failed", err)
+    } catch (err: any) {
+      if (err?.code === googleStatusCodes?.SIGN_IN_CANCELLED) {
+        return { ok: false, error: "Google sign-in cancelled" };
+      }
+      if (err?.code === googleStatusCodes?.IN_PROGRESS) {
+        return { ok: false, error: "Google sign-in already in progress" };
+      }
+      if (err?.code === googleStatusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
+        return { ok: false, error: "Google Play Services unavailable" };
+      }
+      console.warn(
+        "[auth] Native Google Sign-In failed, falling back to browser OAuth",
+        err
       );
     }
-
-    return { ok: true };
-  } catch (err: any) {
-    if (err?.code === GoogleStatusCodes.SIGN_IN_CANCELLED) {
-      return { ok: false, error: "Google sign-in cancelled" };
-    }
-    if (err?.code === GoogleStatusCodes.IN_PROGRESS) {
-      return { ok: false, error: "Google sign-in already in progress" };
-    }
-    if (err?.code === GoogleStatusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-      return { ok: false, error: "Google Play Services unavailable" };
-    }
-    return { ok: false, error: err?.message || "Google auth failed" };
   }
+
+  return startSupabaseGoogleOAuth(true);
 }

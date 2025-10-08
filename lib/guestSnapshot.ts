@@ -5,6 +5,7 @@ import {
   UserStatsRow,
   LevelProgressRow,
 } from "./syncTypes";
+import { clampEnergy } from "./energy";
 import type { GuestProgressPayload } from "@/hooks/guest-progress";
 
 const GUEST_ID_KEY = "wordscapes_guest_uuid_v1";
@@ -89,6 +90,7 @@ export async function updateGuestSnapshotFromProgress(
     user_id: guestId,
     xp: progress.meta.xp,
     gems: progress.meta.gems,
+    energy: clampEnergy(progress.meta.energy ?? 0),
     last_streak_date: null,
     updated_at: now,
   };

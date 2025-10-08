@@ -5,7 +5,7 @@ import {
 } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
-import { ChevronLeft, Play, Settings, Eye, EyeOff } from "lucide-react-native";
+import { ChevronLeft, Play, Settings } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -17,12 +17,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Logo from "./logo";
-
-
 
 interface LoginScreenProps {
   onNavigate: (screen: string) => void;
@@ -33,13 +31,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [showLogin, setShowLogin] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [googleLoading, setGoogleLoading] = useState<boolean>(false);
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
-
 
   const handlePlayClick = (): void => {
     setShowLogin(true);
@@ -49,7 +45,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     setShowLogin(false);
     setEmail("");
     setPassword("");
-    setShowPassword(false);
   };
 
   const handleLogin = async (): Promise<void> => {
@@ -125,8 +120,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
       setResetLoading(false);
     }
   };
-
-
 
   const renderMainMenu = () => (
     <View
@@ -209,27 +202,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
           </View>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>PASSWORD</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.passwordInput}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor="#6B7280"
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-                activeOpacity={0.7}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color="#6B7280" />
-                ) : (
-                  <Eye size={20} color="#6B7280" />
-                )}
-              </TouchableOpacity>
-            </View>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter your password"
+              placeholderTextColor="#6B7280"
+              secureTextEntry
+            />
           </View>
           <TouchableOpacity
             onPress={handleLogin}
@@ -478,27 +458,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#4B5563",
     paddingStart: 20,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#4B5563",
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 14,
-    fontSize: 16,
-    color: "#FFFFFF",
-    paddingStart: 20,
-  },
-  eyeButton: {
-    padding: 14,
-    paddingRight: 20,
-    justifyContent: "center",
-    alignItems: "center",
   },
   loginButton: {
     backgroundColor: "#8B5CF6",

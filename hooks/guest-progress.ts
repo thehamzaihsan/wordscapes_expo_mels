@@ -2,9 +2,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import levelsData from "@/constants/levels.json";
 import economy from "@/constants/economy.json";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+import { clampEnergy, getDefaultEnergy } from "@/lib/energy";
 
 /**
- * Offline guest progress model (mirrors future remote schema subset)
+    parsed.meta.energy = clampEnergy(
+      typeof parsed.meta.energy === "number"
+        ? parsed.meta.energy
+        : DEFAULT_ENERGY_CAP
+    );
+
+    return parsed;
  */
 export interface GuestLevelProgress {
   level: number;
@@ -45,12 +52,13 @@ export interface GuestProgressPayload {
 
 const STORAGE_KEY = "wordscapes_guest_progress";
 const CURRENT_VERSION = 5; // Incremented for star removal migration
+const DEFAULT_ENERGY_CAP = getDefaultEnergy();
 
 /** Default meta for a new guest profile */
 const defaultMeta: GuestMeta = {
   gems: economy.gems.startingAmount, // Dynamic starting gems from economy config
   xp: 0,
-  energy: 100,
+  energy: DEFAULT_ENERGY_CAP,
   playerName: "Guest",
   playerLevel: 0,
   avatar: "🧩",
@@ -64,17 +72,17 @@ const defaultMeta: GuestMeta = {
  */
 export function xpNeededToUnlockCategory(categoryLevel: number): number {
   if (categoryLevel === 0) return 0; // First category (Mountain) is always unlocked
-  
+
   // Explicit mapping to ensure proper progression
   const unlockLevels = [0, 2, 4, 6, 8]; // Player levels required for each category
-  const requiredPlayerLevel = unlockLevels[categoryLevel] || (categoryLevel * 2);
-  
+  const requiredPlayerLevel = unlockLevels[categoryLevel] || categoryLevel * 2;
+
   // Calculate total XP needed to reach the required player level
   let totalXP = 0;
   for (let i = 0; i < requiredPlayerLevel; i++) {
     totalXP += xpNeededForLevel(i);
   }
-  
+
   return totalXP;
 }
 
@@ -91,19 +99,21 @@ export function getCategoryOrder(): string[] {
 export function getUnlockedCategories(playerLevel: number): string[] {
   const categoryOrder = getCategoryOrder();
   const unlockedCategories: string[] = [];
-  
+
   for (let i = 0; i < categoryOrder.length; i++) {
     const requiredXP = xpNeededToUnlockCategory(i);
     const requiredLevel = derivePlayerLevelFromXP(requiredXP).level;
-    
+
     if (playerLevel >= requiredLevel) {
       unlockedCategories.push(categoryOrder[i]);
     } else {
       break; // Categories unlock in order
     }
   }
-  
-  return unlockedCategories.length > 0 ? unlockedCategories : [categoryOrder[0]]; // Always unlock first category
+
+  return unlockedCategories.length > 0
+    ? unlockedCategories
+    : [categoryOrder[0]]; // Always unlock first category
 }
 
 /**
@@ -111,10 +121,10 @@ export function getUnlockedCategories(playerLevel: number): string[] {
  */
 function derivePlayerLevelFromXP(targetXP: number): { level: number } {
   if (targetXP === 0) return { level: 0 };
-  
+
   let accumulatedXP = 0;
   let level = 0;
-  
+
   // Calculate what level this amount of XP corresponds to
   while (accumulatedXP < targetXP) {
     const xpForNextLevel = xpNeededForLevel(level);
@@ -124,11 +134,11 @@ function derivePlayerLevelFromXP(targetXP: number): { level: number } {
     } else {
       break;
     }
-    
+
     // Prevent infinite loop
     if (level > 1000) break;
   }
-  
+
   return { level };
 }
 /**
@@ -228,17 +238,24 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
         playerLevel:
           (parsed as any).playerLevel ?? parsed.meta?.playerLevel ?? 0,
         avatar: parsed.meta?.avatar || defaultMeta.avatar,
+        energy: clampEnergy(
+          typeof parsed.meta?.energy === "number"
+            ? parsed.meta.energy
+            : DEFAULT_ENERGY_CAP
+        ),
       };
-      
+
       // Migration for version 4: Combine coins + gems into single gems currency
       if (parsed.version < 4 && (parsed.meta as any).coins !== undefined) {
         const oldCoins = (parsed.meta as any).coins || 0;
         const oldGems = parsed.meta.gems || 0;
         parsed.meta.gems = oldCoins + oldGems; // Combine both currencies
         delete (parsed.meta as any).coins; // Remove old coins property
-        console.log(`[Migration] Combined ${oldCoins} coins + ${oldGems} gems = ${parsed.meta.gems} gems`);
+        console.log(
+          `[Migration] Combined ${oldCoins} coins + ${oldGems} gems = ${parsed.meta.gems} gems`
+        );
       }
-      
+
       // Migration for version 5: Remove stars from level progress
       if (parsed.version < 5 && parsed.categories) {
         Object.values(parsed.categories).forEach((levels: any[]) => {
@@ -250,7 +267,7 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
         });
         console.log(`[Migration] Removed stars from level progress data`);
       }
-      
+
       parsed.version = CURRENT_VERSION;
       parsed.updatedAt = new Date().toISOString();
       // Persist migrated structure (fire & forget)
@@ -322,7 +339,7 @@ export function applyLevelCompletion(
   if (idx === -1) return progress;
 
   const lvl = categoryLevels[idx];
-  
+
   // Check if this is the first time completing this level
   const isFirstCompletion = !lvl.isCompleted;
 
@@ -349,9 +366,11 @@ export function applyLevelCompletion(
     progress.meta.xp += crosswordWordsFound * economy.xp.gainPerWord; // XP per crossword word found
     progress.meta.xp += bonusWordsFound * economy.xp.gainPerBonusWord; // XP per bonus word found
   }
-  
+
   // Always deduct energy (regardless of first completion or not)
-  progress.meta.energy = Math.max(0, progress.meta.energy - economy.energy.payPerLevel); // Dynamic energy cost from economy config
+  progress.meta.energy = clampEnergy(
+    progress.meta.energy - economy.energy.payPerLevel
+  ); // Dynamic energy cost from economy config
 
   // Recalculate playerLevel from total xp
   const derived = derivePlayerLevel(progress.meta.xp);
@@ -359,21 +378,25 @@ export function applyLevelCompletion(
 
   // Check if new categories should be unlocked
   const unlockedCategories = getUnlockedCategories(progress.meta.playerLevel);
-  const categoryOrder = getCategoryOrder();
-  
+  const levelDefinitions = levelsData as Record<string, any[]>;
+
   // Add any newly unlocked categories to progress
-  unlockedCategories.forEach(categoryName => {
-    if (!progress.categories[categoryName] && levelsData[categoryName]) {
-      progress.categories[categoryName] = levelsData[categoryName].map((lvl: any, idx: number) => ({
-        level: lvl.level ?? idx + 1,
-        baseWord: lvl.baseWord,
-        difficulty: lvl.difficulty,
-        isUnlocked: idx < 3, // unlock first 3 levels of new category
-        isCompleted: false,
-        bestScore: 0,
-        attempts: 0,
-      }));
-      console.log(`[Category Unlock] Player level ${progress.meta.playerLevel} unlocked category: ${categoryName}`);
+  unlockedCategories.forEach((categoryName) => {
+    if (!progress.categories[categoryName] && levelDefinitions[categoryName]) {
+      progress.categories[categoryName] = levelDefinitions[categoryName].map(
+        (lvl: any, idx: number) => ({
+          level: lvl.level ?? idx + 1,
+          baseWord: lvl.baseWord,
+          difficulty: lvl.difficulty,
+          isUnlocked: idx < 3, // unlock first 3 levels of new category
+          isCompleted: false,
+          bestScore: 0,
+          attempts: 0,
+        })
+      );
+      console.log(
+        `[Category Unlock] Player level ${progress.meta.playerLevel} unlocked category: ${categoryName}`
+      );
     }
   });
 
@@ -463,6 +486,7 @@ export async function resetGuestEconomy(): Promise<GuestProgressPayload | null> 
   const progress = await loadGuestProgress();
   if (!progress) return null;
   progress.meta.gems = defaultMeta.gems;
+  progress.meta.energy = DEFAULT_ENERGY_CAP;
   progress.updatedAt = new Date().toISOString();
   await saveGuestProgress(progress);
   updateGuestSnapshotFromProgress(progress).catch(() => {});

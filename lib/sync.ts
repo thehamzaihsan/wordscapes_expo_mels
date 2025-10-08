@@ -8,6 +8,7 @@ import {
   loadGuestProgress,
   saveGuestProgress,
 } from "@/hooks/guest-progress";
+import { clampEnergy, getDefaultEnergy } from "./energy";
 import { supabase } from "./supabase";
 import type {
   LocalUserSnapshot,
@@ -93,7 +94,11 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
     progress.meta.avatar = snapshot.profile.avatar || progress.meta.avatar;
     progress.meta.xp = remoteXp;
     progress.meta.gems = remoteGems;
-    progress.meta.energy = existing?.meta.energy ?? progress.meta.energy;
+    const remoteEnergyValue =
+      typeof snapshot.stats?.energy === "number"
+        ? snapshot.stats.energy
+        : existing?.meta.energy ?? progress.meta.energy ?? getDefaultEnergy();
+    progress.meta.energy = clampEnergy(remoteEnergyValue);
 
     const derived = derivePlayerLevel(remoteXp);
     progress.meta.playerLevel = derived.level;
@@ -178,6 +183,7 @@ export interface GuestToUserParams {
   avatar?: string;
   guestGems: number;
   guestXp: number;
+  guestEnergy?: number;
   guestLevels: {
     level: number;
     completed: boolean;
@@ -190,6 +196,11 @@ export async function createInitialSnapshotFromGuest(
   userId: string,
   params: GuestToUserParams
 ): Promise<LocalUserSnapshot> {
+  const initialEnergy = clampEnergy(
+    typeof params.guestEnergy === "number"
+      ? params.guestEnergy
+      : getDefaultEnergy()
+  );
   const profile: ProfileRow = {
     id: userId,
     username: params.guestName,
@@ -203,6 +214,7 @@ export async function createInitialSnapshotFromGuest(
     user_id: userId,
     xp: params.guestXp,
     gems: params.guestGems,
+    energy: initialEnergy,
     last_streak_date: null,
     updated_at: nowISO(),
   };
@@ -232,6 +244,7 @@ export async function createInitialSnapshotFromGuest(
 export async function createDefaultSnapshot(
   userId: string
 ): Promise<LocalUserSnapshot> {
+  const defaultEnergy = getDefaultEnergy();
   const profile: ProfileRow = {
     id: userId,
     username: "Player",
@@ -245,6 +258,7 @@ export async function createDefaultSnapshot(
     user_id: userId,
     xp: 0,
     gems: economy.gems.startingAmount, // Dynamic starting gems from economy config
+    energy: defaultEnergy,
     last_streak_date: null,
     updated_at: nowISO(),
   };

@@ -22,6 +22,7 @@ export interface UserStatsRow {
   user_id: string; // uuid FK -> profiles.id
   xp: number;
   gems: number; // using gems as the single currency
+  energy: number; // player energy/stamina pool
   last_streak_date?: string | null; // ISO date (YYYY-MM-DD)
   updated_at: string; // ISO
 }
