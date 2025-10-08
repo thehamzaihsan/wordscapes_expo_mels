@@ -1,5 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import economy from "@/constants/economy.json";
+import levelsData from "@/constants/levels.json";
+import {
+  buildInitialProgress,
+  derivePlayerLevel,
+  getUnlockedCategories,
+  loadGuestProgress,
+  saveGuestProgress,
+} from "@/hooks/guest-progress";
 import { supabase } from "./supabase";
 import type {
   LocalUserSnapshot,
@@ -64,6 +72,104 @@ function logSupabaseWarning(
     error,
     payload,
   });
+}
+
+async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
+  try {
+    const existing = await loadGuestProgress();
+    const preferredName =
+      snapshot.profile.username || existing?.meta.playerName;
+    const progress = buildInitialProgress(levelsData as any, preferredName);
+
+    // Carry over meta from snapshot stats/profile
+    const remoteXp =
+      typeof snapshot.stats?.xp === "number" ? snapshot.stats.xp : 0;
+    const remoteGems =
+      typeof snapshot.stats?.gems === "number"
+        ? snapshot.stats.gems
+        : progress.meta.gems;
+
+    progress.meta.playerName = preferredName || progress.meta.playerName;
+    progress.meta.avatar = snapshot.profile.avatar || progress.meta.avatar;
+    progress.meta.xp = remoteXp;
+    progress.meta.gems = remoteGems;
+    progress.meta.energy = existing?.meta.energy ?? progress.meta.energy;
+
+    const derived = derivePlayerLevel(remoteXp);
+    progress.meta.playerLevel = derived.level;
+
+    const updatedAt =
+      snapshot.last_pulled_at ||
+      snapshot.stats?.updated_at ||
+      snapshot.profile?.updated_at ||
+      new Date().toISOString();
+    progress.updatedAt = updatedAt;
+
+    // Unlock categories based on derived player level
+    const unlockedCategories = new Set(
+      getUnlockedCategories(progress.meta.playerLevel)
+    );
+    Object.entries(progress.categories).forEach(([category, levels]) => {
+      const categoryUnlocked = unlockedCategories.has(category);
+      levels.forEach((lvl, idx) => {
+        if (categoryUnlocked) {
+          lvl.isUnlocked = true;
+        } else if (idx < 3) {
+          lvl.isUnlocked = true;
+        }
+      });
+    });
+
+    // Apply remote level completions/unlocks
+    const levelsByTheme = new Map<string, LevelProgressRow[]>();
+    snapshot.levels.forEach((row) => {
+      const theme = row.theme || "Mountain";
+      const list = levelsByTheme.get(theme);
+      if (list) list.push(row);
+      else levelsByTheme.set(theme, [row]);
+    });
+
+    levelsByTheme.forEach((rows, theme) => {
+      const category = progress.categories[theme];
+      if (!category) return;
+      // Sort incoming rows for predictable unlock logic
+      const sorted = [...rows].sort((a, b) => a.level - b.level);
+      let maxCompletedLevel = 0;
+      sorted.forEach((remoteLevel) => {
+        const idx = category.findIndex(
+          (lvl) => lvl.level === remoteLevel.level
+        );
+        if (idx === -1) return;
+        const entry = category[idx];
+        entry.isUnlocked = true;
+        if (remoteLevel.completed) {
+          entry.isCompleted = true;
+          entry.lastCompletedAt =
+            remoteLevel.last_completed_at ||
+            remoteLevel.first_completed_at ||
+            remoteLevel.updated_at ||
+            updatedAt;
+          maxCompletedLevel = Math.max(maxCompletedLevel, remoteLevel.level);
+        } else {
+          maxCompletedLevel = Math.max(
+            maxCompletedLevel,
+            remoteLevel.level - 1
+          );
+        }
+      });
+      if (maxCompletedLevel > 0) {
+        category.forEach((lvl) => {
+          if (lvl.level <= maxCompletedLevel + 1) {
+            lvl.isUnlocked = true;
+          }
+        });
+      }
+    });
+
+    await saveGuestProgress(progress);
+  } catch (err) {
+    console.warn("[sync] Failed to mirror snapshot into guest progress", err);
+  }
 }
 
 // Build a snapshot from guest progress (migration path)
@@ -151,6 +257,7 @@ export async function createDefaultSnapshot(
     last_pushed_at: undefined,
   };
   await saveSnapshot(snapshot);
+  await applySnapshotToGuestProgress(snapshot);
   return snapshot;
 }
 
@@ -243,6 +350,7 @@ export async function pullRemote(
   // Normalize status for authenticated profiles
   sanitizeStatus(snapshot.profile);
   await saveSnapshot(snapshot);
+  await applySnapshotToGuestProgress(snapshot);
   return snapshot;
 }
 
@@ -491,6 +599,7 @@ export async function syncUser(
   }
   snapshot.last_pulled_at = nowISO();
   await saveSnapshot(snapshot);
+  await applySnapshotToGuestProgress(snapshot);
   return {
     ...pushRes,
     pullInserted: pushRes.pullInserted + pullInserted,

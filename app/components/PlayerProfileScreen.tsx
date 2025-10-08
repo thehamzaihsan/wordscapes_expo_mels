@@ -20,6 +20,8 @@ import {
   derivePlayerLevel,
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { pullRemote } from "@/lib/sync";
 
 interface PlayerProfileScreenProps {
   onNavigate: (screen: string) => void;
@@ -30,18 +32,32 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
   onNavigate,
   onLogout,
 }) => {
+  const { user } = useSupabaseAuth();
   const [progress, setProgress] = useState<GuestProgressPayload | null>(null);
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
+    let active = true;
     (async () => {
+      if (user?.id) {
+        try {
+          await pullRemote(user.id);
+        } catch (err) {
+          console.warn("Failed to refresh profile snapshot", err);
+        }
+      }
+      if (!active) return;
       const gp = await loadGuestProgress();
+      if (!active) return;
       setProgress(gp);
       if (gp?.meta.playerName) setNameDraft(gp.meta.playerName);
     })();
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   const handleSaveName = async () => {
     if (!nameDraft.trim()) {
@@ -159,9 +175,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 <Text style={styles.xpCaption}>
                   {derived.levelXp}/{derived.nextLevelXp} XP to next level
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.buyXpButton}
-                  onPress={() => onNavigate('xpshop')}
+                  onPress={() => onNavigate("xpshop")}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.buyXpText}>⚡ Buy XP</Text>

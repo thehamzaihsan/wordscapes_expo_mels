@@ -9,7 +9,7 @@ import {
   BackHandler,
   Platform,
   Text,
-  View
+  View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -39,9 +39,9 @@ function LayoutWithInsets() {
       {/* Background animation behind everything */}
       <BGAnimation />
       {/* App content always on top */}
-      <View 
-        style={{ 
-          flex: 1, 
+      <View
+        style={{
+          flex: 1,
           backgroundColor: "transparent",
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
@@ -61,7 +61,8 @@ function LayoutWithInsets() {
           >
             <Text style={{ color: "#fde68a", fontSize: 12 }}>
               Supabase disabled: set EXPO_PUBLIC_SUPABASE_URL and
-              EXPO_PUBLIC_SUPABASE_ANON_KEY in .env then restart (expo start -c).
+              EXPO_PUBLIC_SUPABASE_ANON_KEY in .env then restart (expo start
+              -c).
             </Text>
           </View>
         )}
@@ -70,19 +71,50 @@ function LayoutWithInsets() {
             headerShown: false,
             // animation: 'slide_from_right',
             gestureEnabled: true,
-            contentStyle: { backgroundColor: 'transparent', zIndex: 10 }, // Ensure content is above animation
+            contentStyle: { backgroundColor: "transparent", zIndex: 10 }, // Ensure content is above animation
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ headerShown: false, gestureEnabled: false }} />
-          <Stack.Screen name="levels" options={{ headerShown: false, gestureEnabled: true }} />
-          <Stack.Screen name="game" options={{ headerShown: false, gestureEnabled: true }} />
-          <Stack.Screen name="test" options={{ headerShown: false, gestureEnabled: true }} />
-          <Stack.Screen name="profile" options={{ headerShown: false, gestureEnabled: true }} />
-          <Stack.Screen name="create-account" options={{ headerShown: false, gestureEnabled: true }} />
-          <Stack.Screen name="email-confirmation" options={{ headerShown: false, gestureEnabled: false }} />
-          <Stack.Screen name="shop" options={{ headerShown: false, gestureEnabled: true }} />
-          <Stack.Screen name="settings" options={{ headerShown: false, gestureEnabled: true }} />
+          <Stack.Screen
+            name="login"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="levels"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="game"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="test"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="profile"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="create-account"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="email-confirmation"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="auth-callback"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="shop"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="settings"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
         </Stack>
       </View>
     </View>

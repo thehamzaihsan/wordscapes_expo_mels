@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { signUpEmailPassword } from "@/lib/auth";
+import { signInWithGoogle, signUpEmailPassword } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
 
 interface CreateAccountScreenProps {
@@ -54,6 +54,7 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
   const nameRef = useRef<TextInput | null>(null);
   const emailRef = useRef<TextInput | null>(null);
@@ -97,7 +98,9 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
         } else {
           // Always redirect to email confirmation screen after successful signup
           // Supabase requires email confirmation by default
-          onNavigate("email-confirmation", { email: email.trim().toLowerCase() });
+          onNavigate("email-confirmation", {
+            email: email.trim().toLowerCase(),
+          });
         }
       }
     } catch (e: any) {
@@ -108,7 +111,23 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   };
 
   const handleGoogleSignIn = async () => {
-    setError("Use Google from login screen");
+    if (googleLoading) return;
+    if (!isSupabaseEnabled()) {
+      setError("Supabase not configured");
+      return;
+    }
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      const res = await signInWithGoogle();
+      if (!res.ok) {
+        setError(res.error || "Google sign-in failed");
+      }
+    } catch (e: any) {
+      setError(e?.message || "Google sign-in failed");
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleGoogleComplete = async () => {
@@ -223,11 +242,11 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               <View style={styles.hr} />
             </View>
             <TouchableOpacity
-              disabled={loading}
+              disabled={loading || googleLoading}
               style={styles.googleButton}
               onPress={handleGoogleSignIn}
             >
-              {loading ? (
+              {googleLoading ? (
                 <ActivityIndicator color="#111827" />
               ) : (
                 <View style={styles.googleContentRow}>

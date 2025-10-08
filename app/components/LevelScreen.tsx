@@ -2,21 +2,17 @@ import { Difficulty } from "@/constants/difficulty";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
 import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
+import type { LocalUserSnapshot } from "@/lib/syncTypes";
 import {
   buildInitialProgress,
   loadGuestProgress,
   saveGuestProgress,
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { getLocalSnapshot } from "@/lib/sync";
+import { getLocalSnapshot, pullRemote } from "@/lib/sync";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import {
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StatusBar, StyleSheet, Text, View } from "react-native";
 
 // Import the new components
 import LevelHeader from "./LevelHeader";
@@ -98,7 +94,17 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         setIsLoading(true);
         initializeGameManager();
         try {
-          const snapshot = await getLocalSnapshot();
+          let snapshot: LocalUserSnapshot | null = null;
+          if (user?.id) {
+            try {
+              snapshot = await pullRemote(user.id);
+            } catch (err) {
+              console.warn("Failed to pull remote snapshot", err);
+            }
+          }
+          if (!snapshot) {
+            snapshot = await getLocalSnapshot();
+          }
           if (!isMounted) return;
           setSnapshotProfileName(snapshot?.profile?.username ?? null);
           const existing = await loadGuestProgress();
@@ -148,11 +154,18 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           });
           setLevelCategories(mapped);
           setGuestMeta(progressToUse.meta);
-          
+
           // Set initial category to first unlocked category
-          const { getUnlockedCategories } = await import('@/hooks/guest-progress');
-          const unlockedCategories = getUnlockedCategories(progressToUse.meta.playerLevel);
-          if (unlockedCategories.length > 0 && !unlockedCategories.includes(selectedCategory)) {
+          const { getUnlockedCategories } = await import(
+            "@/hooks/guest-progress"
+          );
+          const unlockedCategories = getUnlockedCategories(
+            progressToUse.meta.playerLevel
+          );
+          if (
+            unlockedCategories.length > 0 &&
+            !unlockedCategories.includes(selectedCategory)
+          ) {
             setSelectedCategory(unlockedCategories[0]);
           }
         } catch (e) {
@@ -165,7 +178,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       return () => {
         isMounted = false;
       };
-    }, [authDisplayName, selectedCategory])
+    }, [authDisplayName, selectedCategory, user?.id])
   );
 
   const handleShopPress = () => {
