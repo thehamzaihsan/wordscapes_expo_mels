@@ -1,9 +1,9 @@
-import { supabase, isSupabaseEnabled } from "./supabase";
-import * as Linking from "expo-linking";
-import { Platform, NativeModules } from "react-native";
-import { remapGuestSnapshotToUser } from "./guestSnapshot";
-import { syncUser, mutateLocalProfile } from "./sync";
 import { updateGuestAvatar, updateGuestName } from "@/hooks/guest-progress";
+import * as Linking from "expo-linking";
+import { NativeModules, Platform } from "react-native";
+import { remapGuestSnapshotToUser } from "./guestSnapshot";
+import { isSupabaseEnabled, supabase } from "./supabase";
+import { mutateLocalProfile, syncUser } from "./sync";
 
 type GoogleSignInModule =
   typeof import("@react-native-google-signin/google-signin");
@@ -67,9 +67,12 @@ async function startSupabaseGoogleOAuth(
   skipBrowserRedirect: boolean
 ): Promise<AuthResult> {
   try {
-    const redirectTo = Linking.createURL("/auth-callback", {
-      scheme: Platform.select({ default: "wordscapesexpo" }),
-    });
+    // Use the scheme defined in app.json (expo.expo.scheme) automatically.
+    // Hardcoding a different scheme (previously "wordscapesexpo") caused redirect_uri mismatches.
+    const redirectTo = Linking.createURL("/auth-callback");
+    if (__DEV__) {
+      console.log("[auth] Using redirect URI:", redirectTo);
+    }
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

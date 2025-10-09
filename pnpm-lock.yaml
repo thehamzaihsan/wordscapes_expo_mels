@@ -14,9 +14,9 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: ^2.2.0
         version: 2.2.0(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))
-      '@react-native-community/blur':
-        specifier: ^4.4.1
-        version: 4.4.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      '@react-native-google-signin/google-signin':
+        specifier: ^12.1.0
+        version: 12.2.1(expo@54.0.9)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
       '@react-navigation/bottom-tabs':
         specifier: ^7.4.0
         version: 7.4.7(@react-navigation/native@7.1.17(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native-safe-area-context@5.6.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native-screens@4.16.0(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -107,9 +107,6 @@ importers:
       react-native:
         specifier: 0.81.4
         version: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
-      react-native-blur:
-        specifier: ^3.2.2
-        version: 3.2.2
       react-native-elements:
         specifier: ^3.4.3
         version: 3.4.3(react-native-safe-area-context@5.6.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native-vector-icons@10.3.0)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -1184,11 +1181,18 @@ packages:
     peerDependencies:
       react-native: ^0.0.0-0 || >=0.65 <1.0
 
-  '@react-native-community/blur@4.4.1':
-    resolution: {integrity: sha512-XBSsRiYxE/MOEln2ayunShfJtWztHwUxLFcSL20o+HNNRnuUDv+GXkF6FmM2zE8ZUfrnhQ/zeTqvnuDPGw6O8A==}
+  '@react-native-google-signin/google-signin@12.2.1':
+    resolution: {integrity: sha512-qt2Cb+bN2NS8BBT06M3UbLVS1gaSYTenNh4uZtPNmyJC23xZAynLkuhvsC6gmeEnxcj0wLVUn1Es+LSHw0OhVQ==}
     peerDependencies:
+      expo: '>=50.0.0'
       react: '*'
+      react-dom: '*'
       react-native: '*'
+    peerDependenciesMeta:
+      expo:
+        optional: true
+      react-dom:
+        optional: true
 
   '@react-native/assets-registry@0.81.4':
     resolution: {integrity: sha512-AMcDadefBIjD10BRqkWw+W/VdvXEomR6aEZ0fhQRAv7igrBzb4PTn4vHKYg+sUK0e3wa74kcMy2DLc/HtnGcMA==}
@@ -3746,10 +3750,6 @@ packages:
   react-is@19.1.1:
     resolution: {integrity: sha512-tr41fA15Vn8p4X9ntI+yCyeGSf1TlYaY5vlTZfQmeLBrFo3psOPX6HhTDnFNL9uj3EhP0KAQ80cugCl4b4BERA==}
 
-  react-native-blur@3.2.2:
-    resolution: {integrity: sha512-r7zNQISL7kQX5ocQEet5QVOBzoXP+Nr3dO7Wql+fV6rebx/8I7eAUHnfITDx12WoOmRpiJjbt/4xF5gTEll6Uw==}
-    deprecated: 'WARNING: This project has been renamed to @react-native-community/blur. Install using @react-native-community/blur instead.'
-
   react-native-elements@3.4.3:
     resolution: {integrity: sha512-VtZc25EecPZyUBER85zFK9ZbY6kkUdcm1ZwJ9hdoGSCr1R/GFgxor4jngOcSYeMvQ+qimd5No44OVJW3rSJECA==}
     peerDependencies:
@@ -5951,10 +5951,13 @@ snapshots:
       merge-options: 3.0.4
       react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
 
-  '@react-native-community/blur@4.4.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)':
+  '@react-native-google-signin/google-signin@12.2.1(expo@54.0.9)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)':
     dependencies:
       react: 19.1.0
       react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
+    optionalDependencies:
+      expo: 54.0.9(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.7)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      react-dom: 19.1.0(react@19.1.0)
 
   '@react-native/assets-registry@0.81.4': {}
 
@@ -9053,10 +9056,6 @@ snapshots:
   react-is@18.3.1: {}
 
   react-is@19.1.1: {}
-
-  react-native-blur@3.2.2:
-    dependencies:
-      prop-types: 15.8.1
 
   react-native-elements@3.4.3(react-native-safe-area-context@5.6.1(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native-vector-icons@10.3.0)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0):
     dependencies:
