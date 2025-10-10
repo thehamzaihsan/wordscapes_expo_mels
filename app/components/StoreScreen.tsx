@@ -13,8 +13,6 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
-import economy from "../../constants/economy.json";
-import { loadGuestProgress, type GuestMeta } from "../../hooks/guest-progress";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.75;
@@ -35,29 +33,17 @@ export default function CombinedStoreScreen({
   const [activeTab, setActiveTab] = useState<"shop" | "subscription">("shop");
   const [shopIndex, setShopIndex] = useState(0);
   const [subscriptionIndex, setSubscriptionIndex] = useState(0);
-  const [guestMeta, setGuestMeta] = useState<GuestMeta | null>(null);
   const shopScrollX = useRef(new Animated.Value(0)).current;
   const subscriptionScrollX = useRef(new Animated.Value(0)).current;
   const shopScrollViewRef = useRef<ScrollView>(null);
   const subscriptionScrollViewRef = useRef<ScrollView>(null);
 
-  // Load guest progress to show accurate currency data
-  useEffect(() => {
-    const loadProgress = async () => {
-      const progress = await loadGuestProgress();
-      if (progress) {
-        setGuestMeta(progress.meta);
-      }
-    };
-    loadProgress();
-  }, []);
-
   const shopOffers = [
     {
       id: 1,
       name: "Sack of Gems",
-      gems: economy.gems.purchaseOptions[0].gems,
-      price: `$${economy.gems.purchaseOptions[0].usd.toFixed(2)}`,
+      gems: 2500,
+      price: "$19.99",
       popular: false,
       colors: ["#8b5cf6", "#7c3aed"],
       bgColor: "#2e1065",
@@ -66,8 +52,8 @@ export default function CombinedStoreScreen({
     {
       id: 2,
       name: "Box of Gems",
-      gems: economy.gems.purchaseOptions[1].gems,
-      price: `$${economy.gems.purchaseOptions[1].usd.toFixed(2)}`,
+      gems: 6500,
+      price: "$49.99",
       popular: true,
       badge: "BEST VALUE",
       colors: ["#10b981", "#059669"],
@@ -77,8 +63,8 @@ export default function CombinedStoreScreen({
     {
       id: 3,
       name: "Chest of Gems",
-      gems: economy.gems.purchaseOptions[2].gems,
-      price: `$${economy.gems.purchaseOptions[2].usd.toFixed(2)}`,
+      gems: 14000,
+      price: "$99.99",
       popular: false,
       colors: ["#f59e0b", "#d97706"],
       bgColor: "#78350f",
@@ -87,8 +73,8 @@ export default function CombinedStoreScreen({
     {
       id: 4,
       name: "Pile of Gems",
-      gems: economy.gems.purchaseOptions[2].gems * 2, // Double the highest tier for the ultimate package
-      price: `$${(economy.gems.purchaseOptions[2].usd * 2).toFixed(2)}`,
+      gems: 28000,
+      price: "$199.99",
       popular: false,
       colors: ["#ef4444", "#dc2626"],
       bgColor: "#7f1d1d",
@@ -369,13 +355,13 @@ export default function CombinedStoreScreen({
                 <View style={[styles.currencyIcon]}>
                   <Text style={styles.currencyEmoji}>💎</Text>
                 </View>
-                <Text style={styles.currencyText}>{guestMeta?.gems ?? 0}</Text>
+                <Text style={styles.currencyText}>1245</Text>
               </View>
               <View style={styles.currencyBadge}>
                 <View style={[styles.currencyIcon]}>
-                  <Text style={styles.currencyEmoji}>⚡</Text>
+                  <Text style={styles.currencyEmoji}>🟡</Text>
                 </View>
-                <Text style={styles.currencyText}>{guestMeta?.energy ?? 0}/{economy.dailyLogin.maxEnergy}</Text>
+                <Text style={styles.currencyText}>750</Text>
               </View>
             </View>
           </View>

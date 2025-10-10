@@ -10,7 +10,7 @@
   "energy": {
     "refillCost": 20,
     "refillMax": 100,
-    "payPerLevel": 5
+    "earnPerLevel": 5
   },
   "gems": {
     "startingAmount": 100,

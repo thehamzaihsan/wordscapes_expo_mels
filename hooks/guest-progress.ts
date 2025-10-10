@@ -1,8 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import levelsData from "@/constants/levels.json";
 import economy from "@/constants/economy.json";
-import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+import levelsData from "@/constants/levels.json";
 import { clampEnergy, getDefaultEnergy } from "@/lib/energy";
+import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
     parsed.meta.energy = clampEnergy(
@@ -368,9 +368,8 @@ export function applyLevelCompletion(
   }
 
   // Always deduct energy (regardless of first completion or not)
-  progress.meta.energy = clampEnergy(
-    progress.meta.energy - economy.energy.payPerLevel
-  ); // Dynamic energy cost from economy config
+  // Dynamic energy cost from economy config
+  progress.meta.energy = Math.max(0, progress.meta.energy - 5); // small energy cost
 
   // Recalculate playerLevel from total xp
   const derived = derivePlayerLevel(progress.meta.xp);
