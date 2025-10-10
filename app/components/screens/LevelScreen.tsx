@@ -14,10 +14,10 @@ import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
 import { StatusBar, StyleSheet, Text, View } from "react-native";
 
-// Import the new components
-import CategoryTabs from "./CategoryTabs";
-import LevelGrid from "./LevelGrid";
-import LevelHeader from "./LevelHeader";
+// Import the level components
+import CategoryTabs from "../levels/CategoryTabs";
+import LevelGrid from "../levels/LevelGrid";
+import LevelHeader from "../levels/LevelHeader";
 
 interface LevelData {
   level: number;

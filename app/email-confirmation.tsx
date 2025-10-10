@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import EmailConfirmationScreen from "./components/EmailConfirmationScreen";
+import EmailConfirmationScreen from "./components/screens/EmailConfirmationScreen";
 import { useLocalSearchParams } from "expo-router";
 
 export default function EmailConfirmationRoute() {

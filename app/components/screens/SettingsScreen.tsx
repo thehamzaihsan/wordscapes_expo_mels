@@ -9,8 +9,11 @@ import {
   Switch,
   View
 } from 'react-native';
-import ThemeSwitcher from './ThemeSwitcher';
-import { ThemedCard, ThemedText, ThemedButton, useThemedStyles } from './ui-components';
+import ThemeSwitcher from '../ui/ThemeSwitcher';
+import ThemedCard from '../ui/ThemedCard';
+import ThemedText from '../ui/ThemedText';
+import ThemedButton from '../ui/ThemedButton';
+import { useThemedStyles } from '@/hooks/useTheme';
 
 interface SettingsScreenProps {
   onNavigate: (screen: string) => void;

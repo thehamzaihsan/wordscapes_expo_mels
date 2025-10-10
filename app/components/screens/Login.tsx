@@ -4,8 +4,12 @@ import { ChevronLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Logo from "./logo";
-import { ThemedButton, ThemedCard, ThemedInput, ThemedText, useTheme, useThemedStyles } from "./ui-components";
+import Logo from "../common/Logo";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedInput from "../ui/ThemedInput";
+import ThemedText from "../ui/ThemedText";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 
 interface LoginScreenProps {
   onNavigate: (screen: string) => void;

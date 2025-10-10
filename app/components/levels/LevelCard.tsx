@@ -2,7 +2,9 @@ import React from "react";
 import { View, TouchableOpacity } from "react-native";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import economy from "@/constants/economy.json";
-import { useTheme, useThemedStyles, ThemedCard, ThemedText } from "./ui-components";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 
 interface LevelData {
   level: number;

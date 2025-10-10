@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import CreateAccountScreen from "./components/CreateAccountScreen";
+import CreateAccountScreen from "./components/screens/CreateAccountScreen";
 
 export default function CreateAccountRoute() {
   const router = useRouter();

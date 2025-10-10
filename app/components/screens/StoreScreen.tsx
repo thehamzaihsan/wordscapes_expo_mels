@@ -5,13 +5,13 @@ import {
   Animated,
   Dimensions,
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -47,7 +47,7 @@ export default function CombinedStoreScreen({
       popular: false,
       colors: ["#8b5cf6", "#7c3aed"],
       bgColor: "#2e1065",
-      image: require("../../assets/images/gem1.png"),
+      image: require("../../../assets/images/gem1.png"),
     },
     {
       id: 2,
@@ -58,7 +58,7 @@ export default function CombinedStoreScreen({
       badge: "BEST VALUE",
       colors: ["#10b981", "#059669"],
       bgColor: "#064e3b",
-      image: require("../../assets/images/gem2.png"),
+      image: require("../../../assets/images/gem2.png"),
     },
     {
       id: 3,
@@ -68,7 +68,7 @@ export default function CombinedStoreScreen({
       popular: false,
       colors: ["#f59e0b", "#d97706"],
       bgColor: "#78350f",
-      image: require("../../assets/images/gem3.png"),
+      image: require("../../../assets/images/gem3.png"),
     },
     {
       id: 4,
@@ -78,7 +78,7 @@ export default function CombinedStoreScreen({
       popular: false,
       colors: ["#ef4444", "#dc2626"],
       bgColor: "#7f1d1d",
-      image: require("../../assets/images/gem4.png"),
+      image: require("../../../assets/images/gem4.png"),
     },
   ];
 

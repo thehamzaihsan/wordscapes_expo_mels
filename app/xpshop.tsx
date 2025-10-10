@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import XPShopScreen from "./components/Screens/XPShopScreen";
+import XPShopScreen from "./components/screens/XPShopScreen";
 
 export default function XPShopRoute() {
   const router = useRouter();

@@ -1,4 +1,4 @@
-import LetterWheel from "../inputWheel";
+import LetterWheel from "../game/inputWheel";
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import economy from "@/constants/economy.json";
@@ -166,16 +166,16 @@ export default function GameScreen({
       try {
         const [rightRes, wrongRes, bonusRes, levelRes] = await Promise.all([
           Audio.Sound.createAsync(
-            require("../../assets/sounds/correct-word.mp3")
+            require("../../../assets/sounds/correct-word.mp3")
           ),
           Audio.Sound.createAsync(
-            require("../../assets/sounds/wrong-word.mp3")
+            require("../../../assets/sounds/wrong-word.mp3")
           ),
           Audio.Sound.createAsync(
-            require("../../assets/sounds/bonus-word.mp3")
+            require("../../../assets/sounds/bonus-word.mp3")
           ),
           Audio.Sound.createAsync(
-            require("../../assets/sounds/level-complete.mp3")
+            require("../../../assets/sounds/level-complete.mp3")
           ),
         ]);
 
@@ -892,7 +892,7 @@ export default function GameScreen({
           <View style={styles.animationContainer}>
             <Text style={styles.gameCompleteText}>LEVEL COMPLETED</Text>
             <LottieView
-              source={require("../../assets/animations/level-complete.json")}
+              source={require("../../../assets/animations/level-complete.json")}
               autoPlay
               loop={false}
               style={styles.lottieAnimation}

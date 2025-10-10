@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
-import StoreScreen from './components/StoreScreen'
+import StoreScreen from './components/screens/StoreScreen'
 
 export default function ShopRoute() {
   const router = useRouter();

@@ -1,7 +1,7 @@
-import { useRouter } from "expo-router";
-import GuestNameScreen from "./components/GuestNameScreen";
 import { loadGuestProgress } from "@/hooks/guest-progress";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import GuestNameScreen from "./components/screens/GuestNameScreen";
 
 export default function GuestNameRoute() {
   const router = useRouter();

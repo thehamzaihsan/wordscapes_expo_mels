@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 // Guest progress handled inside LevelScreen; this wrapper only passes params.
 import { useCallback } from "react";
 import { BackHandler, Platform } from "react-native";
-import LevelScreen from "./components/LevelScreen";
+import LevelScreen from "./components/screens/LevelScreen";
 
 interface LevelData {
   baseWord: string;

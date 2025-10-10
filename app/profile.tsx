@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { signOutSupabase } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
 import React from "react";
-import PlayerProfileScreen from "./components/PlayerProfileScreen";
+import PlayerProfileScreen from "./components/screens/PlayerProfileScreen";
 
 export default function ProfileRoute() {
   const router = useRouter();

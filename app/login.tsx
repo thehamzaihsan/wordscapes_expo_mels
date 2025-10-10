@@ -1,7 +1,7 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback } from "react";
-import LoginScreen from "./components/Login";
+import LoginScreen from "./components/screens/Login";
 
 export default function LoginRoute() {
   const router = useRouter();

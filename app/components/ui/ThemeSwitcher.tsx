@@ -6,7 +6,9 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
-import { ThemedButton, ThemedText, ThemedCard } from './ui-components';
+import ThemedButton from './ThemedButton';
+import ThemedText from './ThemedText';
+import ThemedCard from './ThemedCard';
 
 interface ThemeSwitcherProps {
   showTitle?: boolean;

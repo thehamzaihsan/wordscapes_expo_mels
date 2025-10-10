@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
-import SettingsScreen from './components/SettingsScreen';
+import SettingsScreen from './components/screens/SettingsScreen';
 
 export default function SettingsRoute() {
   const router = useRouter();

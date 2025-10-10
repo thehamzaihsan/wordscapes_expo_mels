@@ -143,6 +143,10 @@ function LayoutWithInsets() {
             name="settings"
             options={{ headerShown: false, gestureEnabled: true }}
           />
+          <Stack.Screen
+            name="glassmorphism-demo"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
         </Stack>
       </View>
     </View>

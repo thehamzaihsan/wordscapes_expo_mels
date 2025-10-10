@@ -14,9 +14,10 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, Theme } from '@/hooks/useTheme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'ghost' | 'outline';
+type ButtonVariant = 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'ghost' | 'outline' | 'glass' | 'glassStrong' | 'glassPremium';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface ButtonProps extends Omit<TouchableOpacityProps, 'style'> {
@@ -66,17 +67,17 @@ const Button: React.FC<ButtonProps> = ({
         return {
           container: {
             backgroundColor: disabled 
-              ? 'rgba(255, 255, 255, 0.05)' 
-              : 'rgba(255, 255, 255, 0.15)',
+              ? theme.colors.glassmorphismBackground
+              : theme.colors.glassmorphismBackgroundStrong,
             borderColor: disabled 
-              ? 'rgba(255, 255, 255, 0.1)' 
-              : 'rgba(255, 255, 255, 0.3)',
+              ? theme.colors.glassmorphismBorder
+              : theme.colors.glassmorphismBorderStrong,
             borderWidth: 1,
-            shadowColor: '#000',
-            shadowOpacity: 0.2,
-            shadowRadius: 6,
-            shadowOffset: { width: 0, height: 2 },
-            elevation: 4,
+            shadowColor: theme.name === 'light' ? '#000' : '#fff',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: theme.name === 'light' ? 0.1 : 0.2,
+            shadowRadius: 8,
+            elevation: 6,
           },
           text: { color: theme.colors.text },
         };
@@ -132,6 +133,63 @@ const Button: React.FC<ButtonProps> = ({
             borderColor: 'transparent',
           },
           text: { color: disabled ? theme.colors.textTertiary : theme.colors.primary },
+        };
+      case 'glass':
+        return {
+          container: {
+            backgroundColor: disabled 
+              ? theme.colors.glassmorphismBackground
+              : theme.colors.glassmorphismBackground,
+            borderColor: disabled 
+              ? theme.colors.glassmorphismBorder 
+              : theme.colors.glassmorphismBorder,
+            borderWidth: 1,
+            shadowColor: theme.name === 'light' ? '#000' : '#fff',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: theme.name === 'light' ? 0.08 : 0.15,
+            shadowRadius: 6,
+            elevation: 4,
+          },
+          text: { color: disabled ? theme.colors.textTertiary : theme.colors.text },
+        };
+      case 'glassStrong':
+        return {
+          container: {
+            backgroundColor: disabled 
+              ? theme.colors.glassmorphismBackground
+              : theme.colors.glassmorphismBackgroundStrong,
+            borderColor: disabled 
+              ? theme.colors.glassmorphismBorder 
+              : theme.colors.glassmorphismBorderStrong,
+            borderWidth: 1.5,
+            shadowColor: theme.name === 'light' ? '#000' : '#fff',
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: theme.name === 'light' ? 0.12 : 0.25,
+            shadowRadius: 10,
+            elevation: 8,
+          },
+          text: { color: disabled ? theme.colors.textTertiary : theme.colors.text },
+        };
+      case 'glassPremium':
+        return {
+          container: {
+            backgroundColor: disabled 
+              ? theme.colors.glassmorphismBackground
+              : theme.colors.glassmorphismBackgroundStrong,
+            borderColor: disabled 
+              ? theme.colors.glassmorphismBorder 
+              : theme.colors.primary,
+            borderWidth: 2,
+            shadowColor: theme.colors.primary,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 10,
+          },
+          text: { 
+            color: disabled ? theme.colors.textTertiary : theme.colors.primary,
+            fontWeight: '600' as any,
+          },
         };
       default:
         return {

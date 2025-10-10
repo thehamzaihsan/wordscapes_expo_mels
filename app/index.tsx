@@ -7,8 +7,10 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Logo from "./components/logo";
-import { ThemedButton, ThemedText, useTheme, useThemedStyles } from "./components/ui-components";
+import Logo from "./components/common/Logo";
+import ThemedButton from "./components/ui/ThemedButton";
+import ThemedText from "./components/ui/ThemedText";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 
 export default function Index() {
   const router = useRouter();
@@ -83,7 +85,7 @@ export default function Index() {
 
         {/* Quick Access Footer */}
         <View style={styles.footerSection}>
-          <ThemedText variant="caption" align="center" color="textInverse" style={styles.footerText}>
+          <ThemedText variant="caption" align="center"  style={styles.footerText}>
             Play thousands of word puzzles
           </ThemedText>
         </View>

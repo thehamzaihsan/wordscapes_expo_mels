@@ -272,6 +272,12 @@ export const LightTheme = {
     overlay: 'rgba(0, 0, 0, 0.5)',
     overlayLight: 'rgba(0, 0, 0, 0.2)',
     
+    // Glassmorphism colors (theme-aware) - Fixed for light mode visibility
+    glassmorphismBackground: 'rgba(0, 0, 0, 0.08)',
+    glassmorphismBorder: 'rgba(0, 0, 0, 0.12)',
+    glassmorphismBackgroundStrong: 'rgba(0, 0, 0, 0.15)',
+    glassmorphismBorderStrong: 'rgba(0, 0, 0, 0.2)',
+    
     // Status bar
     statusBar: BaseColors.gray[900],
   },
@@ -335,6 +341,12 @@ export const DarkTheme = {
     // Overlay colors
     overlay: 'rgba(0, 0, 0, 0.7)',
     overlayLight: 'rgba(0, 0, 0, 0.3)',
+    
+    // Glassmorphism colors (theme-aware)
+    glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
+    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
     
     // Status bar
     statusBar: '#121213',
@@ -400,6 +412,12 @@ export const GameTheme = {
     // Overlay colors
     overlay: 'rgba(0, 0, 0, 0.8)',
     overlayLight: 'rgba(0, 0, 0, 0.4)',
+    
+    // Glassmorphism colors (theme-aware)
+    glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
+    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
     
     // Status bar
     statusBar: '#121213',
