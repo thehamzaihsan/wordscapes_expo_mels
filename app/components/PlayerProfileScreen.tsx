@@ -1,27 +1,27 @@
+import {
+  aggregateGuestStats,
+  clearGuestProgress,
+  derivePlayerLevel,
+  loadGuestProgress,
+  updateGuestAvatar,
+  updateGuestName,
+  type GuestProgressPayload,
+} from "@/hooks/guest-progress";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { pullRemote, syncUser } from "@/lib/sync";
+import { showToast } from "@/lib/toast";
+import { BlurView } from "expo-blur";
+import { ChevronLeft } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ScrollView,
 } from "react-native";
-import { showToast } from "@/lib/toast";
-import { BlurView } from "expo-blur";
-import { ChevronLeft } from "lucide-react-native";
-import {
-  loadGuestProgress,
-  updateGuestName,
-  clearGuestProgress,
-  updateGuestAvatar,
-  aggregateGuestStats,
-  derivePlayerLevel,
-  type GuestProgressPayload,
-} from "@/hooks/guest-progress";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { pullRemote } from "@/lib/sync";
 
 interface PlayerProfileScreenProps {
   onNavigate: (screen: string) => void;
@@ -37,6 +37,8 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
+  const [savingAvatar, setSavingAvatar] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +55,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
       if (!active) return;
       setProgress(gp);
       if (gp?.meta.playerName) setNameDraft(gp.meta.playerName);
+      if (gp?.meta.avatar) setAvatarDraft(gp.meta.avatar);
     })();
     return () => {
       active = false;
@@ -70,6 +73,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
       const updated = await updateGuestName(sanitized);
       setProgress(updated);
       showToast("Display name updated", "success");
+      if (user?.id) {
+        syncUser(user.id).catch(() => {});
+      }
     } catch {
       showToast("Failed to update name", "error");
     } finally {
@@ -93,9 +99,25 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
     "🎯",
   ];
 
-  const handleSelectAvatar = async (icon: string) => {
-    const updated = await updateGuestAvatar(icon);
-    setProgress(updated);
+  const handleSelectAvatar = (icon: string) => {
+    setAvatarDraft(icon);
+  };
+
+  const handleUpdateAvatar = async () => {
+    if (!avatarDraft) return;
+    setSavingAvatar(true);
+    try {
+      const updated = await updateGuestAvatar(avatarDraft);
+      setProgress(updated);
+      showToast("Avatar updated", "success");
+      if (user?.id) {
+        syncUser(user.id).catch(() => {});
+      }
+    } catch {
+      showToast("Failed to update avatar", "error");
+    } finally {
+      setSavingAvatar(false);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -223,7 +245,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
             <Text style={styles.sectionTitle}>Avatar</Text>
             <View style={styles.avatarGrid}>
               {avatars.map((a) => {
-                const active = progress.meta.avatar === a;
+                const active = (avatarDraft ?? progress.meta.avatar) === a;
                 return (
                   <TouchableOpacity
                     key={a}
@@ -238,6 +260,17 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 );
               })}
             </View>
+            {avatarDraft !== (progress.meta.avatar ?? null) && (
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleUpdateAvatar}
+                disabled={savingAvatar}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {savingAvatar ? "Updating..." : "Update Avatar"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
