@@ -12,9 +12,12 @@ import {
   View,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Alert,
 } from "react-native";
 import economy from "../../constants/economy.json";
-import { loadGuestProgress, type GuestMeta } from "../../hooks/guest-progress";
+import { loadGuestProgress, saveGuestProgress, type GuestMeta } from "../../hooks/guest-progress";
+import PaymentService, { type PurchaseItem } from "../../lib/payments";
+import PaymentModal from "./PaymentModal";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.75;
@@ -36,6 +39,13 @@ export default function CombinedStoreScreen({
   const [shopIndex, setShopIndex] = useState(0);
   const [subscriptionIndex, setSubscriptionIndex] = useState(0);
   const [guestMeta, setGuestMeta] = useState<GuestMeta | null>(null);
+  
+  // Payment states
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [paymentMessage, setPaymentMessage] = useState('');
+  const [selectedItem, setSelectedItem] = useState<PurchaseItem | null>(null);
+  
   const shopScrollX = useRef(new Animated.Value(0)).current;
   const subscriptionScrollX = useRef(new Animated.Value(0)).current;
   const shopScrollViewRef = useRef<ScrollView>(null);
@@ -51,6 +61,157 @@ export default function CombinedStoreScreen({
     };
     loadProgress();
   }, []);
+
+  // Refresh guest meta after successful payment
+  const refreshGuestMeta = async () => {
+    const progress = await loadGuestProgress();
+    if (progress) {
+      setGuestMeta(progress.meta);
+    }
+  };
+
+  // Handle gem purchase
+  const handleGemPurchase = async (offer: any) => {
+    try {
+      const purchaseItem: PurchaseItem = {
+        id: offer.id.toString(),
+        name: offer.name,
+        gems: offer.gems,
+        price: economy.gems.purchaseOptions[offer.id - 1]?.usd || 0,
+        type: 'gems',
+      };
+
+      // Validate purchase
+      const validation = PaymentService.validatePurchase(purchaseItem);
+      if (!validation.valid) {
+        Alert.alert('Invalid Purchase', validation.error || 'Invalid purchase item');
+        return;
+      }
+
+      setSelectedItem(purchaseItem);
+      setIsPaymentModalVisible(true);
+      setPaymentStatus('processing');
+      setPaymentMessage('Initializing PayPal payment...');
+
+      // Process payment
+      await PaymentService.purchaseGems(
+        purchaseItem,
+        // Progress callback
+        (message: string) => {
+          setPaymentMessage(message);
+        },
+        // Completion callback
+        async (result) => {
+          if (result.success) {
+            setPaymentStatus('success');
+            setPaymentMessage(
+              `Successfully added ${result.gemsAdded?.toLocaleString()} gems to your account!`
+            );
+            await refreshGuestMeta();
+          } else {
+            setPaymentStatus('error');
+            setPaymentMessage(result.error || 'Payment failed');
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Purchase error:', error);
+      setPaymentStatus('error');
+      setPaymentMessage('An unexpected error occurred. Please try again.');
+    }
+  };
+
+  // Handle subscription purchase
+  const handleSubscriptionPurchase = async (subscription: any) => {
+    try {
+      const subscriptionItem: PurchaseItem = {
+        id: subscription.id.toString(),
+        name: subscription.name,
+        gems: 0, // Subscriptions don't directly give gems
+        price: parseFloat(subscription.price.replace('$', '')),
+        type: 'subscription',
+      };
+
+      setSelectedItem(subscriptionItem);
+      setIsPaymentModalVisible(true);
+      setPaymentStatus('processing');
+      setPaymentMessage('Processing subscription...');
+
+      // Process subscription
+      await PaymentService.purchaseSubscription(
+        subscriptionItem,
+        (message: string) => {
+          setPaymentMessage(message);
+        },
+        (result) => {
+          if (result.success) {
+            setPaymentStatus('success');
+            setPaymentMessage('Subscription activated successfully!');
+          } else {
+            setPaymentStatus('error');
+            setPaymentMessage(result.error || 'Subscription failed');
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Subscription error:', error);
+      setPaymentStatus('error');
+      setPaymentMessage('Subscription processing failed. Please try again.');
+    }
+  };
+
+  // Handle payment modal close
+  const handlePaymentModalClose = () => {
+    setIsPaymentModalVisible(false);
+    setPaymentStatus('idle');
+    setPaymentMessage('');
+    setSelectedItem(null);
+  };
+
+  // Handle payment retry
+  const handlePaymentRetry = () => {
+    if (selectedItem) {
+      if (selectedItem.type === 'gems') {
+        handleGemPurchase({
+          id: parseInt(selectedItem.id),
+          name: selectedItem.name,
+          gems: selectedItem.gems,
+        });
+      } else {
+        handleSubscriptionPurchase({
+          id: parseInt(selectedItem.id),
+          name: selectedItem.name,
+          price: `$${selectedItem.price.toFixed(2)}`,
+        });
+      }
+    }
+  };
+
+  // Handle restore purchases
+  const handleRestorePurchases = async () => {
+    try {
+      Alert.alert(
+        'Restore Purchases',
+        'This will restore any previous purchases you made. Continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Restore',
+            onPress: async () => {
+              const result = await PaymentService.restorePurchases();
+              Alert.alert(
+                result.success ? 'Success' : 'Error',
+                result.message,
+                [{ text: 'OK' }]
+              );
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to restore purchases');
+    }
+  };
 
   const shopOffers = [
     {
@@ -216,6 +377,18 @@ export default function CombinedStoreScreen({
           style={[styles.offerCard, { backgroundColor: offer.bgColor }]}
           activeOpacity={0.8}
           disabled={index !== shopIndex}
+          onPress={() => {
+            if (index === shopIndex) {
+              Alert.alert(
+                'Confirm Purchase',
+                `Purchase ${offer.name} for ${offer.price}?`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Buy Now', onPress: () => handleGemPurchase(offer) },
+                ]
+              );
+            }
+          }}
         >
           {offer.popular && (
             <View style={styles.popularBadge}>
@@ -243,7 +416,15 @@ export default function CombinedStoreScreen({
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex}>
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          disabled={index !== shopIndex}
+          onPress={() => {
+            if (index === shopIndex) {
+              handleGemPurchase(offer);
+            }
+          }}
+        >
           <LinearGradient
             colors={offer.colors}
             start={{ x: 0, y: 0 }}
@@ -294,6 +475,18 @@ export default function CombinedStoreScreen({
           ]}
           activeOpacity={0.8}
           disabled={index !== subscriptionIndex}
+          onPress={() => {
+            if (index === subscriptionIndex) {
+              Alert.alert(
+                'Confirm Subscription',
+                `Subscribe to ${subscription.name} for ${subscription.price}?`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Subscribe', onPress: () => handleSubscriptionPurchase(subscription) },
+                ]
+              );
+            }
+          }}
         >
           {subscription.popular && (
             <View style={styles.popularBadge}>
@@ -334,6 +527,11 @@ export default function CombinedStoreScreen({
         <TouchableOpacity
           activeOpacity={0.8}
           disabled={index !== subscriptionIndex}
+          onPress={() => {
+            if (index === subscriptionIndex) {
+              handleSubscriptionPurchase(subscription);
+            }
+          }}
         >
           <LinearGradient
             colors={subscription.colors}
@@ -446,8 +644,32 @@ export default function CombinedStoreScreen({
             )}
           </View>
 
+          {/* Restore Purchases Button */}
+          <View style={styles.restoreContainer}>
+            <TouchableOpacity
+              onPress={handleRestorePurchases}
+              style={styles.restoreButton}
+            >
+              <Text style={styles.restoreText}>Restore Purchases</Text>
+            </TouchableOpacity>
+          </View>
+
           
         </ScrollView>
+
+        {/* Payment Modal */}
+        <PaymentModal
+          visible={isPaymentModalVisible}
+          onClose={handlePaymentModalClose}
+          item={selectedItem ? {
+            name: selectedItem.name,
+            gems: selectedItem.gems,
+            price: `$${selectedItem.price.toFixed(2)}`,
+          } : null}
+          status={paymentStatus}
+          message={paymentMessage}
+          onRetry={handlePaymentRetry}
+        />
       </View>
     </LinearGradient>
   );
@@ -796,4 +1018,22 @@ const styles = StyleSheet.create({
     paddingEnd: 16,
   },
   backButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  restoreContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  restoreButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  restoreText: {
+    color: '#8b5cf6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
