@@ -1,8 +1,8 @@
-import { useFocusEffect, useRouter, useLocalSearchParams } from "expo-router";
+import { Difficulty } from "@/constants/difficulty";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { BackHandler, Platform } from "react-native";
-import GameScreen from "./components/GameScreen";
-import { Difficulty } from "@/constants/difficulty";
+import GameScreen from "./components/Screens/GameScreen";
 
 export default function GameRoute() {
   const router = useRouter();

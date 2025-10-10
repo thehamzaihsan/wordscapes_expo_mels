@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { BlurView } from "expo-blur";
-import { ChevronLeft } from "lucide-react-native";
 import economy from "@/constants/economy.json";
 import {
+  derivePlayerLevel,
   loadGuestProgress,
   saveGuestProgress,
-  derivePlayerLevel,
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { showToast } from "@/lib/toast";
+import { BlurView } from "expo-blur";
+import { ChevronLeft } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface XPShopScreenProps {
   onNavigate: (screen: string) => void;

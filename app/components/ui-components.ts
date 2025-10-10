@@ -1,73 +1,69 @@
 /**
- * Centralized Components Export
- * Organized by category for better maintainability
+ * Centralized Components Export - ORGANIZED STRUCTURE
+ * Components are now organized into logical categories
  */
 
 // ==========================================
 // UI COMPONENTS - Basic reusable UI elements
 // ==========================================
-export { default as ThemedButton } from './ThemedButton';
-export { default as ThemedCard } from './ThemedCard';
-export { default as ThemedInput } from './ThemedInput';
-export { default as ThemedText } from './ThemedText';
-export { default as ThemedModal } from './ThemedModal';
-export { default as ThemeSwitcher } from './ThemeSwitcher';
-export { default as SimpleText } from './SimpleText';
+export { default as SimpleText } from './ui/SimpleText';
+export { default as ThemedButton } from './ui/ThemedButton';
+export { default as ThemedCard } from './ui/ThemedCard';
+export { default as ThemedInput } from './ui/ThemedInput';
+export { default as ThemedModal } from './ui/ThemedModal';
+export { default as ThemedText } from './ui/ThemedText';
+export { default as ThemeSwitcher } from './ui/ThemeSwitcher';
 
 // Enhanced components for better consistency
-export { EnhancedButton, EnhancedCard, EnhancedText } from './ThemedComponents';
+export { EnhancedButton, EnhancedCard, EnhancedText } from './ui/ThemedComponents';
 
 // ==========================================
 // GAME COMPONENTS - Game-specific functionality
 // ==========================================
-export { default as GameScreen } from './GameScreen';
-export { default as GameGrid } from './GameGrid';
-export { default as GameHeader } from './GameHeader';
-export { default as GameCompletionModal } from './GameCompletionModal';
-export { default as GameSoundManager } from './GameSoundManager';
-export { default as InputWheel } from './inputWheel';
-export { default as useGameLogic } from './useGameLogic';
+export { default as InputWheel } from './game/inputWheel';
+export { default as useGameLogic } from './game/useGameLogic';
 
 // ==========================================
 // SCREEN COMPONENTS - Full screen components
 // ==========================================
-export { default as CreateAccountScreen } from './CreateAccountScreen';
-export { default as EmailConfirmationScreen } from './EmailConfirmationScreen';
-export { default as GuestNameScreen } from './GuestNameScreen';
-export { default as LevelScreen } from './LevelScreen';
-export { default as Login } from './Login';
-export { default as PlayerProfileScreen } from './PlayerProfileScreen';
-export { default as SettingsScreen } from './SettingsScreen';
-export { default as StoreScreen } from './StoreScreen';
-export { default as XPShopScreen } from './XPShopScreen';
+export { default as CreateAccountScreen } from './screens/CreateAccountScreen';
+export { default as EmailConfirmationScreen } from './screens/EmailConfirmationScreen';
+export { default as GameScreen } from './screens/GameScreen';
+export { default as GuestNameScreen } from './screens/GuestNameScreen';
+export { default as LevelScreen } from './screens/LevelScreen';
+export { default as Login } from './screens/Login';
+export { default as PlayerProfileScreen } from './screens/PlayerProfileScreen';
+export { default as XPShopScreen } from './screens/XPShopScreen';
+export { default as SettingsScreen } from './screens/SettingsScreen';
+export { default as StoreScreen } from './screens/StoreScreen';
 
 // ==========================================
 // LEVEL COMPONENTS - Level selection and management
 // ==========================================
-export { default as LevelCard } from './LevelCard';
-export { default as LevelGrid } from './LevelGrid';
-export { default as LevelHeader } from './LevelHeader';
-export { default as CategoryTabs } from './CategoryTabs';
-export { default as DifficultySelection } from './DifficultySelection';
+export { default as CategoryTabs } from './levels/CategoryTabs';
+export { default as DifficultySelection } from './levels/DifficultySelection';
+export { default as LevelCard } from './levels/LevelCard';
+export { default as LevelGrid } from './levels/LevelGrid';
+export { default as LevelHeader } from './levels/LevelHeader';
 
 // ==========================================
 // ANIMATION COMPONENTS - Visual effects
 // ==========================================
-export { default as BackgroundAnimation } from './BackgroundAnimation';
-export { default as LetterAnimations } from './LetterAnimations';
+export { default as BackgroundAnimation } from './animations/BackgroundAnimation';
+export { default as LetterAnimations } from './animations/LetterAnimations';
 
 // ==========================================
 // HOOKS - Custom React hooks
 // ==========================================
-export { default as useSoundSettings } from './useSoundSettings';
+export { default as useSoundSettings } from './hooks/useSoundSettings';
 
 // ==========================================
 // COMMON COMPONENTS - Shared utilities
 // ==========================================
-export { default as Logo } from './logo';
-export { default as CompleteShowcase } from './CompleteShowcase';
+export { default as Logo } from './common/Logo';
 
 // Re-export theme utilities
-export { useTheme, useThemedStyles, ThemeProvider } from '@/hooks/useTheme';
-export { themes, LightTheme, DarkTheme, GameTheme } from '@/constants/themes';
+export { DarkTheme, GameTheme, LightTheme, themes } from '@/constants/themes';
 export type { Theme, ThemeName } from '@/constants/themes';
+export { ThemeProvider, useTheme, useThemedStyles } from '@/hooks/useTheme';
+

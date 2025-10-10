@@ -1,4 +1,4 @@
-import LetterWheel from "./inputWheel";
+import LetterWheel from "../inputWheel";
 // import { router } from "@/.expo/types/router";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import economy from "@/constants/economy.json";
