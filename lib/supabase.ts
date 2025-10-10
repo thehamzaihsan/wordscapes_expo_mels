@@ -1,5 +1,6 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
 
 // Use Expo public env vars (prefixed with EXPO_PUBLIC_) so they are accessible in the app bundle.
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL as string | undefined;
@@ -50,15 +51,25 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   // Assign mock to exported supabase variable
   supabase = mock;
 } else {
-  // Provide AsyncStorage so sessions (access/refresh tokens) persist across app launches on device.
-  // This replaces the web localStorage mechanism in a React Native environment.
+  // SSR-safe client configuration:
+  // - On server (no window), disable session persistence/refresh and avoid AsyncStorage/localStorage usage.
+  // - On native (iOS/Android), use AsyncStorage to persist sessions.
+  // - On web runtime (has window), let Supabase use localStorage by default (don’t pass storage).
+
+  // Avoid direct 'window' reference in types; use globalThis
+  const isSSR = typeof (globalThis as any).window === "undefined";
+  const authOptions: any = {
+    persistSession: !isSSR,
+    autoRefreshToken: !isSSR,
+    detectSessionInUrl: true,
+  };
+
+  if (!isSSR && Platform.OS !== "web") {
+    authOptions.storage = AsyncStorage as any;
+  }
+
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true, // still useful for handling OAuth redirect URLs
-      storage: AsyncStorage as any, // Supabase expects a StorageAdapter; AsyncStorage matches the shape
-    },
+    auth: authOptions,
   });
 }
 
