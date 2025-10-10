@@ -28,7 +28,7 @@ export default function Index() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <ActivityIndicator color={theme.colors.primary} size="large" />
         <ThemedText variant="body1" color="textSecondary" style={{ marginTop: theme.spacing.base }}>
           Loading...
@@ -39,10 +39,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
-      
-      {/* Background Gradient Effect */}
-      <View style={[styles.backgroundGradient, { backgroundColor: theme.colors.primary }]} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       <View style={[styles.safeArea, {
         paddingTop: insets.top,
@@ -99,20 +96,12 @@ const createStyles = (theme: any) => ({
     flex: 1,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'transparent', // Remove background to show layout image
   },
   container: {
     flex: 1,
     position: 'relative' as const,
-    backgroundColor: theme.colors.background,
-  },
-  backgroundGradient: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    opacity: 0.1,
+    backgroundColor: 'transparent', // Remove background to show layout image
   },
   safeArea: {
     flex: 1,

@@ -58,10 +58,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
-      
-      {/* Background Gradient Effect */}
-      <View style={[styles.backgroundGradient, { backgroundColor: theme.colors.primary }]} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       <ScrollView 
         contentContainerStyle={[styles.loginScrollContent, {
@@ -76,12 +73,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         {/* Back Button */}
         <ThemedButton
           title="Back"
-          variant="ghost"
+          variant="glass"
           size="sm"
-          leftIcon={<ChevronLeft size={20} color={theme.colors.textInverse} />}
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
           onPress={handleBackClick}
           style={styles.backButton}
-          textStyle={{ color: theme.colors.textInverse }}
         />
 
         {/* Compact Logo */}
@@ -90,7 +86,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         </View>
 
         {/* Login Form Card */}
-        <ThemedCard variant="elevated" padding="xl" style={styles.loginCard}>
+        <ThemedCard variant="glassStrong" padding="xl" style={styles.loginCard}>
           <ThemedText variant="heading2" weight="bold" align="center" style={styles.loginTitle}>
             Sign In to Play
           </ThemedText>
@@ -195,15 +191,7 @@ const createStyles = (theme: any) => ({
   container: {
     flex: 1,
     position: 'relative' as const,
-    backgroundColor: theme.colors.background,
-  },
-  backgroundGradient: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-    opacity: 0.1,
+    backgroundColor: 'transparent', // Remove background to show layout image
   },
   loginScrollContent: {
     flexGrow: 1,

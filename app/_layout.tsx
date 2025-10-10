@@ -11,6 +11,7 @@ import {
   Platform,
   Text,
   View,
+  StyleSheet,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -19,6 +20,7 @@ import {
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
+import BackgroundImage from "./components/common/BackgroundImage";
 
 function LayoutWithInsets() {
   useAutoSync();
@@ -30,28 +32,23 @@ function LayoutWithInsets() {
   useEffect(() => {
     updateGlobalSettings(settings);
   }, [settings]);
+  
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background, // Use theme background color
-        position: 'relative', // Ensure proper stacking context
-      }}
-    >
-      {/* Background animation behind everything */}
-      {/* <BGAnimation /> */}
+    <View style={styles.container}>
+      {/* Centralized Background Image with Blur */}
+      <BackgroundImage blurRadius={8} />
+      
       {/* App content always on top */}
       <View
-        style={{
-          flex: 1,
-          backgroundColor: "transparent",
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-          zIndex: 10, // Ensure content is above animation
-          position: 'relative', // Establish stacking context
-        }}
+        style={[
+          styles.contentContainer,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          }
+        ]}
       >
         {!isSupabaseEnabled() && (
           <View
@@ -73,11 +70,9 @@ function LayoutWithInsets() {
         <Stack
           screenOptions={{
             headerShown: false,
-            // animation: 'slide_from_right',
             gestureEnabled: true,
             contentStyle: { 
               backgroundColor: "transparent", 
-              zIndex: 20, // Ensure screens are above everythingpinde
             },
           }}
         >
@@ -153,6 +148,19 @@ function LayoutWithInsets() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative',
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: "transparent",
+    zIndex: 10, // Above overlay and background
+    position: 'relative',
+  },
+});
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     KnightWarrior: require("../assets/fonts/KnightWarrior.otf"),
@@ -195,15 +203,19 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#121213", // Keep static for loading screen
-        }}
-      >
-        <ActivityIndicator size="large" color="#8B5CF6" />
+      <View style={styles.container}>
+        {/* Background Image for Loading Screen */}
+        <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 10,
+          }}
+        >
+          <ActivityIndicator size="large" color="#8B5CF6" />
+        </View>
       </View>
     );
   }
