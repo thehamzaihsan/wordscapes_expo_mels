@@ -214,6 +214,12 @@ function getWordList(
  * Finds all valid subwords that can be formed from the base word (optimized)
  */
 function findSubwords(baseWord: string, wordList: string[], maxSubwords?: number): string[] {
+  // Safety check for baseWord
+  if (!baseWord || typeof baseWord !== 'string') {
+    console.warn('findSubwords called with invalid baseWord:', baseWord);
+    return [];
+  }
+  
   const cacheKey = `${baseWord}-${wordList.length}`;
   
   // Check cache first
@@ -383,6 +389,11 @@ export function generateCrosswordLevelWithBaseword(
   baseWord: string,
   options: CrosswordGenerationOptions = {}
 ): CrosswordLevel {
+  // Safety check for baseWord
+  if (!baseWord || typeof baseWord !== 'string') {
+    throw new Error(`Invalid base word: ${baseWord} (must be a non-empty string)`);
+  }
+  
   const difficulty = options.difficulty || 'medium';
   const config = difficultyMap[difficulty];
   const minSubwords = options.minSubwords || config.minWords;
@@ -702,6 +713,11 @@ export function generateLevelFromCompleteJSON(levelData: {
 }): CrosswordLevel {
   console.log(`🚀 Using complete JSON data for level generation`);
   
+  // Safety check for baseWord
+  if (!levelData.baseWord || typeof levelData.baseWord !== 'string') {
+    throw new Error(`Invalid base word in level data: ${levelData.baseWord}`);
+  }
+  
   // No need to generate anything - use data directly from JSON
   return {
     baseWord: levelData.baseWord.toLowerCase(),
@@ -717,6 +733,11 @@ export function generateLevelFromCompleteJSON(levelData: {
  */
 export function generateLevelFromJSON(baseWord: string, difficulty: Difficulty): CrosswordLevel {
   console.log(`🎮 Generating level for baseWord: "${baseWord}", difficulty: "${difficulty}"`);
+  
+  // Safety check for baseWord
+  if (!baseWord || typeof baseWord !== 'string') {
+    throw new Error(`Invalid base word: ${baseWord} (must be a non-empty string)`);
+  }
   
   try {
     // Ensure the word is properly formatted

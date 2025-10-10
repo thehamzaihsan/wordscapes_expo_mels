@@ -34,6 +34,7 @@ function LayoutWithInsets() {
       style={{
         flex: 1,
         backgroundColor: "#121213", // Set the base background color
+        position: 'relative', // Ensure proper stacking context
       }}
     >
       {/* Background animation behind everything */}
@@ -47,6 +48,8 @@ function LayoutWithInsets() {
           paddingBottom: insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
+          zIndex: 10, // Ensure content is above animation
+          position: 'relative', // Establish stacking context
         }}
       >
         {!isSupabaseEnabled() && (
@@ -71,7 +74,10 @@ function LayoutWithInsets() {
             headerShown: false,
             // animation: 'slide_from_right',
             gestureEnabled: true,
-            contentStyle: { backgroundColor: "transparent", zIndex: 10 }, // Ensure content is above animation
+            contentStyle: { 
+              backgroundColor: "transparent", 
+              zIndex: 20, // Ensure screens are above everything
+            },
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />

@@ -32,7 +32,7 @@ export default function GameScreen({
   categoryName,
   levelData,
 }: GameScreenProps) {
-  // Custom hooks for separated concerns
+  // Custom hooks
   const gameLogic = useGameLogic({
     difficulty,
     baseWord,
@@ -103,33 +103,29 @@ export default function GameScreen({
         onBack={handleBack}
       />
 
-      <View style={styles.gameContent}>
-        <View style={styles.gridSection}>
-          <GameGrid
-            gameGrid={gameLogic.gameGrid}
-            cellSize={gameLogic.cellSize}
-            hintAnim={gameLogic.hintAnim}
-            gridCellRefs={gameLogic.gridCellRefs}
-          />
-        </View>
+      <GameGrid
+        gameGrid={gameLogic.gameGrid}
+        cellSize={gameLogic.cellSize}
+        hintAnim={gameLogic.hintAnim}
+        gridCellRefs={gameLogic.gridCellRefs}
+      />
 
-        <View style={styles.wheelSection}>
-          <LetterWheel
-            ref={gameLogic.letterWheelRef}
-            letters={gameLogic.letters}
-            onWordSubmit={handleWordSubmit}
-            onWordHint={gameLogic.handleWordHint}
-            foundCrosswordWords={gameLogic.foundCrosswordWords}
-            foundBonusWords={gameLogic.foundBonusWords}
-            allValidWords={gameLogic.allValidWords}
-            crosswordWords={gameLogic.crosswordWords}
-            hintsLeft={gameLogic.hintsLeft}
-            gridCellRefs={gameLogic.gridCellRefs}
-            onLetterAnimation={(animatingLetters) => {
-              gameLogic.setAnimatingLetters(animatingLetters);
-            }}
-          />
-        </View>
+      <View style={styles.wheelSection}>
+        <LetterWheel
+          ref={gameLogic.letterWheelRef}
+          letters={gameLogic.letters}
+          onWordSubmit={handleWordSubmit}
+          onWordHint={gameLogic.handleWordHint}
+          foundCrosswordWords={gameLogic.foundCrosswordWords}
+          foundBonusWords={gameLogic.foundBonusWords}
+          allValidWords={gameLogic.allValidWords}
+          crosswordWords={gameLogic.crosswordWords}
+          hintsLeft={gameLogic.hintsLeft}
+          gridCellRefs={gameLogic.gridCellRefs}
+          onLetterAnimation={(animatingLetters) => {
+            gameLogic.setAnimatingLetters(animatingLetters);
+          }}
+        />
       </View>
 
       <LetterAnimations animatingLetters={gameLogic.animatingLetters} />
@@ -147,23 +143,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
-  },
-  gameContent: {
-    flex: 1,
     paddingHorizontal: 10,
-  },
-  gridSection: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 15,
-    minHeight: 80,
-  },
-  wheelSection: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    paddingVertical: 10,
+    position: "relative",
   },
   loadingContainer: {
     flex: 1,
@@ -186,5 +167,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginVertical: 10,
     textAlign: "center",
+  },
+  wheelSection: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    minHeight: 200,
   },
 });
