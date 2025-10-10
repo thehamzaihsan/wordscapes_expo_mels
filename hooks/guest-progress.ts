@@ -2,6 +2,8 @@ import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import { clampEnergy, getDefaultEnergy } from "@/lib/energy";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+
+import { supabase } from "@/lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
@@ -50,7 +52,8 @@ export interface GuestProgressPayload {
   version: number; // bump if shape changes
 }
 
-const STORAGE_KEY = "wordscapes_guest_progress";
+const STORAGE_KEY_GUEST = "wordscapes_guest_progress";
+const STORAGE_KEY_PREFIX = "wordscapes_user_progress:"; // per-user
 const CURRENT_VERSION = 5; // Incremented for star removal migration
 const DEFAULT_ENERGY_CAP = getDefaultEnergy();
 
@@ -223,9 +226,35 @@ export function aggregateGuestStats(
   };
 }
 
+async function getActiveUserId(): Promise<string | null> {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function keyForUser(uid: string | null): string {
+  return uid ? `${STORAGE_KEY_PREFIX}${uid}` : STORAGE_KEY_GUEST;
+}
+
 export async function loadGuestProgress(): Promise<GuestProgressPayload | null> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const uid = await getActiveUserId();
+    const key = keyForUser(uid);
+    let raw = await AsyncStorage.getItem(key);
+    // Migration: if user has no per-user data but guest data exists, migrate it
+    if (!raw && uid) {
+      const legacy = await AsyncStorage.getItem(STORAGE_KEY_GUEST);
+      if (legacy) {
+        await AsyncStorage.setItem(keyForUser(uid), legacy);
+        await AsyncStorage.removeItem(STORAGE_KEY_GUEST);
+        raw = legacy;
+      }
+    }
     if (!raw) return null;
     const parsed: GuestProgressPayload = JSON.parse(raw);
     // Lightweight migration for older versions
@@ -284,7 +313,8 @@ export async function saveGuestProgress(
   progress: GuestProgressPayload
 ): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    const uid = await getActiveUserId();
+    await AsyncStorage.setItem(keyForUser(uid), JSON.stringify(progress));
     // Fire & forget: mirror into unified snapshot for future upgrade/sync.
     updateGuestSnapshotFromProgress(progress).catch(() => {});
   } catch (e) {
@@ -495,8 +525,20 @@ export async function resetGuestEconomy(): Promise<GuestProgressPayload | null> 
 /** Completely remove stored guest progress from device */
 export async function clearGuestProgress(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    const uid = await getActiveUserId();
+    await AsyncStorage.removeItem(keyForUser(uid));
   } catch (e) {
     console.warn("Failed to clear guest progress", e);
+  }
+}
+
+// Clear both guest and any per-user key for the current user
+export async function clearAllLocalProgressForActiveUser(): Promise<void> {
+  try {
+    const uid = await getActiveUserId();
+    await AsyncStorage.removeItem(STORAGE_KEY_GUEST);
+    if (uid) await AsyncStorage.removeItem(keyForUser(uid));
+  } catch (e) {
+    console.warn("Failed to clear local progress for active user", e);
   }
 }

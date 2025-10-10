@@ -44,6 +44,9 @@ export default function LevelsRoute() {
   const handleNavigate = (screen: string, levelData?: LevelData) => {
     if (screen === "login") {
       router.back(); // Use back() for going back to login
+    } else if (screen === "index") {
+      // Return to opening screen
+      router.replace("/");
     } else if (screen === "game") {
       if (levelData) {
         router.push({

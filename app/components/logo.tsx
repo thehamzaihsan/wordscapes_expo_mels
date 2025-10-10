@@ -1,6 +1,16 @@
-import { Text } from 'react-native';
+import { Image } from "react-native";
+
 export default function Logo() {
-    return (
-        <Text style={{ fontFamily: 'KnightWarrior' , color: '#8B5CF6', fontSize:80, }}>Wordoryn</Text>
-    );
-    }
+  return (
+    <Image
+      source={require("../../assets/images/wordspring.png")}
+      style={{
+        width: 350,
+        height: 100,
+        resizeMode: "contain",
+        marginBottom: 0,
+        marginTop: 0,
+      }}
+    />
+  );
+}

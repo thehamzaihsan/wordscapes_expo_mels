@@ -1,4 +1,8 @@
-import { updateGuestAvatar, updateGuestName } from "@/hooks/guest-progress";
+import {
+  clearAllLocalProgressForActiveUser,
+  updateGuestAvatar,
+  updateGuestName,
+} from "@/hooks/guest-progress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { NativeModules, Platform } from "react-native";
@@ -217,6 +221,14 @@ export async function signOutSupabase(): Promise<AuthResult> {
     } catch (googleError) {
       console.warn("[auth] Failed to sign out of Google", googleError);
     }
+  }
+  try {
+    // Clear local per-user progress and fallback guest progress and the snapshot
+    await clearAllLocalProgressForActiveUser();
+    const { clearLocalSnapshot } = await import("./sync");
+    await clearLocalSnapshot();
+  } catch (e) {
+    console.warn("[auth] Failed to clear local data on sign out", e);
   }
   return { ok: true };
 }

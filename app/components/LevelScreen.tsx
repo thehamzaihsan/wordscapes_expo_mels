@@ -2,7 +2,6 @@ import { Difficulty } from "@/constants/difficulty";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
 import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
-import type { LocalUserSnapshot } from "@/lib/syncTypes";
 import {
   buildInitialProgress,
   loadGuestProgress,
@@ -10,14 +9,15 @@ import {
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { getLocalSnapshot, pullRemote } from "@/lib/sync";
+import type { LocalUserSnapshot } from "@/lib/syncTypes";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
 import { StatusBar, StyleSheet, Text, View } from "react-native";
 
 // Import the new components
-import LevelHeader from "./LevelHeader";
 import CategoryTabs from "./CategoryTabs";
 import LevelGrid from "./LevelGrid";
+import LevelHeader from "./LevelHeader";
 
 interface LevelData {
   level: number;
@@ -72,16 +72,16 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   const displayName = React.useMemo(() => {
     const candidates = [
-      authDisplayName,
-      snapshotProfileName?.trim(),
       guestMeta?.playerName?.trim(),
+      snapshotProfileName?.trim(),
+      authDisplayName,
       user?.email ? user.email.split("@")[0] : null,
     ].filter((v): v is string => !!v && v.length > 0);
     return (candidates[0] || "Guest").toUpperCase();
   }, [
-    authDisplayName,
-    snapshotProfileName,
     guestMeta?.playerName,
+    snapshotProfileName,
+    authDisplayName,
     user?.email,
   ]);
 
@@ -129,15 +129,15 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             await saveGuestProgress(progressToUse);
           }
 
-          if (
-            isMounted &&
-            progressToUse &&
-            authDisplayName &&
-            progressToUse.meta.playerName !== authDisplayName
-          ) {
-            progressToUse.meta.playerName = authDisplayName;
-            progressToUse.updatedAt = new Date().toISOString();
-            await saveGuestProgress(progressToUse);
+          if (isMounted && progressToUse && authDisplayName) {
+            const currentName = (progressToUse.meta.playerName || "").trim();
+            const isDefault =
+              currentName.length === 0 || currentName.toLowerCase() === "guest";
+            if (isDefault && currentName !== authDisplayName) {
+              progressToUse.meta.playerName = authDisplayName;
+              progressToUse.updatedAt = new Date().toISOString();
+              await saveGuestProgress(progressToUse);
+            }
           }
           if (!isMounted) return;
           const mapped: { [key: string]: LevelData[] } = {};

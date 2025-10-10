@@ -1,9 +1,9 @@
-import { sendSignupOtp, signInWithGoogle } from "@/lib/auth";
+import { sendSignupOtp } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
+  // Image,
   Keyboard,
   Platform,
   SafeAreaView,
@@ -20,7 +20,7 @@ interface CreateAccountScreenProps {
   onNavigate: (screen: string, params?: { email?: string }) => void;
   onCancel: () => void;
   initialEmail?: string;
-  googlePrefill?: boolean; // if coming from login google and need only name+avatar
+  googlePrefill?: boolean; // Google flow disabled for now
 }
 
 const AVATARS = [
@@ -45,17 +45,14 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   initialEmail,
   googlePrefill,
 }) => {
-  const [step, setStep] = useState<"form" | "googleName">(
-    googlePrefill ? "googleName" : "form"
-  );
+  // Single-step flow (Google flow disabled)
   const [name, setName] = useState("");
   const [email, setEmail] = useState(initialEmail || "");
   const [password, setPassword] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState("");
+  // Google flow disabled for now
   const nameRef = useRef<TextInput | null>(null);
   const emailRef = useRef<TextInput | null>(null);
   const passRef = useRef<TextInput | null>(null);
@@ -106,29 +103,9 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (googleLoading) return;
-    if (!isSupabaseEnabled()) {
-      setError("Supabase not configured");
-      return;
-    }
-    setError(null);
-    setGoogleLoading(true);
-    try {
-      const res = await signInWithGoogle();
-      if (!res.ok) {
-        setError(res.error || "Google sign-in failed");
-      }
-    } catch (e: any) {
-      setError(e?.message || "Google sign-in failed");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+  // Google sign-in handler removed
 
-  const handleGoogleComplete = async () => {
-    setError("Complete Google flow via OAuth return (not implemented here)");
-  };
+  // Google completion removed
 
   const AvatarPicker = (
     <View>
@@ -164,7 +141,7 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
           <Text style={styles.backButtonText}>‹ Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Create Account</Text>
-        {step === "form" && !googlePrefill && (
+        {!googlePrefill && (
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>Your Info</Text>
             <TextInput
@@ -232,91 +209,10 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                 <Text style={styles.primaryButtonText}>CREATE ACCOUNT</Text>
               )}
             </TouchableOpacity>
-            <View style={styles.dividerRow}>
-              <View style={styles.hr} />
-              <Text style={styles.orText}>OR</Text>
-              <View style={styles.hr} />
-            </View>
-            <TouchableOpacity
-              disabled={loading || googleLoading}
-              style={styles.googleButton}
-              onPress={handleGoogleSignIn}
-            >
-              {googleLoading ? (
-                <ActivityIndicator color="#111827" />
-              ) : (
-                <View style={styles.googleContentRow}>
-                  <Image
-                    source={{
-                      uri: "https://developers.google.com/identity/images/g-logo.png",
-                    }}
-                    style={styles.googleIcon}
-                  />
-                  <Text style={styles.googleButtonText}>
-                    SIGN IN WITH GOOGLE
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            {/* Google sign-in hidden for now */}
           </View>
         )}
-        {(step === "googleName" || googlePrefill) && (
-          <View style={styles.card}>
-            <Text style={styles.subtitleCenter}>
-              Signed in as {googleEmail || email}
-            </Text>
-            <Text style={[styles.sectionLabel, { marginTop: 12 }]}>
-              Pick a Display Name
-            </Text>
-            <TextInput
-              ref={nameRef}
-              style={styles.input}
-              placeholder="Name"
-              placeholderTextColor="#6B7280"
-              value={name}
-              onChangeText={(t) => {
-                setName(t);
-                if (error) setError(null);
-              }}
-              returnKeyType="done"
-              onSubmitEditing={() => {
-                Keyboard.dismiss();
-                handleGoogleComplete();
-              }}
-              selectionColor="#8B5CF6"
-              autoCapitalize="words"
-            />
-            {AvatarPicker}
-            {error && <Text style={styles.errorText}>{error}</Text>}
-            <TouchableOpacity
-              disabled={loading}
-              style={[
-                styles.primaryButton,
-                loading && styles.primaryButtonDisabled,
-              ]}
-              onPress={handleGoogleComplete}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>FINISH</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              disabled={loading}
-              style={styles.secondaryButton}
-              onPress={() => {
-                setStep("form");
-                setGoogleEmail("");
-                setName("");
-              }}
-            >
-              <Text style={styles.secondaryButtonText}>
-                ← Use Email Instead
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Google prefill flow hidden for now */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -383,22 +279,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 1,
   },
-  googleButton: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
-  googleButtonText: {
-    color: "#111827",
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  googleContentRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  googleIcon: { width: 18, height: 18, resizeMode: "contain" },
+  // Google styles removed
   secondaryButton: {
     backgroundColor: "#374151",
     paddingVertical: 12,
