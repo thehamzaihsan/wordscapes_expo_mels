@@ -1,4 +1,5 @@
 import { updateGuestAvatar, updateGuestName } from "@/hooks/guest-progress";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { NativeModules, Platform } from "react-native";
 import { remapGuestSnapshotToUser } from "./guestSnapshot";
@@ -271,8 +272,8 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
-      const account = await GoogleSignin.signIn();
-      const idToken = account?.data?.idToken ?? (account as any)?.idToken;
+      const account: any = await GoogleSignin.signIn();
+      const idToken = account?.data?.idToken ?? account?.idToken;
       if (!idToken) {
         console.warn(
           "[auth] Google Sign-In returned no ID token; using browser OAuth fallback"
@@ -340,4 +341,222 @@ export async function signInWithGoogle(): Promise<AuthResult> {
   }
 
   return startSupabaseGoogleOAuth(true);
+}
+
+// ================= OTP helpers (email code) =================
+// Signup flow with OTP:
+// 1) sendSignupOtp -> store pending signup locally and send code to email
+// 2) verifySignupOtp -> verify code, set password + metadata, sync user
+// Password reset flow with OTP:
+// 1) sendPasswordResetOtp -> send code to email
+// 2) verifyPasswordResetOtp -> verify code, creates session
+// 3) updatePassword -> update password for the authed user
+
+const PENDING_SIGNUP_PREFIX = "@pendingSignup:";
+
+export async function sendSignupOtp(params: {
+  email: string;
+  password: string;
+  username: string;
+  avatar?: string;
+}): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  const email = params.email.trim().toLowerCase();
+  const avatar = params.avatar || "🛡️";
+  try {
+    console.info("[auth] sendSignupOtp ->", { email });
+    await AsyncStorage.setItem(
+      `${PENDING_SIGNUP_PREFIX}${email}`,
+      JSON.stringify({
+        email,
+        password: params.password,
+        username: params.username.trim(),
+        avatar,
+        ts: Date.now(),
+      })
+    );
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to send OTP" };
+  }
+}
+
+export async function verifySignupOtp(params: {
+  email: string;
+  token: string;
+}): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  const email = params.email.trim().toLowerCase();
+  try {
+    // For signup OTP the correct type is usually 'signup'.
+    let data: any | null = null;
+    let error: any | null = null;
+    const attempt1 = await supabase.auth.verifyOtp({
+      email,
+      token: params.token.trim(),
+      type: "signup",
+    } as any);
+    data = attempt1.data;
+    error = attempt1.error;
+    if (error) {
+      // Fallback to 'email' in case project is configured differently
+      const attempt2 = await supabase.auth.verifyOtp({
+        email,
+        token: params.token.trim(),
+        type: "email",
+      } as any);
+      data = attempt2.data;
+      error = attempt2.error;
+    }
+    if (error) return { ok: false, error: error.message };
+    const user = data?.user ?? data?.session?.user;
+    if (!user) return { ok: false, error: "No user returned" };
+
+    const raw = await AsyncStorage.getItem(`${PENDING_SIGNUP_PREFIX}${email}`);
+    if (raw) {
+      const pending = JSON.parse(raw) as {
+        password: string;
+        username: string;
+        avatar?: string;
+      };
+      const upd = await supabase.auth.updateUser({
+        password: pending.password,
+        data: { username: pending.username, avatar: pending.avatar || "🛡️" },
+      });
+      if (upd.error) return { ok: false, error: upd.error.message };
+      try {
+        await updateGuestName(pending.username);
+        if (pending.avatar) await updateGuestAvatar(pending.avatar);
+      } catch {}
+      await mutateLocalProfile((p) => {
+        p.username = pending.username;
+        if (pending.avatar) p.avatar = pending.avatar;
+      });
+      await AsyncStorage.removeItem(`${PENDING_SIGNUP_PREFIX}${email}`);
+    }
+
+    await remapGuestSnapshotToUser(user.id);
+    syncUser(user.id).catch((err) =>
+      console.warn("[auth] syncUser after signup otp verify failed", err)
+    );
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to verify OTP" };
+  }
+}
+
+export async function sendPasswordResetOtp(email: string): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  try {
+    console.info("[auth] sendPasswordResetOtp (recovery) ->", { email });
+    // Use recovery flow so Supabase sends the Recovery template (now OTP-based)
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email.trim().toLowerCase()
+    );
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to send OTP" };
+  }
+}
+
+export async function verifyPasswordResetOtp(params: {
+  email: string;
+  token: string;
+}): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: params.email.trim().toLowerCase(),
+      token: params.token.trim(),
+      type: "recovery",
+    } as any);
+    if (error) return { ok: false, error: error.message };
+    const user = data?.user ?? data?.session?.user;
+    if (!user) return { ok: false, error: "No user returned" };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to verify OTP" };
+  }
+}
+
+export async function updatePassword(newPassword: string): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to update password" };
+  }
+}
+
+// ----- Optional: Login via Magic Link or Email OTP -----
+export async function sendLoginMagicLink(email: string): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  try {
+    const redirectTo = Linking.createURL("/auth-callback");
+    console.info("[auth] sendLoginMagicLink ->", { email, redirectTo });
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to send magic link" };
+  }
+}
+
+export async function sendLoginOtp(email: string): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  try {
+    console.info("[auth] sendLoginOtp ->", { email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: false },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to send OTP" };
+  }
+}
+
+export async function verifyLoginOtp(params: {
+  email: string;
+  token: string;
+}): Promise<AuthResult> {
+  if (!isSupabaseEnabled())
+    return { ok: false, error: "Supabase not configured" };
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: params.email.trim().toLowerCase(),
+      token: params.token.trim(),
+      type: "email",
+    } as any);
+    if (error) return { ok: false, error: error.message };
+    const user = data?.user ?? data?.session?.user;
+    if (user) {
+      await remapGuestSnapshotToUser(user.id);
+      syncUser(user.id).catch((err) =>
+        console.warn("[auth] syncUser after login otp verify failed", err)
+      );
+    }
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Failed to verify OTP" };
+  }
 }

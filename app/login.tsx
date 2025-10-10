@@ -1,19 +1,23 @@
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { Alert, BackHandler, Platform } from "react-native";
 import LoginScreen from "./components/Login";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 export default function LoginRoute() {
   const router = useRouter();
   const { session, loading } = useSupabaseAuth();
 
-  // If already logged in, push to levels immediately
-  useEffect(() => {
-    if (!loading && session) {
-      router.replace("/levels");
-    }
-  }, [loading, session, router]);
+  // Redirect to levels only when this route is focused, to avoid stealing
+  // control during flows like password recovery on other screens.
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading && session) {
+        router.replace("/levels");
+      }
+      return undefined;
+    }, [loading, session, router])
+  );
 
   // Handle Android back button on login screen
   useFocusEffect(
@@ -46,6 +50,10 @@ export default function LoginRoute() {
       router.push("/create-account");
     } else if (screen === "settings") {
       router.push("/settings");
+    } else if (screen === "forgot-password") {
+      router.push("/forgot-password-email" as any);
+    } else if (screen === "login-email") {
+      router.push("/login-email" as any);
     }
   };
 

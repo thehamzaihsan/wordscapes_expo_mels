@@ -1,15 +1,10 @@
-import {
-  resetPassword,
-  signInEmailPassword,
-  signInWithGoogle,
-} from "@/lib/auth";
+import { signInEmailPassword, signInWithGoogle } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
 import { ChevronLeft, Play, Settings } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StatusBar,
@@ -33,9 +28,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [googleLoading, setGoogleLoading] = useState<boolean>(false);
-  const [showReset, setShowReset] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetLoading, setResetLoading] = useState(false);
+  // reset flow moved to dedicated screens
 
   const handlePlayClick = (): void => {
     setShowLogin(true);
@@ -76,9 +69,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   };
 
   const handleForgotPassword = () => {
-    setResetEmail(email);
-    setShowReset(true);
+    onNavigate("forgot-password");
   };
+
+  const handleSignInWithCode = () => {
+    onNavigate("login-email");
+  };
+
+  // Magic link removed
 
   const handleCreateAccount = (): void => {
     onNavigate("create-account");
@@ -98,26 +96,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
       showToast(e?.message || "Google error", "error");
     } finally {
       setGoogleLoading(false);
-    }
-  };
-
-  const handleSendReset = async () => {
-    if (!resetEmail.trim()) {
-      showToast("Enter email", "error");
-      return;
-    }
-    setResetLoading(true);
-    try {
-      const res = await resetPassword(resetEmail.trim().toLowerCase());
-      if (!res.ok) showToast(res.error || "Failed to send reset", "error");
-      else {
-        showToast("Reset email sent", "success");
-        setShowReset(false);
-      }
-    } catch (e: any) {
-      showToast(e?.message || "Error sending reset", "error");
-    } finally {
-      setResetLoading(false);
     }
   };
 
@@ -234,6 +212,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         <TouchableOpacity onPress={handleGuestLogin} style={styles.guestButton}>
           <Text style={styles.guestButtonText}>CONTINUE AS GUEST</Text>
         </TouchableOpacity>
+        {/* Alternative email auth */}
+        <View style={{ gap: 8, marginBottom: 16 }}>
+          <TouchableOpacity
+            onPress={handleSignInWithCode}
+            style={[
+              styles.googleLoginButton,
+              { backgroundColor: "#1F2937", borderColor: "#374151" },
+            ]}
+          >
+            <Text style={[styles.googleLoginButtonText, { color: "#fff" }]}>
+              SIGN IN WITH EMAIL CODE
+            </Text>
+          </TouchableOpacity>
+        </View>
         {/* Google Login */}
         <TouchableOpacity
           onPress={handleGoogleLogin}
@@ -263,37 +255,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
             <Text style={styles.createAccountLink}>CREATE ACCOUNT</Text>
           </TouchableOpacity>
         </View>
-        {showReset && (
-          <View style={styles.resetCard}>
-            <Text style={styles.resetTitle}>Reset Password</Text>
-            <TextInput
-              style={styles.input}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={resetEmail}
-              onChangeText={setResetEmail}
-              placeholder="you@example.com"
-              placeholderTextColor="#6B7280"
-            />
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <TouchableOpacity
-                style={[styles.loginButton, { flex: 1 }]}
-                disabled={resetLoading}
-                onPress={handleSendReset}
-              >
-                <Text style={styles.loginButtonText}>
-                  {resetLoading ? "SENDING..." : "SEND LINK"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.guestButton, { flex: 1 }]}
-                onPress={() => setShowReset(false)}
-              >
-                <Text style={styles.guestButtonText}>CANCEL</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+        {/* reset UI moved to dedicated screens */}
       </ScrollView>
     </View>
   );

@@ -1,7 +1,5 @@
-import { useRouter } from "expo-router";
-import React from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import CreateAccountScreen from "./components/CreateAccountScreen";
-import { useLocalSearchParams } from "expo-router";
 
 export default function CreateAccountRoute() {
   const router = useRouter();
@@ -11,10 +9,16 @@ export default function CreateAccountRoute() {
     if (screen === "levels") {
       router.push("/levels");
     } else if (screen === "email-confirmation") {
+      // Backward compatibility: redirect to new OTP flow
       router.push({
-        pathname: "/email-confirmation",
+        pathname: "/otp-verify",
         params: { email: params?.email },
-      });
+      } as any);
+    } else if (screen === "otp-verify") {
+      router.push({
+        pathname: "/otp-verify",
+        params: { email: params?.email },
+      } as any);
     }
   };
 

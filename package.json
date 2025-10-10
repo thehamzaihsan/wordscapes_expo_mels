@@ -9,7 +9,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:dev:android": "eas build --profile development --platform android"
+    "build:dev:android": "eas build --profile development --platform android",
+    "supabase:templates:dry": "node ./scripts/supabase-update-templates.mjs",
+    "supabase:templates:apply": "node ./scripts/supabase-update-templates.mjs --apply"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

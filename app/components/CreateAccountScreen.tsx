@@ -1,20 +1,20 @@
+import { sendSignupOtp, signInWithGoogle } from "@/lib/auth";
+import { isSupabaseEnabled } from "@/lib/supabase";
 import React, { useCallback, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Image,
+  Keyboard,
+  Platform,
   SafeAreaView,
-  View,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  Keyboard,
-  Platform,
-  ActivityIndicator,
-  Image,
+  View,
 } from "react-native";
-import { signInWithGoogle, signUpEmailPassword } from "@/lib/auth";
-import { isSupabaseEnabled } from "@/lib/supabase";
 
 interface CreateAccountScreenProps {
   onNavigate: (screen: string, params?: { email?: string }) => void;
@@ -87,20 +87,16 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
       if (!isSupabaseEnabled()) {
         setError("Supabase not configured");
       } else {
-        const res = await signUpEmailPassword({
+        const res = await sendSignupOtp({
           email: email.trim().toLowerCase(),
           password,
           username: name.trim(),
           avatar,
         });
         if (!res.ok) {
-          setError(res.error || "Signup failed");
+          setError(res.error || "Failed to send OTP");
         } else {
-          // Always redirect to email confirmation screen after successful signup
-          // Supabase requires email confirmation by default
-          onNavigate("email-confirmation", {
-            email: email.trim().toLowerCase(),
-          });
+          onNavigate("otp-verify", { email: email.trim().toLowerCase() });
         }
       }
     } catch (e: any) {

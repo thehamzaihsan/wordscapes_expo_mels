@@ -17,7 +17,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
-import { useSettings, updateGlobalSettings } from "../hooks/useSettings";
+import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
 import BGAnimation from "./components/BackgroundAnimation";
 
 function LayoutWithInsets() {
@@ -102,6 +102,30 @@ function LayoutWithInsets() {
           <Stack.Screen
             name="email-confirmation"
             options={{ headerShown: false, gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="otp-verify"
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="forgot-password-email"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="forgot-password-otp"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="forgot-password-new"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="login-email"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="login-email-code"
+            options={{ headerShown: false, gestureEnabled: true }}
           />
           <Stack.Screen
             name="auth-callback"
