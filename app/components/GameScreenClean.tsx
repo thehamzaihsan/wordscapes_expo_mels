@@ -1,23 +1,4 @@
-import LetterWheel from "./inputWheel";
-import { Difficulty } from "@/constants/difficulty";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useGameLogic } from "./useGameLogic";
-import { useSoundSettings } from "./useSoundSettings";
-import { useSoundManager } from "./GameSoundManager";
-import GameHeader from "./GameHeader";
-import GameGrid from "./GameGrid";
-import GameCompletionModal from "./GameCompletionModal";
-import LetterAnimations from "./LetterAnimations";
-
-interface GameScreenProps {
-  onNavigate?: (screen: string) => void;
-  difficulty?: Difficulty;
-  baseWord?: string;
-  levelTitle?: string;
-  categoryName?: string;
-  levelData?: {
-    level: number;
-    baseWord: string;
+// This file has been removed as it was unused
     letters: string[];
     crosswordWords: string[];
     difficulty: Difficulty;

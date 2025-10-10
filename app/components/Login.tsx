@@ -1,21 +1,11 @@
 import { signInEmailPassword } from "@/lib/auth";
-// import { isSupabaseEnabled } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
-import { ChevronLeft, Play, Settings } from "lucide-react-native";
+import { ChevronLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
-import {
-  // ActivityIndicator,
-  // Image,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Logo from "./logo";
+import { ThemedButton, ThemedCard, ThemedInput, ThemedText, useTheme, useThemedStyles } from "./ui-components";
 
 interface LoginScreenProps {
   onNavigate: (screen: string) => void;
@@ -23,21 +13,18 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const insets = useSafeAreaInsets();
-  const [showLogin, setShowLogin] = useState<boolean>(false);
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  // Google login temporarily disabled
-  // reset flow moved to dedicated screens
-
-  const handlePlayClick = (): void => {
-    setShowLogin(true);
-  };
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const handleBackClick = (): void => {
-    setShowLogin(false);
+    onNavigate("back");
     setEmail("");
     setPassword("");
+    setShowPassword(false);
   };
 
   const handleLogin = async (): Promise<void> => {
@@ -47,10 +34,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     }
     setIsLoading(true);
     try {
-      const res = await signInEmailPassword(
-        email.trim().toLowerCase(),
-        password
-      );
+      const res = await signInEmailPassword(email.trim().toLowerCase(), password);
       if (!res.ok) {
         showToast(res.error || "Login failed", "error");
       } else {
@@ -64,404 +48,226 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleGuestLogin = (): void => {
-    onNavigate("guest-name");
-  };
+  const handleGuestLogin = (): void => onNavigate("guest-name");
+  const handleForgotPassword = () => onNavigate("forgot-password");
+  const handleCreateAccount = (): void => onNavigate("create-account");
 
-  const handleForgotPassword = () => {
-    onNavigate("forgot-password");
-  };
-
-  // Email code sign-in removed for now
-
-  // Magic link removed
-
-  const handleCreateAccount = (): void => {
-    onNavigate("create-account");
-  };
-
-  // Google handler removed for now
-
-  const renderMainMenu = () => (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}
-    >
-      {/* <StatusBar barStyle="light-content" backgroundColor="#121213" /> */}
-      <View style={styles.mainContent}>
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoSection}>
-            <Logo />
-          </View>
-        </View>
-        {/* Menu Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handlePlayClick}
-            style={styles.primaryButton}
-          >
-            <Play size={18} color={"white"} />
-            <Text style={styles.primaryButtonText}> Play Game</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onNavigate("settings")}
-            style={styles.secondaryButton}
-          >
-            <Settings size={18} color={"white"} />
-            <Text style={styles.secondaryButtonText}> Settings</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderLoginScreen = () => (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="#121213" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
+      
+      {/* Background Gradient Effect */}
+      <View style={[styles.backgroundGradient, { backgroundColor: theme.colors.primary }]} />
+      
+      <ScrollView 
+        contentContainerStyle={[styles.loginScrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
+        showsVerticalScrollIndicator={false}
+      >
+        
         {/* Back Button */}
-        <TouchableOpacity onPress={handleBackClick} style={styles.backButton}>
-          <ChevronLeft size={16} color={"white"} />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+        <ThemedButton
+          title="Back"
+          variant="ghost"
+          size="sm"
+          leftIcon={<ChevronLeft size={20} color={theme.colors.textInverse} />}
+          onPress={handleBackClick}
+          style={styles.backButton}
+          textStyle={{ color: theme.colors.textInverse }}
+        />
+
         {/* Compact Logo */}
         <View style={styles.compactLogoContainer}>
           <Logo />
         </View>
-        {/* Login Form */}
-        <View style={styles.loginForm}>
-          <Text style={styles.loginTitle}>LOGIN TO PLAY</Text>
+
+        {/* Login Form Card */}
+        <ThemedCard variant="elevated" padding="xl" style={styles.loginCard}>
+          <ThemedText variant="heading2" weight="bold" align="center" style={styles.loginTitle}>
+            Sign In to Play
+          </ThemedText>
+          
+          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.loginSubtitle}>
+            Enter your credentials to continue your word journey
+          </ThemedText>
+
+          {/* Email Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>EMAIL</Text>
-            <TextInput
-              style={styles.input}
+            <ThemedInput
+              label="Email Address"
               value={email}
               onChangeText={setEmail}
               placeholder="Enter your email"
-              placeholderTextColor="#6B7280"
               keyboardType="email-address"
               autoCapitalize="none"
+              variant="outlined"
+              leftIcon={<Mail size={20} color={theme.colors.textSecondary} />}
+              style={styles.input}
             />
           </View>
+
+          {/* Password Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>PASSWORD</Text>
-            <TextInput
-              style={styles.input}
+            <ThemedInput
+              label="Password"
               value={password}
               onChangeText={setPassword}
               placeholder="Enter your password"
-              placeholderTextColor="#6B7280"
-              secureTextEntry
+              secureTextEntry={!showPassword}
+              variant="outlined"
+              leftIcon={<Lock size={20} color={theme.colors.textSecondary} />}
+              rightIcon={
+                showPassword ? 
+                  <EyeOff size={20} color={theme.colors.textSecondary} /> : 
+                  <Eye size={20} color={theme.colors.textSecondary} />
+              }
+              onRightIconPress={() => setShowPassword(!showPassword)}
+              style={styles.input}
             />
           </View>
-          <TouchableOpacity
-            onPress={handleLogin}
+
+          {/* Login Button */}
+          <ThemedButton
+            title={isLoading ? "Signing In..." : "Sign In"}
+            variant="primary"
+            size="lg"
+            fullWidth
+            isLoading={isLoading}
             disabled={isLoading}
-            style={[
-              styles.loginButton,
-              isLoading && styles.loginButtonDisabled,
-            ]}
-          >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? "CONNECTING..." : "LOGIN"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            onPress={handleLogin}
+            style={styles.loginButton}
+          />
+
+          {/* Forgot Password */}
+          <ThemedButton
+            title="Forgot Password?"
+            variant="ghost"
+            size="sm"
             onPress={handleForgotPassword}
-            style={styles.forgotPassword}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-        {/* Guest Login */}
-        <TouchableOpacity onPress={handleGuestLogin} style={styles.guestButton}>
-          <Text style={styles.guestButtonText}>CONTINUE AS GUEST</Text>
-        </TouchableOpacity>
-        {/* Alternative email auth hidden for now */}
-        {/* Google Login hidden for now */}
-        {/* Create Account */}
-        <View style={styles.createAccountContainer}>
-          <Text style={styles.createAccountText}>New player? </Text>
-          <TouchableOpacity onPress={handleCreateAccount}>
-            <Text style={styles.createAccountLink}>CREATE ACCOUNT</Text>
-          </TouchableOpacity>
-        </View>
-        {/* reset UI moved to dedicated screens */}
+            style={styles.forgotButton}
+          />
+
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <ThemedText variant="caption" color="textSecondary" style={styles.dividerText}>
+              or
+            </ThemedText>
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+          </View>
+
+          {/* Alternative Actions */}
+          <ThemedButton
+            title="Create New Account"
+            variant="outline"
+            size="md"
+            fullWidth
+            onPress={handleCreateAccount}
+            style={styles.createAccountButton}
+          />
+
+          <ThemedButton
+            title="Continue as Guest"
+            variant="secondary"
+            size="md"
+            fullWidth
+            onPress={handleGuestLogin}
+            style={styles.guestButton}
+          />
+        </ThemedCard>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
   );
-
-  return showLogin ? renderLoginScreen() : renderMainMenu();
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    backgroundColor: "transparent",
+    position: 'relative' as const,
+    backgroundColor: theme.colors.background,
   },
-  mainContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
+  backgroundGradient: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '70%',
+    opacity: 0.1,
   },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 60,
-  },
-  logoSection: {
-    alignItems: "center",
-    position: "relative",
-  },
-  letterRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-    justifyContent: "center",
-  },
-  letterTile: {
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 4,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  letterText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-  },
-  betaTag: {
-    position: "absolute",
-    top: -10,
-    right: -30,
-    backgroundColor: "#EF4444",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    transform: [{ rotate: "15deg" }],
-  },
-  betaText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  buttonContainer: {
-    width: "100%",
-    maxWidth: 300,
-  },
-  primaryButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#7C3AED",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  secondaryButton: {
-    backgroundColor: "#374151",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#4B5563",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  secondaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  scrollContent: {
+  loginScrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    justifyContent: 'flex-start' as const,
   },
   backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    alignSelf: "flex-start",
-    paddingEnd: 16,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    alignSelf: 'flex-start' as const,
+    marginBottom: theme.spacing.lg,
+    paddingHorizontal: 0,
   },
   compactLogoContainer: {
-    alignItems: "center",
-    marginBottom: 40,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.xl2,
   },
-  compactLetterRow: {
-    flexDirection: "row",
-    marginBottom: 4,
-    justifyContent: "center",
-  },
-  loginForm: {
-    backgroundColor: "#1F2937",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: "#374151",
+  loginCard: {
+    maxWidth: 400,
+    alignSelf: 'center' as const,
+    width: '100%',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
   loginTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginBottom: 24,
-    letterSpacing: 1,
+    marginBottom: theme.spacing.sm,
+  },
+  loginSubtitle: {
+    marginBottom: theme.spacing.xl3,
+    lineHeight: 22,
   },
   inputContainer: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#8B5CF6",
-    marginBottom: 8,
-    letterSpacing: 1,
+    marginBottom: theme.spacing.lg,
   },
   input: {
-    backgroundColor: "#374151",
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    color: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#4B5563",
-    paddingStart: 20,
+    borderRadius: theme.borderRadius.md,
   },
   loginButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 16,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#7C3AED",
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.base,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
-  loginButtonDisabled: {
-    backgroundColor: "#4B5563",
-    borderColor: "#6B7280",
+  forgotButton: {
+    marginBottom: theme.spacing.xl,
+    alignSelf: 'center' as const,
   },
-  loginButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-    letterSpacing: 1,
+  dividerContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginVertical: theme.spacing.xl,
   },
-  forgotPassword: {
-    alignItems: "center",
+  divider: {
+    flex: 1,
+    height: 1,
   },
-  forgotPasswordText: {
-    color: "#8B5CF6",
-    fontSize: 14,
+  dividerText: {
+    paddingHorizontal: theme.spacing.base,
+  },
+  createAccountButton: {
+    marginBottom: theme.spacing.md,
   },
   guestButton: {
-    backgroundColor: "#374151",
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: "#4B5563",
+    marginBottom: theme.spacing.sm,
   },
-  googleLoginButton: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: -8,
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleLoginButtonText: {
-    color: "#111827",
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  googleContentRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  googleIcon: { width: 18, height: 18, resizeMode: "contain" },
-  guestButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-    letterSpacing: 1,
-  },
-  createAccountContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  createAccountText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-  },
-  createAccountLink: {
-    color: "#8B5CF6",
-    fontSize: 14,
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
-  resetCard: {
-    backgroundColor: "#1F2937",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: "#374151",
-    marginTop: 10,
-    gap: 14,
-  },
-  resetTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-    textAlign: "center",
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
 });
 

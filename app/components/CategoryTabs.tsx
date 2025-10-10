@@ -35,7 +35,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryScrollContent}
       >
-        {categoryOrder.map((category, index) => {
+        {categoryOrder.map((category: string, index: number) => {
           const isUnlocked = unlockedCategories.includes(category);
           const requiredXP = xpNeededToUnlockCategory(index);
           const requiredLevel = requiredXP > 0 ? derivePlayerLevel(requiredXP).level : 0;

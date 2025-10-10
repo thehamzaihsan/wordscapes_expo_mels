@@ -3,18 +3,19 @@ import { useRouter } from "expo-router";
 import { Play, Settings } from "lucide-react-native";
 import {
   ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
+  StatusBar,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Logo from "./components/logo";
+import { ThemedButton, ThemedText, useTheme, useThemedStyles } from "./components/ui-components";
 
 export default function Index() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { loading, session } = useSupabaseAuth();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const handlePlay = () => {
     if (session) router.push("/levels");
@@ -25,111 +26,131 @@ export default function Index() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator color="#8B5CF6" />
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
+        <ActivityIndicator color={theme.colors.primary} size="large" />
+        <ThemedText variant="body1" color="textSecondary" style={{ marginTop: theme.spacing.base }}>
+          Loading...
+        </ThemedText>
       </View>
     );
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}
-    >
-      <View style={styles.mainContent}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
+      
+      {/* Background Gradient Effect */}
+      <View style={[styles.backgroundGradient, { backgroundColor: theme.colors.primary }]} />
+      
+      <View style={[styles.safeArea, {
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }]}>
+        
+       
+
+        {/* Logo Section */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoSection}>
+          <View style={styles.logoWrapper}>
             <Logo />
           </View>
         </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={handlePlay} style={styles.primaryButton}>
-            <Play size={18} color={"white"} />
-            <Text style={styles.primaryButtonText}> Play Game</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+
+        {/* Main Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <ThemedButton
+            title="Start Playing"
+            variant="primary"
+            size="xl"
+            fullWidth
+            leftIcon={<Play size={24} color="white" />}
+            onPress={handlePlay}
+            style={styles.primaryButton}
+          />
+          
+          <ThemedButton
+            title="Settings"
+            variant="secondary"
+            size="lg"
+            fullWidth
+            leftIcon={<Settings size={20} color={theme.colors.text} />}
             onPress={handleSettings}
             style={styles.secondaryButton}
-          >
-            <Settings size={18} color={"white"} />
-            <Text style={styles.secondaryButtonText}> Settings</Text>
-          </TouchableOpacity>
+          />
+        </View>
+
+        {/* Quick Access Footer */}
+        <View style={styles.footerSection}>
+          <ThemedText variant="caption" align="center" color="textInverse" style={styles.footerText}>
+            Play thousands of word puzzles
+          </ThemedText>
         </View>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   loadingContainer: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#121213",
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: "transparent",
+    position: 'relative' as const,
+    backgroundColor: theme.colors.background,
   },
-  mainContent: {
+  backgroundGradient: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    opacity: 0.1,
+  },
+  safeArea: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  headerSection: {
+    marginTop: theme.spacing.xl4,
+    marginBottom: theme.spacing.lg,
   },
   logoContainer: {
-    alignItems: "center",
-    marginBottom: 60,
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginVertical: theme.spacing.xl4,
   },
-  logoSection: {
-    alignItems: "center",
-    position: "relative",
+  logoWrapper: {
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.lg,
   },
-  buttonContainer: {
-    width: "100%",
-    maxWidth: 300,
+  actionButtonsContainer: {
+    width: '100%',
+    maxWidth: 320,
+    alignSelf: 'center' as const,
+    gap: theme.spacing.base,
   },
   primaryButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#7C3AED",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
+    marginBottom: theme.spacing.md,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
   secondaryButton: {
-    backgroundColor: "#374151",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#4B5563",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
+    marginBottom: theme.spacing.sm,
   },
-  secondaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
+  footerSection: {
+    marginTop: theme.spacing.xl4,
+    marginBottom: theme.spacing.lg,
+  },
+  footerText: {
+    opacity: 0.8,
   },
 });

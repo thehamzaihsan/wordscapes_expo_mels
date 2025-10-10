@@ -1,16 +1,16 @@
+import { useSettings } from '@/hooks/useSettings';
+import { useTheme } from '@/hooks/useTheme';
+import { showToast } from '@/lib/toast';
+import { ChevronLeft, Settings as SettingsIcon } from 'lucide-react-native';
 import React from 'react';
 import {
   ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Switch,
   StatusBar,
+  Switch,
+  View
 } from 'react-native';
-import { ChevronLeft, Settings as SettingsIcon } from 'lucide-react-native';
-import { useSettings } from '@/hooks/useSettings';
-import { showToast } from '@/lib/toast';
+import ThemeSwitcher from './ThemeSwitcher';
+import { ThemedCard, ThemedText, ThemedButton, useThemedStyles } from './ui-components';
 
 interface SettingsScreenProps {
   onNavigate: (screen: string) => void;
@@ -18,6 +18,8 @@ interface SettingsScreenProps {
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
   const { settings, updateSetting, resetSettings, loading } = useSettings();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const handleToggle = (key: keyof typeof settings, value: boolean) => {
     updateSetting(key, value);
@@ -35,9 +37,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#121213" />
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading settings...</Text>
+          <ThemedText variant="body1" color="primary" weight="semibold">
+            Loading settings...
+          </ThemedText>
         </View>
       </View>
     );
@@ -45,253 +49,239 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121213" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
+        <ThemedButton
+          title="Back"
+          variant="ghost"
+          size="sm"
+          leftIcon={<ChevronLeft size={16} color={theme.colors.text} />}
           onPress={() => onNavigate('back')}
           style={styles.backButton}
-        >
-          <ChevronLeft size={16} color={'white'} />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+          textStyle={{ color: theme.colors.text }}
+        />
         
         <View style={styles.headerTitle}>
-          <SettingsIcon size={24} color={'#8B5CF6'} />
-          <Text style={styles.titleText}>Settings</Text>
+          <SettingsIcon size={24} color={theme.colors.primary} />
+          <ThemedText variant="heading3" weight="semibold" style={{ marginLeft: theme.spacing.sm }}>
+            Settings
+          </ThemedText>
         </View>
+        
+        {/* Spacer for centering */}
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
-        {/* Animation Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎨 Animations</Text>
-          
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Background Animations</Text>
-              <Text style={styles.settingDescription}>
-                Floating bubble animations in the background
-              </Text>
-            </View>
-            <Switch
-              value={settings.backgroundAnimationsEnabled}
-              onValueChange={(value) => handleToggle('backgroundAnimationsEnabled', value)}
-              trackColor={{ false: '#374151', true: '#8B5CF6' }}
-              thumbColor={settings.backgroundAnimationsEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </View>
+        {/* Theme Settings */}
+        <View style={styles.sectionContainer}>
+          <ThemeSwitcher />
+        </View>
 
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>UI Animations</Text>
-              <Text style={styles.settingDescription}>
-                Button presses, transitions, and other UI animations
-              </Text>
+        {/* Animation Settings */}
+        <View style={styles.sectionContainer}>
+          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
+            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
+              🎨 Animations
+            </ThemedText>
+          
+            <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
+                  Background Animations
+                </ThemedText>
+                <ThemedText variant="body2" color="textSecondary">
+                  Floating bubble animations in the background
+                </ThemedText>
+              </View>
+              <Switch
+                value={settings.backgroundAnimationsEnabled}
+                onValueChange={(value) => handleToggle('backgroundAnimationsEnabled', value)}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor={settings.backgroundAnimationsEnabled ? theme.colors.textInverse : theme.colors.textTertiary}
+              />
             </View>
-            <Switch
-              value={settings.animationsEnabled}
-              onValueChange={(value) => handleToggle('animationsEnabled', value)}
-              trackColor={{ false: '#374151', true: '#8B5CF6' }}
-              thumbColor={settings.animationsEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </View>
+
+            <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
+                  UI Animations
+                </ThemedText>
+                <ThemedText variant="body2" color="textSecondary">
+                  Button presses, transitions, and other UI animations
+                </ThemedText>
+              </View>
+              <Switch
+                value={settings.animationsEnabled}
+                onValueChange={(value) => handleToggle('animationsEnabled', value)}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor={settings.animationsEnabled ? theme.colors.textInverse : theme.colors.textTertiary}
+              />
+            </View>
+          </ThemedCard>
         </View>
 
         {/* Audio Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔊 Audio</Text>
+        <View style={styles.sectionContainer}>
+          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
+            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
+              🔊 Audio
+            </ThemedText>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Sound Effects</Text>
-              <Text style={styles.settingDescription}>
-                Game sounds, button clicks, and audio feedback
-              </Text>
+            <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
+                  Sound Effects
+                </ThemedText>
+                <ThemedText variant="body2" color="textSecondary">
+                  Game sounds, button clicks, and audio feedback
+                </ThemedText>
+              </View>
+              <Switch
+                value={settings.soundEnabled}
+                onValueChange={(value) => handleToggle('soundEnabled', value)}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor={settings.soundEnabled ? theme.colors.textInverse : theme.colors.textTertiary}
+              />
             </View>
-            <Switch
-              value={settings.soundEnabled}
-              onValueChange={(value) => handleToggle('soundEnabled', value)}
-              trackColor={{ false: '#374151', true: '#8B5CF6' }}
-              thumbColor={settings.soundEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </View>
+          </ThemedCard>
         </View>
 
         {/* Feedback Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📳 Feedback</Text>
+        <View style={styles.sectionContainer}>
+          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
+            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
+              📳 Feedback
+            </ThemedText>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Haptic Feedback</Text>
-              <Text style={styles.settingDescription}>
-                Vibration feedback for actions and interactions
-              </Text>
+            <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
+                  Haptic Feedback
+                </ThemedText>
+                <ThemedText variant="body2" color="textSecondary">
+                  Vibration feedback for actions and interactions
+                </ThemedText>
+              </View>
+              <Switch
+                value={settings.hapticFeedbackEnabled}
+                onValueChange={(value) => handleToggle('hapticFeedbackEnabled', value)}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor={settings.hapticFeedbackEnabled ? theme.colors.textInverse : theme.colors.textTertiary}
+              />
             </View>
-            <Switch
-              value={settings.hapticFeedbackEnabled}
-              onValueChange={(value) => handleToggle('hapticFeedbackEnabled', value)}
-              trackColor={{ false: '#374151', true: '#8B5CF6' }}
-              thumbColor={settings.hapticFeedbackEnabled ? '#FFFFFF' : '#9CA3AF'}
-            />
-          </View>
+          </ThemedCard>
         </View>
 
         {/* Reset Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔄 Reset</Text>
-          
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={handleReset}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.resetButtonText}>Reset to Default Settings</Text>
-          </TouchableOpacity>
+        <View style={styles.sectionContainer}>
+          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
+            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
+              🔄 Reset
+            </ThemedText>
+            
+            <ThemedButton
+              title="Reset to Default Settings"
+              variant="error"
+              size="md"
+              fullWidth
+              onPress={handleReset}
+            />
+          </ThemedCard>
         </View>
 
         {/* App Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ℹ️ About</Text>
+        <ThemedCard variant="elevated" padding="lg" style={styles.card}>
+          <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
+            ℹ️ About
+          </ThemedText>
           <View style={styles.infoContainer}>
-            <Text style={styles.infoText}>Wordscapes Game</Text>
-            <Text style={styles.infoSubtext}>Version 1.0.0</Text>
-            <Text style={styles.infoSubtext}>
+            <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
+              Wordscapes Game
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.settingLabel}>
+              Version 1.0.0
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" align="center">
               Configure your game experience with these settings
-            </Text>
+            </ThemedText>
           </View>
-        </View>
+        </ThemedCard>
       </ScrollView>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#8B5CF6',
-    fontSize: 16,
-    fontWeight: '600',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   header: {
-    backgroundColor: 'rgba(31,41,55,0.85)',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#374151',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: theme.colors.backgroundSecondary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
   },
   backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(55,65,81,0.85)',
-    paddingEnd: 16,
-  },
-  backButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    alignSelf: 'flex-start' as const,
   },
   headerTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     flex: 1,
-    justifyContent: 'center',
-    marginRight: 80, // Offset for back button
+    justifyContent: 'center' as const,
   },
-  titleText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: 'bold',
+  headerSpacer: {
+    width: 80, // Same width as back button for proper centering
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    gap: 24,
+    padding: theme.spacing.lg,
   },
-  section: {
-    backgroundColor: 'rgba(31,41,55,0.85)',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#374151',
+  sectionContainer: {
+    marginBottom: theme.spacing.base,
+  },
+  card: {
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: theme.spacing.base,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
-    marginBottom: 12,
+    borderBottomColor: theme.colors.borderSecondary,
+    marginBottom: theme.spacing.md,
   },
   settingInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: theme.spacing.base,
   },
-  settingTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  settingDescription: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  resetButton: {
-    backgroundColor: '#EF4444',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  resetButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+  settingLabel: {
+    marginBottom: theme.spacing.xs,
   },
   infoContainer: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  infoSubtext: {
-    color: '#9CA3AF',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
+    alignItems: 'center' as const,
   },
 });
 

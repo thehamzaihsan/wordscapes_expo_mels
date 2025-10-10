@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
 import economy from "@/constants/economy.json";
+import { useTheme, useThemedStyles, ThemedCard, ThemedText } from "./ui-components";
 
 interface LevelData {
   level: number;
@@ -20,216 +21,197 @@ interface LevelCardProps {
 }
 
 const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) => {
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  
   const getDifficultyColor = (difficulty: Difficulty): string => {
-    const config = getDifficultyConfig(difficulty);
-    return config.color;
-  };
-
-  const handleShopPress = () => {
-    // Handle shop press if needed
-    console.log("Shop pressed from level card");
+    // Use theme difficulty colors
+    switch (difficulty) {
+      case 'easy':
+        return theme.colors.easy;
+      case 'medium':
+        return theme.colors.medium;
+      case 'hard':
+        return theme.colors.hard;
+      default:
+        return theme.colors.medium;
+    }
   };
 
   if (!level.isUnlocked) {
     return (
-      <View style={[styles.levelCard, styles.lockedCard]}>
+      <ThemedCard variant="elevated" padding="lg" style={styles.lockedCard}>
         <View style={styles.lockOverlay}>
-          <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockText}>Locked</Text>
+          <ThemedText variant="heading1" color="textInverse">🔒</ThemedText>
+          <ThemedText variant="body2" color="textSecondary">
+            Locked
+          </ThemedText>
         </View>
-      </View>
+      </ThemedCard>
     );
   }
 
   return (
     <TouchableOpacity
-      style={[
-        styles.levelCard,
-        !level.isUnlocked && styles.levelCardLocked,
-      ]}
       onPress={() => onPress(level, categoryName)}
       disabled={!level.isUnlocked}
       activeOpacity={0.8}
     >
-      <View style={styles.levelContent}>
-        {/* Level Header */}
-        <View style={styles.levelHeader}>
-          <Text
-            style={[
-              styles.levelName,
-              !level.isUnlocked && styles.levelNameLocked,
-            ]}
-            numberOfLines={1}
-          >
-            {level.baseWord}
-          </Text>
-          <View
-            style={[
-              styles.difficultyBadge,
-              { backgroundColor: getDifficultyColor(level.difficulty) },
-            ]}
-          >
-            <Text style={styles.difficultyText}>
-              {level.difficulty.toUpperCase()}
-            </Text>
+      <ThemedCard
+        variant="elevated"
+        padding="lg"
+        style={[
+          styles.levelCard,
+          !level.isUnlocked && styles.levelCardLocked,
+        ]}
+      >
+        <View style={styles.levelContent}>
+          {/* Level Header */}
+          <View style={styles.levelHeader}>
+            <ThemedText
+              variant="heading4"
+              color={!level.isUnlocked ? "textTertiary" : "text"}
+              weight="bold"
+              style={styles.levelName}
+            >
+              {level.baseWord}
+            </ThemedText>
+            <View
+              style={[
+                styles.difficultyBadge,
+                { backgroundColor: getDifficultyColor(level.difficulty) },
+              ]}
+            >
+              <ThemedText variant="caption" color="textInverse" weight="semibold">
+                {level.difficulty.toUpperCase()}
+              </ThemedText>
+            </View>
+          </View>
+
+          {/* Level Info */}
+          <View style={styles.levelInfo}>
+            <ThemedText variant="body2" color="textSecondary">
+              Level {level.level}
+            </ThemedText>
+            {/* Reward Info - only show for uncompleted levels */}
+            {!level.isCompleted && (
+              <View style={styles.rewardContainer}>
+                <ThemedText variant="body2" color="warning">
+                  +{economy.gems.earnPerLevel} 💎
+                </ThemedText>
+              </View>
+            )}
+            {/* Completed indicator */}
+            {level.isCompleted && (
+              <View style={styles.completedRewardContainer}>
+                <ThemedText variant="body2" color="success">
+                  Completed ✓
+                </ThemedText>
+              </View>
+            )}
+          </View>
+
+          {/* Status Badge */}
+          <View style={styles.statusSection}>
+            {level.isCompleted ? (
+              <View style={[styles.statusBadge, styles.completedBadge]}>
+                <ThemedText variant="caption" color="textInverse" weight="medium">
+                  ✓ Replay Available
+                </ThemedText>
+              </View>
+            ) : level.isUnlocked ? (
+              <View style={[styles.statusBadge, styles.newBadge]}>
+                <ThemedText variant="caption" color="textInverse" weight="medium">
+                  Ready to Play
+                </ThemedText>
+              </View>
+            ) : (
+              <View style={[styles.statusBadge, styles.inProgressBadge]}>
+                <ThemedText variant="caption" color="textInverse" weight="medium">
+                  Locked
+                </ThemedText>
+              </View>
+            )}
           </View>
         </View>
-
-        {/* Level Info */}
-        <View style={styles.levelInfo}>
-          <Text style={styles.levelNumber}>Level {level.level}</Text>
-          {/* Reward Info - only show for uncompleted levels */}
-          {!level.isCompleted && (
-            <View style={styles.rewardContainer}>
-              <Text style={styles.rewardText}>+{economy.gems.earnPerLevel} 💎</Text>
-            </View>
-          )}
-          {/* Completed indicator */}
-          {level.isCompleted && (
-            <View style={styles.completedRewardContainer}>
-              <Text style={styles.completedRewardText}>Completed ✓</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Status Badge */}
-        <View style={styles.statusSection}>
-          {level.isCompleted ? (
-            <View style={[styles.statusBadge, styles.completedBadge]}>
-              <Text style={styles.statusText}>✓ Replay Available</Text>
-            </View>
-          ) : level.isUnlocked ? (
-            <View style={[styles.statusBadge, styles.newBadge]}>
-              <Text style={styles.statusText}>Ready to Play</Text>
-            </View>
-          ) : (
-            <View style={[styles.statusBadge, styles.inProgressBadge]}>
-              <Text style={styles.statusText}>Locked</Text>
-            </View>
-          )}
-        </View>
-      </View>
+      </ThemedCard>
     </TouchableOpacity>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   levelCard: {
-    backgroundColor: "rgba(31,41,55,0.85)",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#374151",
-    overflow: "hidden",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   levelCardLocked: {
     opacity: 0.6,
   },
   lockedCard: {
-    backgroundColor: "rgba(31,41,55,0.4)",
-    borderColor: "#374151",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     minHeight: 140,
   },
   lockOverlay: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  lockIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  lockText: {
-    color: "#9CA3AF",
-    fontSize: 16,
-    fontWeight: "600",
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   levelContent: {
-    padding: 20,
+    // Padding is handled by ThemedCard
   },
   levelHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.base,
   },
   levelName: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
     flex: 1,
   },
-  levelNameLocked: {
-    color: "#6B7280",
-  },
   difficultyBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  difficultyText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.md,
   },
   levelInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  levelNumber: {
-    color: "#D1D5DB",
-    fontSize: 14,
-    fontWeight: "500",
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.md,
   },
   statusSection: {
-    marginTop: 8,
+    marginTop: theme.spacing.sm,
   },
   statusBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    alignSelf: "flex-start",
-  },
-  statusText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
+    paddingHorizontal: theme.spacing.base,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.xl,
+    alignSelf: 'flex-start' as const,
   },
   completedBadge: {
-    backgroundColor: "rgba(16,185,129,0.7)",
+    backgroundColor: `${theme.colors.success}B3`, // 70% opacity
   },
   inProgressBadge: {
-    backgroundColor: "rgba(59,130,246,0.7)",
+    backgroundColor: `${theme.colors.info}B3`, // 70% opacity
   },
   newBadge: {
-    backgroundColor: "rgba(139,92,246,0.7)",
+    backgroundColor: `${theme.colors.primary}B3`, // 70% opacity
   },
   rewardContainer: {
-    backgroundColor: "rgba(31,41,55,0.85)",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  rewardText: {
-    color: "#F59E0B",
-    fontSize: 15,
-    fontWeight: "600",
+    backgroundColor: theme.colors.backgroundSecondary,
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
   },
   completedRewardContainer: {
-    backgroundColor: "rgba(16,185,129,0.15)",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+    backgroundColor: `${theme.colors.success}26`, // 15% opacity
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
     borderWidth: 1,
-    borderColor: "rgba(16,185,129,0.3)",
-  },
-  completedRewardText: {
-    color: "#10B981",
-    fontSize: 15,
-    fontWeight: "600",
+    borderColor: `${theme.colors.success}4D`, // 30% opacity
   },
 });
 

@@ -1,4 +1,5 @@
 import { initializeGameManager } from "@/hooks/game-manager";
+import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
 import { useFonts } from "expo-font";
@@ -18,12 +19,12 @@ import {
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
-import BGAnimation from "./components/BackgroundAnimation";
 
 function LayoutWithInsets() {
   useAutoSync();
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
+  const { theme } = useTheme();
 
   // Update global settings when they change
   useEffect(() => {
@@ -33,12 +34,12 @@ function LayoutWithInsets() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#121213", // Set the base background color
+        backgroundColor: theme.colors.background, // Use theme background color
         position: 'relative', // Ensure proper stacking context
       }}
     >
       {/* Background animation behind everything */}
-      <BGAnimation />
+      {/* <BGAnimation /> */}
       {/* App content always on top */}
       <View
         style={{
@@ -55,14 +56,14 @@ function LayoutWithInsets() {
         {!isSupabaseEnabled() && (
           <View
             style={{
-              backgroundColor: "#7c2d12",
+              backgroundColor: theme.colors.warning,
               padding: 8,
               borderBottomWidth: 1,
-              borderColor: "#78350f",
+              borderColor: theme.colors.border,
               zIndex: 100,
             }}
           >
-            <Text style={{ color: "#fde68a", fontSize: 12 }}>
+            <Text style={{ color: theme.colors.textInverse, fontSize: 12 }}>
               Supabase disabled: set EXPO_PUBLIC_SUPABASE_URL and
               EXPO_PUBLIC_SUPABASE_ANON_KEY in .env then restart (expo start
               -c).
@@ -76,7 +77,7 @@ function LayoutWithInsets() {
             gestureEnabled: true,
             contentStyle: { 
               backgroundColor: "transparent", 
-              zIndex: 20, // Ensure screens are above everything
+              zIndex: 20, // Ensure screens are above everythingpinde
             },
           }}
         >
@@ -93,10 +94,7 @@ function LayoutWithInsets() {
             name="game"
             options={{ headerShown: false, gestureEnabled: true }}
           />
-          <Stack.Screen
-            name="test"
-            options={{ headerShown: false, gestureEnabled: true }}
-          />
+
           <Stack.Screen
             name="profile"
             options={{ headerShown: false, gestureEnabled: true }}
@@ -198,7 +196,7 @@ export default function RootLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#121213",
+          backgroundColor: "#121213", // Keep static for loading screen
         }}
       >
         <ActivityIndicator size="large" color="#8B5CF6" />
@@ -209,8 +207,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <LayoutWithInsets />
-        <ToastHost />
+        <ThemeProvider defaultTheme="game">
+          <LayoutWithInsets />
+          <ToastHost />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

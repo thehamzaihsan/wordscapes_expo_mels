@@ -9,7 +9,7 @@ export default function Logo() {
         height: 100,
         resizeMode: "contain",
         marginBottom: 0,
-        marginTop: 0,
+        marginTop: 20,
       }}
     />
   );
