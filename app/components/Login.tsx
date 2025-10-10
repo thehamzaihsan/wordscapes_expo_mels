@@ -1,11 +1,11 @@
-import { signInEmailPassword, signInWithGoogle } from "@/lib/auth";
-import { isSupabaseEnabled } from "@/lib/supabase";
+import { signInEmailPassword } from "@/lib/auth";
+// import { isSupabaseEnabled } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
 import { ChevronLeft, Play, Settings } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
+  // ActivityIndicator,
+  // Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -27,7 +27,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [googleLoading, setGoogleLoading] = useState<boolean>(false);
+  // Google login temporarily disabled
   // reset flow moved to dedicated screens
 
   const handlePlayClick = (): void => {
@@ -72,9 +72,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     onNavigate("forgot-password");
   };
 
-  const handleSignInWithCode = () => {
-    onNavigate("login-email");
-  };
+  // Email code sign-in removed for now
 
   // Magic link removed
 
@@ -82,22 +80,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     onNavigate("create-account");
   };
 
-  const handleGoogleLogin = async (): Promise<void> => {
-    if (googleLoading) return;
-    if (!isSupabaseEnabled()) {
-      showToast("Supabase not configured", "error");
-      return;
-    }
-    setGoogleLoading(true);
-    try {
-      const res = await signInWithGoogle();
-      if (!res.ok) showToast(res.error || "Google sign-in failed", "error");
-    } catch (e: any) {
-      showToast(e?.message || "Google error", "error");
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+  // Google handler removed for now
 
   const renderMainMenu = () => (
     <View
@@ -212,42 +195,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         <TouchableOpacity onPress={handleGuestLogin} style={styles.guestButton}>
           <Text style={styles.guestButtonText}>CONTINUE AS GUEST</Text>
         </TouchableOpacity>
-        {/* Alternative email auth */}
-        <View style={{ gap: 8, marginBottom: 16 }}>
-          <TouchableOpacity
-            onPress={handleSignInWithCode}
-            style={[
-              styles.googleLoginButton,
-              { backgroundColor: "#1F2937", borderColor: "#374151" },
-            ]}
-          >
-            <Text style={[styles.googleLoginButtonText, { color: "#fff" }]}>
-              SIGN IN WITH EMAIL CODE
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {/* Google Login */}
-        <TouchableOpacity
-          onPress={handleGoogleLogin}
-          disabled={googleLoading}
-          style={styles.googleLoginButton}
-        >
-          {googleLoading ? (
-            <ActivityIndicator color="#111827" />
-          ) : (
-            <View style={styles.googleContentRow}>
-              <Image
-                source={{
-                  uri: "https://developers.google.com/identity/images/g-logo.png",
-                }}
-                style={styles.googleIcon}
-              />
-              <Text style={styles.googleLoginButtonText}>
-                SIGN IN WITH GOOGLE
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {/* Alternative email auth hidden for now */}
+        {/* Google Login hidden for now */}
         {/* Create Account */}
         <View style={styles.createAccountContainer}>
           <Text style={styles.createAccountText}>New player? </Text>
