@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Animated, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path, Polygon } from "react-native-svg";
 interface LetterWheelProps {
   letters?: string[];
@@ -57,8 +57,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [shuffledLetters, setShuffledLetters] = useState<string[]>([]);
   const [animatedLetters, setAnimatedLetters] = useState<AnimatedLetter[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [hintModalVisible, setHintModalVisible] = useState(false);
-  const [hintMessage, setHintMessage] = useState("");
   const letterPositions = useRef<LetterPosition[]>([]);
 
   // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
@@ -273,8 +271,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
   const handleHint = useCallback((): void => {
     if (hintsLeft <= 0) {
-      setHintMessage('You have used all your hints for this game.');
-      setHintModalVisible(true);
+      Alert.alert('No Hints Left', 'You have used all your hints for this game.');
       return;
     }
 
@@ -284,8 +281,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     );
 
     if (unFoundWords.length === 0) {
-      setHintMessage('All words have been found!');
-      setHintModalVisible(true);
+      Alert.alert('No Hints Available', 'All words have been found!');
       return;
     }
 
@@ -294,8 +290,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     const hintWord = unFoundWords[randomIndex];
     
     onHint?.(hintWord);
-    setHintMessage(`Try the word: ${hintWord.toUpperCase()}`);
-    setHintModalVisible(true);
+    Alert.alert('Hint!', `Try the word: ${hintWord.toUpperCase()}`);
   }, [hintsLeft, validWords, foundWords, onHint]);
 
   const isValidWord =
@@ -337,12 +332,12 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
               <Path
                 d={connectionPath}
-                stroke="#4CAF50"
-                strokeWidth={3}
+                stroke={isValidWord ? "#10B981" : "#fde047"}
+                strokeWidth={4}
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                opacity={0.6}
+                opacity={0.8}
               />
 
               {shuffledLetters.map((letter, index) => {
@@ -352,17 +347,14 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                 const y = Math.sin(angle) * radius + wheelCenter;
                 const isSelected = selectedIndices.includes(index);
 
-                // Only render hexagon if letter is selected
-                if (!isSelected) return null;
-
                 return (
                   <Polygon
                     key={`hexagon-${index}`}
                     points={createHexagonPath(x, y, hexagonSize)}
-                    fill="#4CAF50"
-                    stroke="#43A047"
-                    strokeWidth={1.5}
-                    opacity={0.95}
+                    fill={isSelected ? "#F59E0B" : "#8B5CF6"}
+                    stroke={isSelected ? "#F59E0B" : "#8B5CF6"}
+                    strokeWidth={2}
+                    opacity={1}
                   />
                 );
               })}
@@ -479,34 +471,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             <X size={isSmallScreen ? 20 : 24} color="#ffffff" />
           </TouchableOpacity>
         </View>
-
-        {/* Hint Modal */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={hintModalVisible}
-          onRequestClose={() => setHintModalVisible(false)}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setHintModalVisible(false)}
-          >
-            <View style={styles.modalContent}>
-              <View style={styles.hintCard}>
-                <Lightbulb size={28} color="#FFD700" style={styles.hintIcon} />
-                <Text style={styles.hintTitle}>HINT</Text>
-                <Text style={styles.hintText}>{hintMessage}</Text>
-                <TouchableOpacity
-                  style={styles.hintCloseButton}
-                  onPress={() => setHintModalVisible(false)}
-                >
-                  <Text style={styles.hintCloseButtonText}>Got it!</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
       </View>
   );
 };
@@ -533,7 +497,7 @@ const styles = StyleSheet.create({
     marginLeft: isSmallScreen ? 8 : 16,
   },
   hintButton: {
-  backgroundColor: '#F59E0B', // solid gold
+  backgroundColor: 'rgba(255,215,0,0.7)', // gold
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -547,9 +511,9 @@ const styles = StyleSheet.create({
     fontSize: isSmallScreen ? 14 : 16,
   },
   currentWord: {
-    fontSize: isSmallScreen ? 22 : isMediumScreen ? 23 : 24,
+    fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : 18,
     fontWeight: "bold",
-    color: "#ffffffff",
+    color: "#8B5CF6",
     textAlign: "center",
     textTransform: "uppercase",
     marginBottom: isSmallScreen ? 20 : 30,
@@ -559,7 +523,7 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+  backgroundColor: "rgba(55,65,81,0.85)",
     // borderRadius is applied dynamically inline
     overflow: "hidden",
   },
@@ -570,14 +534,18 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   letterText: {
-    fontSize: isSmallScreen ? 25 : isMediumScreen ? 27 : 29,
-    fontWeight: "600",
-    color: "#333333",
+    fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
+    fontWeight: "bold",
+    color: "#ffffff",
     textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   letterTextSelected: {
-    color: "#FFFFFF",
-    fontSize: isSmallScreen ? 25 : isMediumScreen ? 27 : 29,
+    color: "#000000",
+    fontSize: isSmallScreen ? 20 : isMediumScreen ? 22 : 24,
+    textShadowColor: "rgba(255, 255, 255, 0.5)",
   },
   selectionNumber: {
     position: "absolute",
@@ -611,7 +579,7 @@ const styles = StyleSheet.create({
     borderRadius: isSmallScreen ? 20 : 24,
     justifyContent: "center",
     alignItems: "center",
-  backgroundColor: "#FFFFFF",
+  backgroundColor: "rgba(255,255,255,0.7)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -621,19 +589,19 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
   removeButton: {
-  backgroundColor: "#EF4444", // solid red
+  backgroundColor: "rgba(239,68,68,0.7)",
   },
   shuffleButton: {
-  backgroundColor: "#F59E0B", // solid orange
+  backgroundColor: "rgba(245,158,11,0.7)",
   },
   submitCenterButton: {
-  backgroundColor: "#10B981", // solid green
+  backgroundColor: "rgba(16,185,129,0.7)",
   },
   clearButton: {
-  backgroundColor: "#8B5CF6", // solid purple
+  backgroundColor: "rgba(139,92,246,0.7)",
   },
   disabledCenterButton: {
-  backgroundColor: "#D1D5DB", // solid gray
+  backgroundColor: "rgba(209,213,219,0.7)",
     opacity: 0.6,
   },
   centerButtonText: {
@@ -644,69 +612,5 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: isSmallScreen ? 20 : 24,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '80%',
-    maxWidth: 300,
-  },
-  hintCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  hintIcon: {
-    marginBottom: 12,
-  },
-  hintTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#22C55E',
-    marginBottom: 12,
-    fontFamily: 'Helvetica',
-  },
-  hintText: {
-    fontSize: 18,
-    color: '#374151',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 24,
-    fontFamily: 'Helvetica',
-  },
-  hintCloseButton: {
-    backgroundColor: '#22C55E',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-    minWidth: 120,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  hintCloseButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontFamily: 'Helvetica',
   },
 });

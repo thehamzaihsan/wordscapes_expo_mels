@@ -1,13 +1,10 @@
-import React from "react";
 import { useFocusEffect, useRouter } from 'expo-router';
-import LoadingScreen from "./components/common/LoadingScreen";
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import SettingsScreen from './components/screens/SettingsScreen';
 
 export default function SettingsRoute() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState(false);
 
   // Handle Android back button
   useFocusEffect(
@@ -25,17 +22,10 @@ export default function SettingsRoute() {
   );
 
   const handleNavigate = (screen: string) => {
-    setIsLoading(true);
     if (screen === 'back') {
-      router.back();
+      router.back(); // Use back() to return to previous screen
     }
-    setTimeout(() => setIsLoading(false), 600);
   };
 
-  return (
-    <>
-      {isLoading && <LoadingScreen progress={0.7} />}
-      <SettingsScreen onNavigate={handleNavigate} />
-    </>
-  );
+  return <SettingsScreen onNavigate={handleNavigate} />;
 }

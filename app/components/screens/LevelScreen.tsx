@@ -18,7 +18,6 @@ import { StatusBar, StyleSheet, Text, View } from "react-native";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
 import LevelHeader from "../levels/LevelHeader";
-import LoadingScreen from "../common/LoadingScreen";
 
 interface LevelData {
   level: number;
@@ -212,7 +211,12 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <View style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" backgroundColor="#121213" />
+        <Text style={styles.loadingText}>Loading levels...</Text>
+      </View>
+    );
   }
 
   return (
@@ -249,7 +253,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "transparent",
   },
-  // Loading styles removed - now using LoadingScreen component
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+    backgroundColor: "#121213",
+  },
+  loadingText: {
+    color: "#8B5CF6",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
 });
 
 export default LevelScreen;

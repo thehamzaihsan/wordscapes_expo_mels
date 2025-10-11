@@ -16,7 +16,7 @@ interface BackgroundImageProps {
 }
 
 const BackgroundImage: React.FC<BackgroundImageProps> = ({ 
-  blurRadius = 0,
+  blurRadius = 8,
   overlayOpacity 
 }) => {
   const { theme } = useTheme();
