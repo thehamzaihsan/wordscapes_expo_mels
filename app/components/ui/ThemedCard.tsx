@@ -91,10 +91,14 @@ const Card: React.FC<CardProps> = ({
         };
       default:
         return {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
+          backgroundColor: theme.colors.glassmorphismBackground,
+          borderColor: theme.colors.glassmorphismBorder,
           borderWidth: 1,
-          ...(shadow && theme.shadows.base),
+          shadowColor: theme.name === 'light' ? '#000' : '#fff',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: theme.name === 'light' ? 0.08 : 0.15,
+          shadowRadius: 6,
+          elevation: 4,
         };
     }
   };

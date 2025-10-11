@@ -226,7 +226,7 @@ export function generateCrossword(words: string[]): Grid | null {
   return buildGridWithPadding(gridMap);
 }
 
-// Helper function to build grid with at least 1 empty row/column padding
+// Helper function to build grid with minimal padding
 function buildGridWithPadding(gridMap: Map<string, string>): Grid {
   if (gridMap.size === 0) return [];
 
@@ -242,28 +242,23 @@ function buildGridWithPadding(gridMap: Map<string, string>): Grid {
     if (y > maxY) maxY = y;
   }
 
-  // Add padding of at least 1 empty row/column on each side
-  const paddingSize = 1;
-  const paddedMinX = minX - paddingSize;
-  const paddedMaxX = maxX + paddingSize;
-  const paddedMinY = minY - paddingSize;
-  const paddedMaxY = maxY + paddingSize;
-
-  const width = paddedMaxX - paddedMinX + 1;
-  const height = paddedMaxY - paddedMinY + 1;
+  // Use the exact bounds without extra padding since the placement logic
+  // already ensures proper spacing between words
+  const width = maxX - minX + 1;
+  const height = maxY - minY + 1;
   
   // Create grid filled with null values
   const out: Grid = Array.from({ length: height }, () => 
     Array.from({ length: width }, () => null)
   );
 
-  // Place the letters in the padded grid
+  // Place the letters in the grid
   for (const [k, ch] of gridMap.entries()) {
     const [xStr, yStr] = k.split(",");
     const x = parseInt(xStr, 10);
     const y = parseInt(yStr, 10);
-    const gridX = x - paddedMinX;
-    const gridY = y - paddedMinY;
+    const gridX = x - minX;
+    const gridY = y - minY;
     out[gridY][gridX] = ch;
   }
 

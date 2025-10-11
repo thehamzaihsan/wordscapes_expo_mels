@@ -201,30 +201,28 @@ export default function RootLayout() {
     }
   }, []);
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.container}>
-        {/* Background Image for Loading Screen */}
-        <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 10,
-          }}
-        >
-          <ActivityIndicator size="large" color="#8B5CF6" />
-        </View>
-      </View>
-    );
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="game">
-          <LayoutWithInsets />
+          {!fontsLoaded ? (
+            <View style={styles.container}>
+              {/* Background Image for Loading Screen */}
+              <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: 10,
+                }}
+              >
+                <ActivityIndicator size="large" color="#8B5CF6" />
+              </View>
+            </View>
+          ) : (
+            <LayoutWithInsets />
+          )}
           <ToastHost />
         </ThemeProvider>
       </SafeAreaProvider>

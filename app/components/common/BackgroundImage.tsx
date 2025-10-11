@@ -39,9 +39,9 @@ const BackgroundImage: React.FC<BackgroundImageProps> = ({
 
   return (
     <>
-      {/* Background Image with Blur */}
+      {/* Background Image with Blur - Using gem31.jpg as temporary background */}
       <Image
-        source={require("../../../images/default_background.jpg")}
+        source={require("../../../assets/images/gem31.jpg")}
         style={styles.backgroundImage}
         contentFit="cover"
         blurRadius={blurRadius}

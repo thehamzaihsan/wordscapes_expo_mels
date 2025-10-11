@@ -140,6 +140,11 @@ const GlassmorphismDemo: React.FC = () => {
         </ThemedText>
         
         <View style={styles.cardGrid}>
+          <ThemedCard variant="default" padding="md" style={styles.demoCard}>
+            <ThemedText variant="body2" weight="medium">Default Card</ThemedText>
+            <ThemedText variant="caption" color="textSecondary">Now with glassmorphism!</ThemedText>
+          </ThemedCard>
+          
           <ThemedCard variant="glass" padding="md" style={styles.demoCard}>
             <ThemedText variant="body2" weight="medium">Glass Card</ThemedText>
             <ThemedText variant="caption" color="textSecondary">Light glassmorphism</ThemedText>
@@ -166,6 +171,7 @@ const GlassmorphismDemo: React.FC = () => {
           {'\n'}• glassPremium - Premium glassmorphism with colored borders and glow
           {'\n\n'}
           <ThemedText variant="body2" weight="bold">Card Variants:</ThemedText>
+          {'\n'}• default - Default glassmorphism background (NEW!)
           {'\n'}• glass - Light glassmorphism background
           {'\n'}• glassStrong - Enhanced glassmorphism with better visibility
           {'\n\n'}
@@ -225,10 +231,12 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   cardGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: theme.spacing.md,
   },
   demoCard: {
     flex: 1,
+    minWidth: '30%',
     alignItems: 'center',
   },
   usageText: {
