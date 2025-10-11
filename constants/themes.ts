@@ -273,10 +273,10 @@ export const LightTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.2)',
     
     // Glassmorphism colors (theme-aware) - Fixed for light mode visibility
-    glassmorphismBackground: 'rgba(255, 255, 255, 0.64)',
+    glassmorphismBackground: 'rgba(255, 255, 255, 0.75)',
     glassmorphismBorder: 'rgba(255, 255, 255, 1)',
-    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.73)',
-    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.77)',
+    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.75)',
+    glassmorphismBorderStrong: 'rgba(255, 255, 255, 1)',
     
     // Status bar
     statusBar: BaseColors.gray[900],

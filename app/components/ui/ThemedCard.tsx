@@ -76,6 +76,7 @@ const Card: React.FC<CardProps> = ({
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: theme.name === 'light' ? 0.08 : 0.15,
           shadowRadius: 6,
+          
           elevation: 4,
         };
       case 'glassStrong':
