@@ -4,6 +4,8 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { BackHandler, Platform } from "react-native";
 import LevelScreen from "./components/screens/LevelScreen";
+import React, { useState } from "react";
+import LoadingScreen from "./components/common/LoadingScreen";
 
 interface LevelData {
   baseWord: string;
@@ -21,8 +23,8 @@ interface LevelData {
 
 export default function LevelsRoute() {
   const router = useRouter();
-  // removed unused selectedLevel state
-
+  const [isLoading, setIsLoading] = useState(false);
+  
   // Handle Android back button
   useFocusEffect(
     useCallback(() => {
@@ -42,37 +44,46 @@ export default function LevelsRoute() {
   );
 
   const handleNavigate = (screen: string, levelData?: LevelData) => {
-    if (screen === "login") {
-      router.back(); // Use back() for going back to login
-    } else if (screen === "index") {
-      // Return to opening screen
-      router.replace("/");
-    } else if (screen === "game") {
-      if (levelData) {
-        router.push({
-          pathname: "/game",
-          params: {
-            baseWord: levelData.baseWord,
-            difficulty: levelData.difficulty,
-            levelTitle: levelData.levelTitle,
-            categoryName: levelData.categoryName || "Forest",
-            levelNumber: String(levelData.levelData?.level ?? 1),
-            levelDataJSON: JSON.stringify(levelData.levelData),
-          },
-        });
-      } else {
-        router.push("/game");
+    setIsLoading(true);
+    setTimeout(() => {
+      if (screen === "login") {
+        router.back(); // Use back() for going back to login
+      } else if (screen === "index") {
+        // Return to opening screen
+        router.replace("/");
+      } else if (screen === "game") {
+        if (levelData) {
+          router.push({
+            pathname: "/game",
+            params: {
+              baseWord: levelData.baseWord,
+              difficulty: levelData.difficulty,
+              levelTitle: levelData.levelTitle,
+              categoryName: levelData.categoryName || "Forest",
+              levelNumber: String(levelData.levelData?.level ?? 1),
+              levelDataJSON: JSON.stringify(levelData.levelData),
+            },
+          });
+        } else {
+          router.push("/game");
+        }
+      } else if (screen === "shop") {
+        router.push("/shop");
+      } else if (screen === "xpshop") {
+        router.push("/xpshop");
+      } else if (screen === "profile") {
+        router.push("/profile");
+      } else if (screen === "settings") {
+        router.push("/settings");
       }
-    } else if (screen === "shop") {
-      router.push("/shop");
-    } else if (screen === "xpshop") {
-      router.push("/xpshop");
-    } else if (screen === "profile") {
-      router.push("/profile");
-    } else if (screen === "settings") {
-      router.push("/settings");
-    }
+      setTimeout(() => setIsLoading(false), 100);
+    }, 600);
   };
 
-  return <LevelScreen onNavigate={handleNavigate} />;
+  return (
+    <>
+      {isLoading && <LoadingScreen />}
+      <LevelScreen onNavigate={handleNavigate} />
+    </>
+  );
 }

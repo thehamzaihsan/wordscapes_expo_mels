@@ -1,7 +1,8 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import LoginScreen from "./components/screens/Login";
+import LoadingScreen from "./components/common/LoadingScreen";
 
 export default function LoginRoute() {
   const router = useRouter();
@@ -20,21 +21,32 @@ export default function LoginRoute() {
 
 
 
-  const handleNavigate = (screen: string) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleNavigate = async (screen: string) => {
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 800)); // Wait for loading animation
+    
     if (screen === "levels") {
-      router.push("/levels");
+      await router.push("/levels");
     } else if (screen === "guest-name") {
-      router.push("/guest-name");
+      await router.push("/guest-name");
     } else if (screen === "create-account") {
-      router.push("/create-account");
+      await router.push("/create-account");
     } else if (screen === "settings") {
-      router.push("/settings");
+      await router.push("/settings");
     } else if (screen === "forgot-password") {
-      router.push("/forgot-password-email" as any);
+      await router.push("/forgot-password-email" as any);
     } else if (screen === "login-email") {
-      router.push("/login-email" as any);
+      await router.push("/login-email" as any);
     }
+    
+    setIsLoading(false);
   };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return <LoginScreen onNavigate={handleNavigate} />;
 }

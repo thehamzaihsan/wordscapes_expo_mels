@@ -77,7 +77,7 @@ export default function GameScreen({
   levelData,
 }: GameScreenProps) {
 
-  // --- MAIN STATE ---
+  // --- MAIN STATE AND REFS ---
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
   const [letters, setLetters] = useState<string[]>([]);
   const [sound, setSound] = useState(true);
@@ -157,75 +157,155 @@ export default function GameScreen({
 
   const diff = getDifficultyConfig(difficulty);
 
-  // --- LOAD AND UNLOAD SOUNDS (REFACTORED) ---
+  // --- LOAD AND UNLOAD SOUNDS ---
   useEffect(() => {
+    let isMounted = true;
     isUnmounting.current = false;
-    let mounted = true;
 
-    const loadSounds = async () => {
+    // Initialize Audio Session
+    const initAudio = async () => {
       try {
-        const [rightRes, wrongRes, bonusRes, levelRes] = await Promise.all([
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/correct-word.mp3")
-          ),
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/wrong-word.mp3")
-          ),
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/bonus-word.mp3")
-          ),
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/level-complete.mp3")
-          ),
-        ]);
-
-        if (mounted) {
-          setSounds({
-            rightWordSound: rightRes.sound,
-            wrongWordSound: wrongRes.sound,
-            bonusWordSound: bonusRes.sound,
-            levelCompleteSound: levelRes.sound,
-          });
-        }
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
       } catch (error) {
-        console.error("Failed to load sounds", error);
+        console.warn('Failed to configure audio mode:', error);
       }
     };
 
+    // Function to safely unload a sound
+    const unloadSound = async (sound: Audio.Sound | null) => {
+      if (sound) {
+        try {
+          const status = await sound.getStatusAsync();
+          if (status.isLoaded) {
+            await sound.unloadAsync();
+          }
+        } catch (e) {
+          console.warn('Error unloading sound:', e);
+        }
+      }
+    };
+
+    // Function to safely unload all sounds
+    const unloadAllSounds = async () => {
+      await Promise.all(Object.values(sounds).map(unloadSound));
+      if (isMounted) {
+        setSounds({
+          rightWordSound: null,
+          wrongWordSound: null,
+          bonusWordSound: null,
+          levelCompleteSound: null,
+        });
+      }
+    };
+
+    const loadSounds = async () => {
+      // First, unload any existing sounds
+      await unloadAllSounds();
+
+      // If sound is disabled, we're done
+      if (!sound) return;
+
+      try {
+        await initAudio();
+
+        // Create all sounds with error handling for each
+        const loadSound = async (path: number): Promise<Audio.Sound | null> => {
+          try {
+            const { sound } = await Audio.Sound.createAsync(path, { shouldPlay: false });
+            return sound;
+          } catch (error) {
+            console.error(`Failed to load sound:`, error);
+            return null;
+          }
+        };
+
+        const [rightRes, wrongRes, bonusRes, levelRes] = await Promise.all([
+          loadSound(require("../../../assets/sounds/correct-word.mp3")),
+          loadSound(require("../../../assets/sounds/wrong-word.mp3")),
+          loadSound(require("../../../assets/sounds/bonus-word.mp3")),
+          loadSound(require("../../../assets/sounds/level-complete.mp3")),
+        ]);
+
+        // Set sounds only if still mounted and enabled
+        if (isMounted && !isUnmounting.current && sound) {
+          setSounds({
+            rightWordSound: rightRes,
+            wrongWordSound: wrongRes,
+            bonusWordSound: bonusRes,
+            levelCompleteSound: levelRes,
+          });
+        } else {
+          // Clean up if unmounted or sound disabled
+          await Promise.all([
+            unloadSound(rightRes),
+            unloadSound(wrongRes),
+            unloadSound(bonusRes),
+            unloadSound(levelRes),
+          ]);
+        }
+      } catch (error) {
+        console.error("Failed to load sounds:", error);
+        if (isMounted && !isUnmounting.current) {
+          setSounds({
+            rightWordSound: null,
+            wrongWordSound: null,
+            bonusWordSound: null,
+            levelCompleteSound: null,
+          });
+        }
+      }
+    };
+
+    // Initialize sounds
     loadSounds();
 
     return () => {
-      mounted = false;
-      isUnmounting.current = true; // Signal that the component is unmounting
-      // Unload all sounds
-      for (const soundKey in sounds) {
-        if (sounds[soundKey]) {
-          sounds[soundKey]?.unloadAsync();
+      isMounted = false;
+      isUnmounting.current = true;
+      unloadAllSounds();
+    };
+  }, [sound]); // Re-run when sound preference changes
+
+  // Helper function to play sounds with retries
+  const playSound = useCallback(async (soundObject: Audio.Sound | null, maxRetries = 2) => {
+    if (!sound || !soundObject || isUnmounting.current) return;
+
+    const attemptPlay = async (retries: number): Promise<void> => {
+      try {
+        const status = await soundObject.getStatusAsync();
+        
+        if (!status.isLoaded) {
+          throw new Error('Sound not loaded');
+        }
+
+        // Ensure sound is at the beginning
+        await soundObject.setPositionAsync(0);
+        await soundObject.playAsync();
+      } catch (error) {
+        if (retries > 0 && !isUnmounting.current) {
+          // Wait a short time before retrying
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return attemptPlay(retries - 1);
+        }
+        
+        if (error instanceof Error) {
+          // Only log non-"Player not loaded" errors
+          if (!error.message.includes("Player is not loaded") && 
+              !error.message.includes("Player does not exist")) {
+            console.error("Failed to play sound:", error);
+          }
+        } else {
+          console.error("Unknown sound playback error:", error);
         }
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // empty deps so we don't recreate/unload repeatedly
 
-  // Helper function to play sounds (FIXED WITH CALLBACK)
-  const playSound = useCallback(async (soundObject: Audio.Sound | null) => {
-    if (!sound) return; // Use the sound state variable
-    
-    // Prevent playing sound if the component is unmounting
-    if (isUnmounting.current) {
-      return;
-    }
-    try {
-      if (soundObject) {
-        await soundObject.replayAsync();
-      }
-    } catch (e) {
-      // This error might still happen in a rare edge case, but the check above should prevent most cases.
-      if (!e.message.includes("Player is not loaded")) {
-        console.error("Failed to play sound", e);
-      }
-    }
-  }, [sound]); // Add sound as dependency
+    await attemptPlay(maxRetries);
+  }, [sound, isUnmounting]);
 
   useEffect(() => {
     if (score === 0) return;
@@ -404,18 +484,25 @@ export default function GameScreen({
       }
 
       if (crosswordWords.includes(normalizedWord)) {
-        await playSound(sounds.rightWordSound);
+        // Check if this is the final word
+        const isLastWord = foundCrosswordWords.length + 1 === crosswordWords.length;
+        
+        // Only play right word sound if it's not the last word
+        if (!isLastWord) {
+          await playSound(sounds.rightWordSound);
+        }
+
         setFoundCrosswordWords((prev) => [...prev, normalizedWord]);
         const points = normalizedWord.length * 100;
         setScore((prev) => prev + points);
 
         startFloatingLetterAnimation(normalizedWord);
 
-        if (foundCrosswordWords.length + 1 === crosswordWords.length) {
+        // If this is the last word, play completion sound and show animation
+        if (isLastWord) {
+          await playSound(sounds.levelCompleteSound);
           setGameComplete(true);
-          setTimeout(() => {
-            playSound(sounds.levelCompleteSound);
-          }, 1000);
+          gameCompleteRef.current = true; // Set ref to track completion state
         }
       } else {
         const isValidBonus = allValidWords.some(
@@ -696,14 +783,7 @@ export default function GameScreen({
     categoryName,
   ]);
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.loadingText}>Generating crossword...</Text>
-      </View>
-    );
-  }
+  // Loading state is now handled by the LoadingScreen component
 
   // const handleBackPress = (): void => {
   //   router.back();
@@ -747,7 +827,7 @@ export default function GameScreen({
               onPress={() => onNavigate?.("levels")}
               style={styles.backButton}
             >
-              <ChevronLeft size={16} color={"white"} />
+              <ChevronLeft size={16} color={"#22C55E"} />
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
 
@@ -770,7 +850,7 @@ export default function GameScreen({
                   activeOpacity={0.7}
                 >
                   {sound ? (
-                    <Volume2 size={20} color="#8B5CF6" />
+                    <Volume2 size={20} color="#000000ff" />
                   ) : (
                     <VolumeX size={20} color="#6B7280" />
                   )}
@@ -884,7 +964,9 @@ export default function GameScreen({
         animationType="fade"
         visible={gameComplete}
         onRequestClose={() => {
-          setGameComplete(false);
+          if (gameCompleteRef.current) {
+            setGameComplete(false);
+          }
         }}
       >
         <View style={styles.modalContainer}>
@@ -892,14 +974,24 @@ export default function GameScreen({
           <View style={styles.animationContainer}>
             <Text style={styles.gameCompleteText}>LEVEL COMPLETED</Text>
             <LottieView
+              key={gameComplete ? 'visible' : 'hidden'} // Force remount when showing
               source={require("../../../assets/animations/level-complete.json")}
               autoPlay
               loop={false}
+              speed={1.0}
               style={styles.lottieAnimation}
+              onAnimationFinish={() => {
+                // Animation has completed playing
+                gameCompleteRef.current = true;
+              }}
             />
             <TouchableOpacity
               style={styles.nextLevelButton}
-              onPress={() => onNavigate?.("levels")}
+              onPress={() => {
+                setGameComplete(false);
+                gameCompleteRef.current = false;
+                onNavigate?.("levels");
+              }}
             >
               <Text style={styles.nextLevelButtonText}>Back to Levels</Text>
             </TouchableOpacity>
@@ -928,6 +1020,59 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: "#AAA",
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  absolute: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+  },
+  animationContainer: {
+    width: '80%',
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  gameCompleteText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  lottieAnimation: {
+    width: 200,
+    height: 200,
+  },
+  nextLevelButton: {
+    marginTop: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    backgroundColor: '#8B5CF6',
+    borderRadius: 25,
+    elevation: 3,
+  },
+  nextLevelButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   levelHeader: {
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -947,19 +1092,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    backgroundColor: "rgba(229, 231, 235, 0.9)", // Light grey background
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   scoreText: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#00ff33ff",
+    color: "#22C55E", // Changed to match the green theme
     textAlign: "center",
   },
   soundToggleButton: {
     padding: 8,
-    backgroundColor: "rgba(55,65,81,0.8)",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#374151",
+    borderColor: "#c6c6c6ff",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -1000,9 +1157,9 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
   },
   revealedCell: {
-    backgroundColor: "#8B5CF6",
+    backgroundColor: "#22C55E",
     borderWidth: 2,
-    borderColor: "#7C3AED",
+    borderColor: "#16A34A",
   },
   cellText: {
     fontWeight: "bold",
@@ -1079,17 +1236,24 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     gap: 4,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#374151",
-    paddingEnd: 16,
+    backgroundColor: "rgba(229, 231, 235, 0.9)",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   backButtonText: {
-    color: "white",
+    color: "#22C55E",
     fontSize: 16,
     fontWeight: "600",
   },
