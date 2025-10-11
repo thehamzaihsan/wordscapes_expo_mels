@@ -3,15 +3,15 @@
  * Dynamic card component with theme support
  */
 
+import { Theme, useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import {
-  View,
   StyleSheet,
-  ViewStyle,
   TouchableOpacity,
   TouchableOpacityProps,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { useTheme, Theme } from '@/hooks/useTheme';
 
 type CardVariant = 'default' | 'elevated' | 'outlined' | 'flat' | 'glass' | 'glassStrong';
 type CardPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
@@ -133,7 +133,7 @@ const Card: React.FC<CardProps> = ({
     ...styles.container,
     ...variantStyles,
     ...paddingStyles,
-    ...(rounded && { borderRadius: theme.borderRadius.lg }),
+    ...(rounded && { borderRadius: theme.borderRadius.xl3 }),
     ...style,
   };
 

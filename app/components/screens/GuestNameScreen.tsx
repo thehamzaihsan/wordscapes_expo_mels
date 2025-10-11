@@ -1,20 +1,20 @@
 import levelsData from "@/constants/levels.json";
 import {
-    createNewGuestProfile,
-    updateGuestAvatar,
+  createNewGuestProfile,
+  updateGuestAvatar,
 } from "@/hooks/guest-progress";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-    Keyboard,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Keyboard,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface GuestNameScreenProps {
