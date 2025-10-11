@@ -508,3 +508,10 @@ const createTextStyles = (theme: any) => ({
     fontFamily: theme.typography.fontFamilies.regular,
   },
 });
+
+// Default export for the component (fixes the missing default export warning)
+export default {
+  EnhancedButton,
+  EnhancedCard,
+  EnhancedText,
+};
