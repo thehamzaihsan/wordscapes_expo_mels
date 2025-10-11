@@ -1,4 +1,5 @@
 import { loadGuestProgress, type GuestProgressPayload } from "@/hooks/guest-progress";
+import economy from "@/constants/economy.json";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
@@ -71,49 +72,48 @@ export default function CombinedStoreScreen({
     }, [])
   );
 
-  const shopOffers = [
-    {
-      id: 1,
-      name: "Sack of Gems",
-      gems: 2500,
-      price: "$19.99",
-      popular: false,
-      colors: ["#8b5cf6", "#7c3aed"],
-      bgColor: "#2e1065",
-      image: require("../../../assets/images/gem1.png"),
-    },
-    {
-      id: 2,
-      name: "Box of Gems",
-      gems: 6500,
-      price: "$49.99",
-      popular: true,
-      badge: "BEST VALUE",
-      colors: ["#10b981", "#059669"],
-      bgColor: "#064e3b",
-      image: require("../../../assets/images/gem2.png"),
-    },
-    {
-      id: 3,
-      name: "Chest of Gems",
-      gems: 14000,
-      price: "$99.99",
-      popular: false,
-      colors: ["#f59e0b", "#d97706"],
-      bgColor: "#78350f",
-      image: require("../../../assets/images/gem3.png"),
-    },
-    {
-      id: 4,
-      name: "Pile of Gems",
-      gems: 28000,
-      price: "$199.99",
-      popular: false,
-      colors: ["#ef4444", "#dc2626"],
-      bgColor: "#7f1d1d",
-      image: require("../../../assets/images/gem4.png"),
-    },
-  ];
+  // Generate shop offers from economy data
+  // This dynamically creates shop offers based on the purchase options defined in economy.json
+  const getShopOffers = () => {
+    const purchaseOptions = economy.gems.purchaseOptions;
+    const colors = [
+      ["#8b5cf6", "#7c3aed"], // Purple
+      ["#10b981", "#059669"], // Green
+      ["#f59e0b", "#d97706"], // Orange
+      ["#ef4444", "#dc2626"], // Red
+      ["#3b82f6", "#2563eb"], // Blue
+      ["#ec4899", "#db2777"], // Pink
+    ];
+    const bgColors = ["#2e1065", "#064e3b", "#78350f", "#7f1d1d", "#1e3a8a", "#831843"];
+    const names = [
+      "Sack of Gems", 
+      "Box of Gems", 
+      "Chest of Gems", 
+      "Pile of Gems",
+      "Mountain of Gems",
+      "Ocean of Gems"
+    ];
+    const images = [
+      require("../../../assets/images/gem1.png"),
+      require("../../../assets/images/gem2.png"),
+      require("../../../assets/images/gem3.png"),
+      require("../../../assets/images/gem4.png"),
+    ];
+
+    return purchaseOptions.map((option, index) => ({
+      id: index + 1,
+      name: names[index] || `Gem Package ${index + 1}`,
+      gems: option.gems,
+      price: `$${option.usd.toFixed(2)}`,
+      popular: index === 1, // Make the second option popular (best value)
+      badge: index === 1 ? "BEST VALUE" : undefined,
+      colors: colors[index] || colors[index % colors.length],
+      bgColor: bgColors[index] || bgColors[index % bgColors.length],
+      image: images[index] || images[index % images.length],
+    }));
+  };
+
+  const shopOffers = getShopOffers();
 
   const subscriptions = [
     {
