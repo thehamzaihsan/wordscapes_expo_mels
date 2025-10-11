@@ -2,6 +2,7 @@ import { loadGuestProgress } from "@/hooks/guest-progress";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import GuestNameScreen from "./components/screens/GuestNameScreen";
+import LoadingScreen from "./components/common/LoadingScreen";
 
 export default function GuestNameRoute() {
   const router = useRouter();
@@ -29,18 +30,31 @@ export default function GuestNameRoute() {
     })();
   }, [router]);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleNavigate = (screen: string) => {
-    if (screen === "levels") {
-      router.replace("/levels");
-    }
+    setIsLoading(true);
+    setTimeout(() => {
+      if (screen === "levels") {
+        router.replace("/levels");
+      }
+      setIsLoading(false);
+    }, 600);
   };
 
   const handleCancel = () => {
-    router.back();
+    setIsLoading(true);
+    setTimeout(() => {
+      router.back();
+      setIsLoading(false);
+    }, 600);
   };
 
-  if (checking) return null; // Could show a splash/loader if desired
+  if (checking) return <LoadingScreen />;
   return (
-    <GuestNameScreen onNavigate={handleNavigate} onCancel={handleCancel} />
+    <>
+      {isLoading && <LoadingScreen />}
+      <GuestNameScreen onNavigate={handleNavigate} onCancel={handleCancel} />
+    </>
   );
 }

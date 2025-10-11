@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   BackHandler,
   Platform,
+  StyleSheet,
   Text,
   View,
-  StyleSheet,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -35,8 +35,8 @@ function LayoutWithInsets() {
   
   return (
     <View style={styles.container}>
-      {/* Centralized Background Image with Blur */}
-      <BackgroundImage blurRadius={8} />
+      {/* Centralized Background Image */}
+      <BackgroundImage blurRadius={0} />
       
       {/* App content always on top */}
       <View
@@ -70,24 +70,25 @@ function LayoutWithInsets() {
         <Stack
           screenOptions={{
             headerShown: false,
-            gestureEnabled: true,
+            gestureEnabled: false,
+            animation: "none",
             contentStyle: { 
               backgroundColor: "transparent", 
             },
           }}
         >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="index" options={{ headerShown: false, animation: "none" }} />
           <Stack.Screen
             name="login"
-            options={{ headerShown: false, gestureEnabled: false }}
+            options={{ headerShown: false, gestureEnabled: false, animation: "none" }}
           />
           <Stack.Screen
             name="levels"
-            options={{ headerShown: false, gestureEnabled: true }}
+            options={{ headerShown: false, gestureEnabled: false, animation: "none" }}
           />
           <Stack.Screen
             name="game"
-            options={{ headerShown: false, gestureEnabled: true }}
+            options={{ headerShown: false, gestureEnabled: false, animation: "none" }}
           />
 
           <Stack.Screen
@@ -200,6 +201,27 @@ export default function RootLayout() {
       return () => backHandler.remove();
     }
   }, []);
+
+  if (!fontsLoaded) {
+    return (
+      <ThemeProvider defaultTheme="game">
+        <View style={styles.container}>
+          {/* Background Image for Loading Screen */}
+          <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 10,
+            }}
+          >
+            <ActivityIndicator size="large" color="#8B5CF6" />
+          </View>
+        </View>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

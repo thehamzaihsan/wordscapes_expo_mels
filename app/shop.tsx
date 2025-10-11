@@ -1,10 +1,13 @@
+import React from "react";
 import { useFocusEffect, useRouter } from 'expo-router';
+import LoadingScreen from "./components/common/LoadingScreen";
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import StoreScreen from './components/screens/StoreScreen'
 
 export default function ShopRoute() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // Handle Android back button
   useFocusEffect(
@@ -22,10 +25,19 @@ export default function ShopRoute() {
   );
 
   const handleNavigate = (screen: string) => {
-    if (screen === 'levels') {
-      router.back(); // Use back() to return to levels
-    }
+    setIsLoading(true);
+    setTimeout(() => {
+      if (screen === 'levels') {
+        router.back();
+      }
+      setTimeout(() => setIsLoading(false), 100);
+    }, 600);
   };
 
-  return <StoreScreen onNavigate={handleNavigate} />;
+  return (
+    <>
+      {isLoading && <LoadingScreen />}
+      <StoreScreen onNavigate={handleNavigate} />
+    </>
+  );
 }
