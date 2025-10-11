@@ -5,18 +5,21 @@ import {
   saveGuestProgress,
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { showToast } from "@/lib/toast";
-import { BlurView } from "expo-blur";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Gem, Zap } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
-  StyleSheet,
-  Text,
+  StatusBar,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 
 interface XPShopScreenProps {
   onNavigate: (screen: string) => void;
@@ -24,6 +27,9 @@ interface XPShopScreenProps {
 }
 
 const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "levels" }) => {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [progress, setProgress] = useState<GuestProgressPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
@@ -172,8 +178,13 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading XP Shop...</Text>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={styles.loadingContainer}>
+          <ThemedText variant="body1" color="primary" weight="semibold">
+            Loading XP Shop...
+          </ThemedText>
+        </View>
       </View>
     );
   }
@@ -184,90 +195,137 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={50} tint="dark" style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => onNavigate("levels")}
-        >
-          <ChevronLeft size={20} color="white" />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
+        showsVerticalScrollIndicator={false}
+      >
         
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>⭐ XP SHOP</Text>
-          <Text style={styles.subtitle}>Boost Your Progress</Text>
-          
-          {/* Current Gems */}
-          <View style={styles.gemsDisplay}>
-            <Text style={styles.gemsIcon}>💎</Text>
-            <Text style={styles.gemsText}>{progress?.meta.gems || 0}</Text>
-            <Text style={styles.gemsLabel}>Gems</Text>
-          </View>
-        </View>
-      </BlurView>
+        {/* Back Button */}
+        <ThemedButton
+          title="Back"
+          variant="glass"
+          size="sm"
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
+          onPress={() => onNavigate(fromScreen)}
+          style={styles.backButton}
+        />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Header Card */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
+          <View style={styles.headerTitle}>
+            <Zap size={24} color={theme.colors.primary} />
+            <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+              XP Shop
+            </ThemedText>
+          </View>
+          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+            Purchase XP to level up faster and unlock new categories
+          </ThemedText>
+          
+          {/* Player Gems */}
+          <View style={styles.gemsDisplay}>
+            <Gem size={20} color={theme.colors.warning} />
+            <ThemedText variant="heading3" weight="bold" color="warning" style={styles.gemsText}>
+              {progress?.meta.gems || 0}
+            </ThemedText>
+            <ThemedText variant="caption" color="textSecondary">
+              gems available
+            </ThemedText>
+          </View>
+        </ThemedCard>
+
         {/* Current Progress Section */}
         {levelProgress && (
-          <View style={styles.progressCard}>
-            <Text style={styles.cardTitle}>Current Progress</Text>
+          <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+            <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+              Current Progress
+            </ThemedText>
             
             <View style={styles.levelInfo}>
-              <Text style={styles.currentLevelText}>Level {levelProgress.currentLevel}</Text>
-              <Text style={styles.xpText}>
+              <ThemedText variant="heading2" weight="bold" color="primary" style={styles.currentLevelText}>
+                Level {levelProgress.currentLevel}
+              </ThemedText>
+              <ThemedText variant="body1" weight="semibold" color="textSecondary" style={styles.xpText}>
                 {levelProgress.xpInLevel} / {levelProgress.xpNeeded} XP
-              </Text>
+              </ThemedText>
             </View>
             
             <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarBackground}>
+              <View style={[styles.progressBarBackground, { backgroundColor: theme.colors.border }]}>
                 <View 
-                  style={[styles.progressBar, { width: `${levelProgress.progressPercent}%` }]} 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      backgroundColor: theme.colors.primary,
+                      width: `${levelProgress.progressPercent}%` 
+                    }
+                  ]} 
                 />
               </View>
-              <Text style={styles.progressText}>
+              <ThemedText variant="caption" color="textSecondary" align="center" style={styles.progressText}>
                 {Math.round(levelProgress.progressPercent)}% to next level
-              </Text>
+              </ThemedText>
             </View>
             
-            <Text style={styles.totalXpText}>Total XP: {levelProgress.totalXP}</Text>
-          </View>
+            <ThemedText variant="body2" color="textTertiary" align="center" style={styles.totalXpText}>
+              Total XP: {levelProgress.totalXP}
+            </ThemedText>
+          </ThemedCard>
         )}
 
         {/* Next Category Unlock */}
         {nextCategory && (
-          <View style={styles.categoryCard}>
-            <Text style={styles.cardTitle}>Next Unlock</Text>
+          <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+            <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+              Next Unlock
+            </ThemedText>
             
             <View style={styles.categoryInfo}>
-              <Text style={styles.categoryEmoji}>{nextCategory.emoji}</Text>
+              <ThemedText style={styles.categoryEmoji}>{nextCategory.emoji}</ThemedText>
               <View style={styles.categoryDetails}>
-                <Text style={styles.categoryName}>{nextCategory.name}</Text>
-                <Text style={styles.categoryProgress}>
+                <ThemedText variant="heading4" weight="bold" style={styles.categoryName}>
+                  {nextCategory.name}
+                </ThemedText>
+                <ThemedText variant="body2" color="warning" weight="semibold" style={styles.categoryProgress}>
                   {nextCategory.remainingXP} XP needed
-                </Text>
+                </ThemedText>
               </View>
             </View>
             
             <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarBackground}>
+              <View style={[styles.progressBarBackground, { backgroundColor: theme.colors.border }]}>
                 <View 
-                  style={[styles.progressBar, { width: `${nextCategory.progressPercent}%` }]} 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      backgroundColor: theme.colors.warning,
+                      width: `${nextCategory.progressPercent}%` 
+                    }
+                  ]} 
                 />
               </View>
-              <Text style={styles.progressText}>
+              <ThemedText variant="caption" color="textSecondary" align="center" style={styles.progressText}>
                 {Math.round(nextCategory.progressPercent)}% complete
-              </Text>
+              </ThemedText>
             </View>
-          </View>
+          </ThemedCard>
         )}
 
         {/* XP Packages */}
-        <View style={styles.packagesSection}>
-          <Text style={styles.sectionTitle}>XP Packages</Text>
-          <Text style={styles.sectionSubtitle}>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
+            XP Packages
+          </ThemedText>
+          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.sectionSubtitle}>
             Skip the grind and boost your progress instantly!
-          </Text>
+          </ThemedText>
           
           <View style={styles.packagesGrid}>
             {xpPackages.map((pkg) => (
@@ -275,7 +333,8 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                 key={pkg.id}
                 style={[
                   styles.packageCard,
-                  pkg.popular && styles.popularPackage,
+                  { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border },
+                  pkg.popular && { borderColor: theme.colors.primary, backgroundColor: `${theme.colors.primary}10` }
                 ]}
                 onPress={() => handlePurchaseXP(pkg.xp, pkg.gems)}
                 disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems}
@@ -284,203 +343,176 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                 {pkg.badge && (
                   <View style={[
                     styles.packageBadge,
-                    pkg.popular && styles.popularBadge,
+                    pkg.popular 
+                      ? { backgroundColor: theme.colors.primary }
+                      : { backgroundColor: theme.colors.warning }
                   ]}>
-                    <Text style={styles.badgeText}>{pkg.badge}</Text>
+                    <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
+                      {pkg.badge}
+                    </ThemedText>
                   </View>
                 )}
                 
-                <Text style={styles.packageXP}>+{pkg.xp}</Text>
-                <Text style={styles.packageXPLabel}>XP</Text>
+                <ThemedText variant="heading2" weight="bold" style={styles.packageXP}>
+                  +{pkg.xp}
+                </ThemedText>
+                <ThemedText variant="body2" color="textSecondary" weight="semibold" style={styles.packageXPLabel}>
+                  XP
+                </ThemedText>
                 
                 <View style={styles.packageCost}>
-                  <Text style={styles.packageGems}>{pkg.gems}</Text>
-                  <Text style={styles.packageGemsIcon}>💎</Text>
-                  <Text style={styles.packageGemsLabel}>Gems</Text>
+                  <ThemedText variant="heading4" weight="bold" color="warning" style={styles.packageGems}>
+                    {pkg.gems}
+                  </ThemedText>
+                  <Gem size={16} color={theme.colors.warning} />
+                  <ThemedText variant="caption" color="textSecondary" style={styles.packageGemsLabel}>
+                    Gems
+                  </ThemedText>
                 </View>
                 
-                <View style={[
-                  styles.purchaseButton,
-                  (progress?.meta.gems || 0) < pkg.gems && styles.disabledButton,
-                ]}>
-                  <Text style={[
-                    styles.purchaseButtonText,
-                    (progress?.meta.gems || 0) < pkg.gems && styles.disabledButtonText,
-                  ]}>
-                    {(progress?.meta.gems || 0) < pkg.gems ? "Not enough gems" : "Purchase"}
-                  </Text>
-                </View>
+                <ThemedButton
+                  title={(progress?.meta.gems || 0) < pkg.gems ? "Not enough gems" : "Purchase"}
+                  variant={(progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"}
+                  size="sm"
+                  fullWidth
+                  disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems}
+                  style={styles.purchaseButton}
+                />
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </ThemedCard>
 
         {/* Info Section */}
-        <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>💡 Why Buy XP?</Text>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            💡 Why Buy XP?
+          </ThemedText>
           <View style={styles.benefitsList}>
-            <Text style={styles.benefitText}>• Unlock new categories faster</Text>
-            <Text style={styles.benefitText}>• Progress through player levels</Text>
-            <Text style={styles.benefitText}>• Access exclusive content sooner</Text>
-            <Text style={styles.benefitText}>• Skip the level grinding</Text>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Unlock new categories faster
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Progress through player levels
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Access exclusive content sooner
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Skip the level grinding
+            </ThemedText>
           </View>
-        </View>
+        </ThemedCard>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    backgroundColor: "#121213",
+    position: 'relative' as const,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#121213",
-  },
-  loadingText: {
-    color: "#8B5CF6",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  header: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#27272a",
-  },
-  backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    alignSelf: "flex-start",
-    paddingEnd: 16,
-    marginBottom: 16,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  headerContent: {
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
-  subtitle: {
-    color: "#9CA3AF",
-    fontSize: 14,
-  },
-  gemsDisplay: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(31,41,55,0.8)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
-    marginTop: 8,
-  },
-  gemsIcon: {
-    fontSize: 18,
-  },
-  gemsText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  gemsLabel: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  scrollView: {
-    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   scrollContent: {
-    padding: 20,
-    gap: 20,
-    paddingBottom: 40,
+    flexGrow: 1,
+    justifyContent: 'flex-start' as const,
   },
-  progressCard: {
-    backgroundColor: "rgba(31,41,55,0.8)",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#374151",
+  backButton: {
+    alignSelf: 'flex-start' as const,
+    marginBottom: theme.spacing.lg,
   },
-  cardTitle: {
-    color: "#FFFFFF",
+  headerCard: {
+    marginBottom: theme.spacing.lg,
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  headerTitle: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginBottom: theme.spacing.xs,
+  },
+  title: {
+    marginLeft: theme.spacing.sm,
+  },
+  subtitle: {
+    lineHeight: 18,
+    marginBottom: theme.spacing.base,
+  },
+  gemsDisplay: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  gemsText: {
     fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
+  },
+  card: {
+    marginBottom: theme.spacing.lg,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  sectionTitle: {
+    marginBottom: theme.spacing.base,
+  },
+  sectionSubtitle: {
+    marginBottom: theme.spacing.lg,
   },
   levelInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.sm,
   },
   currentLevelText: {
-    color: "#8B5CF6",
     fontSize: 20,
-    fontWeight: "bold",
   },
   xpText: {
-    color: "#D1D5DB",
     fontSize: 16,
-    fontWeight: "600",
   },
   progressBarContainer: {
-    marginBottom: 8,
+    marginBottom: theme.spacing.xs,
   },
   progressBarBackground: {
     height: 12,
-    backgroundColor: "rgba(55,65,81,0.7)",
     borderRadius: 6,
-    overflow: "hidden",
-    marginBottom: 4,
+    overflow: 'hidden' as const,
+    marginBottom: theme.spacing.xs,
   },
   progressBar: {
-    height: "100%",
-    backgroundColor: "#8B5CF6",
+    height: '100%',
     borderRadius: 6,
   },
   progressText: {
-    color: "#9CA3AF",
     fontSize: 12,
-    textAlign: "center",
   },
   totalXpText: {
-    color: "#6B7280",
     fontSize: 14,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  categoryCard: {
-    backgroundColor: "rgba(31,41,55,0.8)",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#374151",
+    marginTop: theme.spacing.xs,
   },
   categoryInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    gap: 12,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.sm,
   },
   categoryEmoji: {
     fontSize: 32,
@@ -489,130 +521,67 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryName: {
-    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: "bold",
   },
   categoryProgress: {
-    color: "#F59E0B",
     fontSize: 14,
-    fontWeight: "600",
-  },
-  packagesSection: {
-    gap: 12,
-  },
-  sectionTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  sectionSubtitle: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 8,
   },
   packagesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "space-between",
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: theme.spacing.sm,
+    justifyContent: 'space-between' as const,
   },
   packageCard: {
-    width: "48%",
-    backgroundColor: "rgba(31,41,55,0.8)",
-    borderRadius: 16,
-    padding: 16,
+    width: '48%',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.base,
     borderWidth: 2,
-    borderColor: "#374151",
-    alignItems: "center",
-    position: "relative",
-  },
-  popularPackage: {
-    borderColor: "#8B5CF6",
-    backgroundColor: "rgba(139,92,246,0.1)",
+    alignItems: 'center' as const,
+    position: 'relative' as const,
   },
   packageBadge: {
-    position: "absolute",
+    position: 'absolute' as const,
     top: -8,
-    backgroundColor: "#F59E0B",
-    paddingHorizontal: 8,
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: 4,
-    borderRadius: 8,
-  },
-  popularBadge: {
-    backgroundColor: "#8B5CF6",
+    borderRadius: theme.borderRadius.sm,
   },
   badgeText: {
-    color: "#FFFFFF",
     fontSize: 10,
-    fontWeight: "bold",
   },
   packageXP: {
-    color: "#FFFFFF",
     fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 8,
+    marginTop: theme.spacing.xs,
   },
   packageXPLabel: {
-    color: "#9CA3AF",
     fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: theme.spacing.sm,
   },
   packageCost: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 4,
-    marginBottom: 12,
+    marginBottom: theme.spacing.sm,
   },
   packageGems: {
-    color: "#F59E0B",
     fontSize: 18,
-    fontWeight: "bold",
-  },
-  packageGemsIcon: {
-    fontSize: 16,
   },
   packageGemsLabel: {
-    color: "#9CA3AF",
     fontSize: 12,
-    fontWeight: "500",
   },
   purchaseButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    width: "100%",
-    alignItems: "center",
-  },
-  disabledButton: {
-    backgroundColor: "#6B7280",
-  },
-  purchaseButtonText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  disabledButtonText: {
-    color: "#9CA3AF",
-  },
-  infoCard: {
-    backgroundColor: "rgba(31,41,55,0.8)",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#374151",
+    marginTop: theme.spacing.xs,
   },
   benefitsList: {
-    gap: 8,
+    gap: theme.spacing.xs,
   },
   benefitText: {
-    color: "#D1D5DB",
     fontSize: 14,
     lineHeight: 20,
+  },
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
 });
 
