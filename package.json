@@ -27,6 +27,7 @@
     "an-array-of-english-words": "^2.0.0",
     "bad-words": "^4.0.0",
     "crossword-layout-generator": "^0.1.1",
+    "dotenv": "^17.2.3",
     "expo": "~54.0.9",
     "expo-av": "^16.0.7",
     "expo-blur": "~15.0.7",

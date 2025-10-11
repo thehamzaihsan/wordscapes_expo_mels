@@ -8,6 +8,12 @@ import {
   generateLevelFromJSON,
   initializeGameManager,
 } from "@/hooks/game-manager";
+import { 
+  loadGuestProgress, 
+  useHint, 
+  purchaseHints,
+  type GuestProgressPayload 
+} from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { mutateLocalStats, syncUser, upsertLocalLevel } from "@/lib/sync";
 import { Audio } from "expo-av";
@@ -82,6 +88,20 @@ export default function GameScreen({
   const [letters, setLetters] = useState<string[]>([]);
   const [sound, setSound] = useState(true);
   const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
+  const [guestProgress, setGuestProgress] = useState<GuestProgressPayload | null>(null);
+
+  // Load guest progress on component mount
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const progress = await loadGuestProgress();
+        setGuestProgress(progress);
+      } catch (error) {
+        console.warn('Failed to load guest progress:', error);
+      }
+    };
+    loadProgress();
+  }, []);
 
   // Load sound preference on component mount
   useEffect(() => {
@@ -132,19 +152,52 @@ export default function GameScreen({
     | { row: number; col: number; anim: Animated.Value }
     | null
   >(null);
-  const [hintsLeft, setHintsLeft] = useState(1); // Only 1 hint per game
-  const [hintedWordss, setHintedWords] = useState<string[]>([]);
+  const [purchasingHints, setPurchasingHints] = useState(false);
+  const [showHintPurchaseModal, setShowHintPurchaseModal] = useState(false);
+
+  // Get available hints from guest progress
+  const availableHints = guestProgress?.meta.hints || 0;
 
   // Handle word hint from LetterWheel
-  const handleWordHint = useCallback((hintedWord: string) => {
-    if (hintsLeft <= 0) return;
+  const handleWordHint = useCallback(async (hintedWord: string) => {
+    if (availableHints <= 0) {
+      // Show modal to purchase hints
+      setShowHintPurchaseModal(true);
+      return;
+    }
     
-    // Add to hinted words to track what was hinted
-    setHintedWords(prev => [...prev, hintedWord]);
-    setHintsLeft(prev => prev - 1);
+    try {
+      // Use a hint and update progress
+      const updatedProgress = await useHint();
+      if (updatedProgress) {
+        setGuestProgress(updatedProgress);
+      }
+      
+      // Could add visual feedback here if needed
+      console.log(`Hint used for word: ${hintedWord}`);
+    } catch (error) {
+      console.error('Failed to use hint:', error);
+    }
+  }, [availableHints]);
+
+  // Handle hint purchase
+  const handlePurchaseHints = useCallback(async () => {
+    if (purchasingHints) return;
     
-    // Could add visual feedback here if needed
-  }, [hintsLeft]);
+    setPurchasingHints(true);
+    try {
+      const updatedProgress = await purchaseHints();
+      if (updatedProgress) {
+        setGuestProgress(updatedProgress);
+        setShowHintPurchaseModal(false);
+      }
+    } catch (error) {
+      console.error('Failed to purchase hints:', error);
+      // Show error message to user
+    } finally {
+      setPurchasingHints(false);
+    }
+  }, [purchasingHints]);
 
   // --- SOUND STATES (REFACTORED) ---
   const [sounds, setSounds] = useState<{ [key: string]: Audio.Sound | null }>({
@@ -844,6 +897,10 @@ export default function GameScreen({
                   Score: {score}
                 </Animated.Text>
                 
+                <View style={styles.hintsContainer}>
+                  <Text style={styles.hintsText}>💡 {availableHints}</Text>
+                </View>
+                
                 <TouchableOpacity
                   onPress={handleSoundToggle}
                   style={styles.soundToggleButton}
@@ -948,7 +1005,7 @@ export default function GameScreen({
                 validWords={[...crosswordWords, ...allValidWords]}
                 foundWords={[...foundCrosswordWords, ...foundBonusWords]}
                 onHint={handleWordHint}
-                hintsLeft={hintsLeft}
+                hintsLeft={availableHints}
               />
             ) : (
               <Text style={styles.errorText}>No letters available</Text>
@@ -995,6 +1052,54 @@ export default function GameScreen({
             >
               <Text style={styles.nextLevelButtonText}>Back to Levels</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Hint Purchase Modal */}
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={showHintPurchaseModal}
+        onRequestClose={() => setShowHintPurchaseModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <BlurView style={styles.absolute} intensity={80} tint="dark" />
+          <View style={styles.hintPurchaseContainer}>
+            <Text style={styles.hintPurchaseTitle}>Need Hints?</Text>
+            <Text style={styles.hintPurchaseText}>
+              Get 3 hints for 100 💎 gems
+            </Text>
+            <Text style={styles.hintPurchaseSubtext}>
+              Available gems: {guestProgress?.meta.gems || 0} 💎
+            </Text>
+            
+            <View style={styles.hintPurchaseButtons}>
+              <TouchableOpacity
+                style={[styles.hintButton, styles.cancelButton]}
+                onPress={() => setShowHintPurchaseModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.hintButton, 
+                  styles.purchaseButton,
+                  (guestProgress?.meta.gems || 0) < 100 && styles.disabledButton
+                ]}
+                onPress={handlePurchaseHints}
+                disabled={purchasingHints || (guestProgress?.meta.gems || 0) < 100}
+              >
+                {purchasingHints ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.purchaseButtonText}>
+                    {(guestProgress?.meta.gems || 0) < 100 ? 'Not enough gems' : 'Purchase'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1109,6 +1214,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#22C55E", // Changed to match the green theme
+    textAlign: "center",
+  },
+  hintsContainer: {
+    backgroundColor: "rgba(229, 231, 235, 0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  hintsText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#8B5CF6",
     textAlign: "center",
   },
   soundToggleButton: {
@@ -1256,5 +1381,69 @@ const styles = StyleSheet.create({
     color: "#22C55E",
     fontSize: 16,
     fontWeight: "600",
+  },
+  // --- HINT PURCHASE MODAL STYLES ---
+  hintPurchaseContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    marginHorizontal: 40,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  hintPurchaseTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 10,
+  },
+  hintPurchaseText: {
+    fontSize: 18,
+    color: "#374151",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  hintPurchaseSubtext: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 25,
+  },
+  hintPurchaseButtons: {
+    flexDirection: "row",
+    gap: 15,
+  },
+  hintButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#E5E7EB",
+  },
+  cancelButtonText: {
+    color: "#374151",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  purchaseButton: {
+    backgroundColor: "#22C55E",
+  },
+  purchaseButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  disabledButton: {
+    backgroundColor: "#9CA3AF",
   },
 });

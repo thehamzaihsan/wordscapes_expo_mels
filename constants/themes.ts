@@ -162,9 +162,9 @@ export const Spacing = {
 // Border radius system
 export const BorderRadius = {
   none: 0,
-  sm: 4,
-  base: 8,
-  md: 12,
+  sm: 20,
+  base: 24,
+  md: 32,
   lg: 16,
   xl: 20,
   xl2: 24,
@@ -273,10 +273,10 @@ export const LightTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.2)',
     
     // Glassmorphism colors (theme-aware) - Fixed for light mode visibility
-    glassmorphismBackground: 'rgba(0, 0, 0, 0.08)',
-    glassmorphismBorder: 'rgba(0, 0, 0, 0.12)',
-    glassmorphismBackgroundStrong: 'rgba(0, 0, 0, 0.15)',
-    glassmorphismBorderStrong: 'rgba(0, 0, 0, 0.2)',
+    glassmorphismBackground: 'rgba(222, 222, 222, 0.72)',
+    glassmorphismBorder: 'rgba(213, 213, 213, 0.85)',
+    glassmorphismBackgroundStrong: 'rgba(206, 206, 206, 0.82)',
+    glassmorphismBorderStrong: 'rgba(207, 207, 207, 0.53)',
     
     // Status bar
     statusBar: BaseColors.gray[900],

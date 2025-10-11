@@ -43,6 +43,8 @@ export interface GuestMeta {
   playerLevel: number;
   /** Selected avatar identifier (emoji or key) */
   avatar?: string;
+  /** Available hints that can be used across all levels */
+  hints?: number;
 }
 
 export interface GuestProgressPayload {
@@ -54,7 +56,7 @@ export interface GuestProgressPayload {
 
 const STORAGE_KEY_GUEST = "wordscapes_guest_progress";
 const STORAGE_KEY_PREFIX = "wordscapes_user_progress:"; // per-user
-const CURRENT_VERSION = 5; // Incremented for star removal migration
+const CURRENT_VERSION = 6; // Incremented for level unlock fix migration
 const DEFAULT_ENERGY_CAP = getDefaultEnergy();
 
 /** Default meta for a new guest profile */
@@ -65,6 +67,7 @@ const defaultMeta: GuestMeta = {
   playerName: "Guest",
   playerLevel: 0,
   avatar: "🧩",
+  hints: 0, // Start with 0 hints, user must purchase them
 };
 
 /**
@@ -272,6 +275,7 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
             ? parsed.meta.energy
             : DEFAULT_ENERGY_CAP
         ),
+        hints: typeof parsed.meta?.hints === "number" ? parsed.meta.hints : 0,
       };
 
       // Migration for version 4: Combine coins + gems into single gems currency
@@ -295,6 +299,40 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
           });
         });
         console.log(`[Migration] Removed stars from level progress data`);
+      }
+
+      // Migration for version 6: Fix level unlock states (only first 3 levels of first category, then one by one)
+      if (parsed.version < 6 && parsed.categories) {
+        const categoryKeys = Object.keys(parsed.categories);
+        const firstCategoryName = categoryKeys[0]; // Should be "Mountain"
+        
+        categoryKeys.forEach((categoryName) => {
+          const levels = parsed.categories[categoryName];
+          if (Array.isArray(levels)) {
+            levels.forEach((level: any, levelIndex: number) => {
+              // Determine correct unlock state based on completion and category
+              if (categoryName === firstCategoryName) {
+                // First category: keep first 3 unlocked, or any completed levels and their next level
+                if (levelIndex < 3) {
+                  level.isUnlocked = true;
+                } else {
+                  // For levels beyond 3 in first category, unlock only if previous is completed
+                  const prevLevel = levels[levelIndex - 1];
+                  level.isUnlocked = prevLevel?.isCompleted || false;
+                }
+              } else {
+                // Other categories: unlock first level, then only if previous is completed
+                if (levelIndex === 0) {
+                  level.isUnlocked = true;
+                } else {
+                  const prevLevel = levels[levelIndex - 1];
+                  level.isUnlocked = prevLevel?.isCompleted || false;
+                }
+              }
+            });
+          }
+        });
+        console.log(`[Migration] Fixed level unlock states to progressive unlocking`);
       }
 
       parsed.version = CURRENT_VERSION;
@@ -323,7 +361,7 @@ export async function saveGuestProgress(
 }
 
 /**
- * Initialize progress structure from level definitions (first 3 unlocked rule).
+ * Initialize progress structure from level definitions (first 3 unlocked rule for first category only).
  */
 export function buildInitialProgress(
   levelDefs: {
@@ -332,16 +370,23 @@ export function buildInitialProgress(
   playerName?: string
 ): GuestProgressPayload {
   const categories: GuestCategoryProgress = {};
-  Object.keys(levelDefs).forEach((category) => {
-    categories[category] = levelDefs[category].map((lvl: any, idx: number) => ({
-      level: lvl.level ?? idx + 1,
-      baseWord: lvl.baseWord,
-      difficulty: lvl.difficulty,
-      isUnlocked: idx < 3, // unlock first 3
-      isCompleted: false,
-      bestScore: 0,
-      attempts: 0,
-    }));
+  
+  // Only initialize categories that should be unlocked for a new player (level 0)
+  const unlockedCategories = getUnlockedCategories(0); // Player level 0
+  
+  unlockedCategories.forEach((category) => {
+    if (levelDefs[category]) {
+      categories[category] = levelDefs[category].map((lvl: any, idx: number) => ({
+        level: lvl.level ?? idx + 1,
+        baseWord: lvl.baseWord,
+        difficulty: lvl.difficulty,
+        // Unlock first 3 levels for the first category only
+        isUnlocked: idx < 3,
+        isCompleted: false,
+        bestScore: 0,
+        attempts: 0,
+      }));
+    }
   });
   return {
     categories,
@@ -417,7 +462,7 @@ export function applyLevelCompletion(
           level: lvl.level ?? idx + 1,
           baseWord: lvl.baseWord,
           difficulty: lvl.difficulty,
-          isUnlocked: idx < 3, // unlock first 3 levels of new category
+          isUnlocked: idx === 0, // unlock only first level of new category
           isCompleted: false,
           bestScore: 0,
           attempts: 0,
@@ -541,4 +586,47 @@ export async function clearAllLocalProgressForActiveUser(): Promise<void> {
   } catch (e) {
     console.warn("Failed to clear local progress for active user", e);
   }
+}
+
+/**
+ * Purchase hints using gems based on economy configuration
+ * User wants 100 gems per 3 hints (instead of economy.json's 250 gems per 3 hints)
+ */
+export async function purchaseHints(): Promise<GuestProgressPayload | null> {
+  const progress = await loadGuestProgress();
+  if (!progress) return null;
+  
+  const hintCost = 100; // User requested 100 gems per 3 hints
+  const hintsQuantity = 3;
+  
+  if (progress.meta.gems < hintCost) {
+    throw new Error(`Insufficient gems. Need ${hintCost} gems to purchase ${hintsQuantity} hints.`);
+  }
+  
+  progress.meta.gems -= hintCost;
+  progress.meta.hints = (progress.meta.hints || 0) + hintsQuantity;
+  progress.updatedAt = new Date().toISOString();
+  
+  await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
+  return progress;
+}
+
+/**
+ * Use a hint in the game (deduct 1 from available hints)
+ */
+export async function useHint(): Promise<GuestProgressPayload | null> {
+  const progress = await loadGuestProgress();
+  if (!progress) return null;
+  
+  if ((progress.meta.hints || 0) <= 0) {
+    throw new Error("No hints available. Purchase more hints to continue.");
+  }
+  
+  progress.meta.hints = (progress.meta.hints || 0) - 1;
+  progress.updatedAt = new Date().toISOString();
+  
+  await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
+  return progress;
 }

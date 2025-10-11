@@ -3,12 +3,11 @@
  * Provides a centralized blurred background image for all screens
  */
 
-import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
-import { Image } from 'expo-image';
 import { useTheme } from '@/hooks/useTheme';
-
-const { width, height } = Dimensions.get('window');
+import { Image } from 'expo-image';
+import React from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
+const { width, height } = Dimensions.get('screen');
 
 interface BackgroundImageProps {
   blurRadius?: number;
@@ -27,18 +26,18 @@ const BackgroundImage: React.FC<BackgroundImageProps> = ({
     
     switch (theme.name) {
       case 'light':
-        return 0.35; // Reduced overlay for light theme (was 0.85)
+        return 0.1; // Reduced overlay for light theme (was 0.85)
       case 'dark':
         return 0.25;  // Reduced overlay for dark theme (was 0.7)
       case 'game':
         return 0.15;  // Minimal overlay for game theme (was 0.6)
       default:
-        return 0.3;   // Reduced default overlay (was 0.75)
+        return 0.75;   // Reduced default overlay (was 0.75)
     }
   };
 
   return (
-    <>
+    <View style={styles.container}>
       {/* Background Image with Blur */}
       <Image
         source={require("../../../images/default_background.jpg")}
@@ -59,11 +58,19 @@ const BackgroundImage: React.FC<BackgroundImageProps> = ({
           }
         ]} 
       />
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: width,
+    height: height,
+    zIndex: 0,
+  },
   backgroundImage: {
     position: 'absolute',
     top: 0,

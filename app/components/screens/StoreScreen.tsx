@@ -1,5 +1,5 @@
-import { loadGuestProgress, type GuestProgressPayload } from "@/hooks/guest-progress";
 import economy from "@/constants/economy.json";
+import { loadGuestProgress, type GuestProgressPayload } from "@/hooks/guest-progress";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { startPurchase } from "../hooks/PaypalCheckout";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.75;
@@ -42,6 +43,7 @@ export default function CombinedStoreScreen({
   const subscriptionScrollX = useRef(new Animated.Value(0)).current;
   const shopScrollViewRef = useRef<ScrollView>(null);
   const subscriptionScrollViewRef = useRef<ScrollView>(null);
+
 
   // Load guest progress data on component mount and when screen gains focus
   useFocusEffect(
@@ -266,12 +268,15 @@ export default function CombinedStoreScreen({
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex}>
+
+        <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex} onPress={() => startPurchase(offer.price)}>
           <LinearGradient
             colors={offer.colors}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.priceButton}
+            
+            
           >
             <Text style={styles.priceText}>{offer.price}</Text>
           </LinearGradient>

@@ -1,4 +1,5 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
 import { Play, Settings } from "lucide-react-native";
 import {
@@ -10,7 +11,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Logo from "./components/common/Logo";
 import ThemedButton from "./components/ui/ThemedButton";
 import ThemedText from "./components/ui/ThemedText";
-import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 
 export default function Index() {
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function Index() {
             variant="primary"
             size="xl"
             fullWidth
-            leftIcon={<Play size={24} color="white" />}
+            leftIcon={<Play size={20} color="white" />}
             onPress={handlePlay}
             style={styles.primaryButton}
           />
@@ -72,7 +72,7 @@ export default function Index() {
           <ThemedButton
             title="Settings"
             variant="secondary"
-            size="lg"
+            size="xl"
             fullWidth
             leftIcon={<Settings size={20} color={theme.colors.text} />}
             onPress={handleSettings}
@@ -81,11 +81,11 @@ export default function Index() {
         </View>
 
         {/* Quick Access Footer */}
-        <View style={styles.footerSection}>
+        {/* <View style={styles.footerSection}>
           <ThemedText variant="caption" align="center"  style={styles.footerText}>
             Play thousands of word puzzles
           </ThemedText>
-        </View>
+        </View> */}
       </View>
     </View>
   );
@@ -128,14 +128,14 @@ const createStyles = (theme: any) => ({
     gap: theme.spacing.base,
   },
   primaryButton: {
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
   secondaryButton: {
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   footerSection: {
     marginTop: theme.spacing.xl4,

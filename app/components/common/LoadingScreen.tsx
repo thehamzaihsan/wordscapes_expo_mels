@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Bar as ProgressBar } from 'react-native-progress';
-
+import ThemedText from '../ui/ThemedText';
 const LoadingScreen: React.FC = () => {
   const { theme } = useTheme();
   const [progress, setProgress] = useState(0);
@@ -33,7 +33,7 @@ const LoadingScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.text, { color: theme.colors.text }]}>Loading</Text>
+      <ThemedText variant='heading3'>Loading</ThemedText>
       <View style={styles.progressContainer}>
         <ProgressBar 
           progress={progress}

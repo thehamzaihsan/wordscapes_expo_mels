@@ -3,19 +3,18 @@
  * Dynamic button component with theme support
  */
 
+import { Theme, useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  View,
-  StyleSheet,
   ActivityIndicator,
-  TouchableOpacityProps,
-  ViewStyle,
+  StyleSheet,
+  Text,
   TextStyle,
+  TouchableOpacity,
+  TouchableOpacityProps,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, Theme } from '@/hooks/useTheme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'ghost' | 'outline' | 'glass' | 'glassStrong' | 'glassPremium';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
