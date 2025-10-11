@@ -1,16 +1,19 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, View } from 'react-native';
-import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
-import economy from "@/constants/economy.json";
+import * as Haptics from "expo-haptics";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Animated, Dimensions, View } from "react-native";
+
+import { Difficulty } from "@/constants/difficulty";
+import {
+  generateCrossword,
+  type Grid as GeneratedGrid,
+} from "@/hooks/crossword-gen";
 import {
   generateBonusWords,
   generateCrosswordLevelWithBaseword,
-  generateLevelFromJSON,
-  initializeGameManager,
 } from "@/hooks/game-manager";
+import { loadGuestProgress, saveGuestProgress } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
-import { mutateLocalStats, syncUser, upsertLocalLevel } from "@/lib/sync";
+import { showToast } from "@/lib/toast";
 
 interface GridCell {
   letter: string | null;
@@ -66,14 +69,17 @@ export function useGameLogic({
   const [error, setError] = useState("");
   const [score, setScore] = useState(0);
   const [gameComplete, setGameComplete] = useState(false);
-  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>([]);
+  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>(
+    []
+  );
   const [cellSize, setCellSize] = useState(40);
 
   // Hint state
-  const [hintAnim, setHintAnim] = useState<
-    | { row: number; col: number; anim: Animated.Value }
-    | null
-  >(null);
+  const [hintAnim, setHintAnim] = useState<{
+    row: number;
+    col: number;
+    anim: Animated.Value;
+  } | null>(null);
   const [hintsLeft, setHintsLeft] = useState(1);
   const [hintedWords, setHintedWords] = useState<string[]>([]);
 
@@ -83,214 +89,370 @@ export function useGameLogic({
   const letterWheelRef = useRef<View>(null);
   const containerRef = useRef<View>(null);
   const scoreScaleAnim = useRef(new Animated.Value(1)).current;
+  const { width, height } = Dimensions.get("window");
+  const GRID_AREA_WIDTH = width * 0.9;
+  const GRID_AREA_HEIGHT = height * 0.4;
 
-  const diff = getDifficultyConfig(difficulty);
+  // Helpers: extract placements from generated grid and build cell grid
+  const extractWordPlacements = useCallback(
+    (grid: GeneratedGrid, words: string[]) => {
+      type Placement = WordPlacement;
+      const placements: Placement[] = [];
+      const rows = grid.length;
+      const cols = grid[0]?.length || 0;
+      const isBoundary = (r: number, c: number) => {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return true;
+        return grid[r][c] == null;
+      };
+      words.forEach((word) => {
+        const upperWord = word.toUpperCase();
+        // Horizontal
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c <= cols - upperWord.length; c++) {
+            let ok = true;
+            for (let i = 0; i < upperWord.length; i++) {
+              if (grid[r][c + i] !== upperWord[i]) {
+                ok = false;
+                break;
+              }
+            }
+            if (!ok) continue;
+            const proper =
+              isBoundary(r, c - 1) && isBoundary(r, c + upperWord.length);
+            if (proper) {
+              placements.push({
+                word: upperWord,
+                startRow: r,
+                startCol: c,
+                direction: "horizontal",
+                isFound: false,
+              });
+            }
+          }
+        }
+        // Vertical
+        for (let r = 0; r <= rows - upperWord.length; r++) {
+          for (let c = 0; c < cols; c++) {
+            let ok = true;
+            for (let i = 0; i < upperWord.length; i++) {
+              if (grid[r + i][c] !== upperWord[i]) {
+                ok = false;
+                break;
+              }
+            }
+            if (!ok) continue;
+            const proper =
+              isBoundary(r - 1, c) && isBoundary(r + upperWord.length, c);
+            if (proper) {
+              placements.push({
+                word: upperWord,
+                startRow: r,
+                startCol: c,
+                direction: "vertical",
+                isFound: false,
+              });
+            }
+          }
+        }
+      });
+      return placements;
+    },
+    []
+  );
 
-  // Initialize game
+  const createGameGridFromGenerated = useCallback(
+    (grid: GeneratedGrid, placements: WordPlacement[]): GridCell[][] => {
+      const rows = grid.length;
+      const cols = grid[0]?.length || 0;
+      const out: GridCell[][] = Array.from({ length: rows }, () =>
+        Array.from({ length: cols }, () => ({
+          letter: null,
+          isRevealed: false,
+          isActive: false,
+          belongsToWords: [],
+        }))
+      );
+      // Fill letters and mark active cells
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const ch = grid[r][c];
+          if (ch) {
+            out[r][c].letter = ch;
+            out[r][c].isActive = true;
+          }
+        }
+      }
+      // Belongs-to info
+      placements.forEach((p) => {
+        if (p.direction === "horizontal") {
+          for (let i = 0; i < p.word.length; i++) {
+            out[p.startRow][p.startCol + i].belongsToWords.push(p.word);
+          }
+        } else {
+          for (let i = 0; i < p.word.length; i++) {
+            out[p.startRow + i][p.startCol].belongsToWords.push(p.word);
+          }
+        }
+      });
+      return out;
+    },
+    []
+  );
+
+  // Initialize game using the crossword generator so every word gets boxes
   useEffect(() => {
-    const initGame = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         setLoading(true);
         setError("");
 
-        const { width } = Dimensions.get("window");
-        const gridWidth = width * 0.9;
-        const maxCellSize = 50;
-        const minCellSize = 25;
+        const level = levelData
+          ? {
+              baseWord: levelData.baseWord,
+              letters: levelData.letters,
+              crosswordWords: levelData.crosswordWords,
+              difficulty: levelData.difficulty,
+              wordCount: levelData.crosswordWords.length,
+            }
+          : generateCrosswordLevelWithBaseword(baseWord || "planet", {
+              difficulty,
+            });
 
-        let level;
-        if (levelData) {
-          level = {
-            baseWord: levelData.baseWord,
-            letters: levelData.letters,
-            crosswordWords: levelData.crosswordWords,
-            difficulty: levelData.difficulty,
-            wordCount: levelData.crosswordWords.length
-          };
-        } else {
-          level = generateCrosswordLevelWithBaseword(baseWord || "planet", { difficulty });
+        const wordsLower = level.crosswordWords.map((w) => w.toLowerCase());
+        const generated = generateCrossword(wordsLower);
+
+        if (!generated) {
+          // Fallback: minimal base word row
+          const base = level.baseWord.toUpperCase();
+          const grid: GridCell[][] = [
+            Array.from({ length: base.length }, (_, i) => ({
+              letter: base[i],
+              isRevealed: false,
+              isActive: true,
+              belongsToWords: [base],
+            })),
+          ];
+          if (!cancelled) {
+            setCellSize(45);
+            setGameGrid(grid);
+            setWordPlacements([
+              {
+                word: base,
+                startRow: 0,
+                startCol: 0,
+                direction: "horizontal",
+                isFound: false,
+              },
+            ]);
+            setCrosswordWords(level.crosswordWords);
+            const gameLetters = levelData?.letters || level.letters;
+            setLetters(gameLetters);
+            const bonusWords = generateBonusWords(
+              level.baseWord,
+              level.crosswordWords,
+              difficulty
+            );
+            setAllValidWords([...level.crosswordWords, ...bonusWords]);
+          }
+          return;
         }
 
-        // Create a compact grid that only shows the base word
-        const baseWordLength = level.baseWord.length;
-        
-        // Set a reasonable default cell size
-        const defaultCellSize = 45;
-        setCellSize(defaultCellSize);
+        const placements = extractWordPlacements(
+          generated,
+          level.crosswordWords
+        );
+        const grid = createGameGridFromGenerated(generated, placements);
 
-        // Create a minimal 1-row grid with just the base word
-        const grid = [
-          Array.from({ length: baseWordLength }, (_, i) => ({
-            letter: level.baseWord[i].toUpperCase(),
-            isRevealed: false,
-            isActive: false,
-            belongsToWords: [level.baseWord]
-          }))
-        ];
-        
-        setGameGrid(grid);
-        setWordPlacements([{
-          word: level.baseWord.toUpperCase(),
-          startRow: 0,
-          startCol: 0,
-          direction: "horizontal" as const,
-          isFound: false
-        }]);
-        setCrosswordWords(level.crosswordWords);
+        const numRows = grid.length;
+        const numCols = grid[0]?.length || 1;
+        const sizeByWidth = GRID_AREA_WIDTH / numCols;
+        const sizeByHeight = GRID_AREA_HEIGHT / numRows;
+        const newCell = Math.max(
+          24,
+          Math.min(56, Math.floor(Math.min(sizeByWidth, sizeByHeight) - 2))
+        );
 
-        const gameLetters = levelData?.letters || level.letters;
-        setLetters(gameLetters);
+        if (!cancelled) {
+          setCellSize(newCell);
+          setGameGrid(grid);
+          setWordPlacements(placements);
+          setCrosswordWords(level.crosswordWords);
 
-        const bonusWords = generateBonusWords(level.baseWord, level.crosswordWords, difficulty);
-        setAllValidWords([...level.crosswordWords, ...bonusWords]);
+          const gameLetters = levelData?.letters || level.letters;
+          setLetters(gameLetters);
 
-        console.log("Game initialized successfully");
+          const bonusWords = generateBonusWords(
+            level.baseWord,
+            level.crosswordWords,
+            difficulty
+          );
+          setAllValidWords([...level.crosswordWords, ...bonusWords]);
+        }
       } catch (err) {
         console.error("Game initialization error:", err);
-        setError(err instanceof Error ? err.message : "Failed to initialize game");
+        if (!cancelled)
+          setError(
+            err instanceof Error ? err.message : "Failed to initialize game"
+          );
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-
-    initGame();
-  }, [baseWord, difficulty, levelData]);
-
-  // Handle word submission
-  const handleWordSubmit = useCallback(async (word: string) => {
-    const upperWord = word.toUpperCase();
-    
-    if (foundCrosswordWords.includes(upperWord) || foundBonusWords.includes(upperWord)) {
-      return { success: false, type: 'duplicate' as const };
-    }
-
-    if (crosswordWords.map(w => w.toUpperCase()).includes(upperWord)) {
-      // Handle crossword word found
-      setFoundCrosswordWords(prev => [...prev, upperWord]);
-      
-      const placement = wordPlacements.find(p => p.word.toUpperCase() === upperWord);
-      if (placement && gameGrid) {
-        const newGrid = [...gameGrid];
-        
-        if (placement.direction === "horizontal") {
-          for (let i = 0; i < placement.word.length; i++) {
-            const col = placement.startCol + i;
-            if (newGrid[placement.startRow] && newGrid[placement.startRow][col]) {
-              newGrid[placement.startRow][col].isRevealed = true;
-            }
-          }
-        } else {
-          for (let i = 0; i < placement.word.length; i++) {
-            const row = placement.startRow + i;
-            if (newGrid[row] && newGrid[row][placement.startCol]) {
-              newGrid[row][placement.startCol].isRevealed = true;
-            }
-          }
-        }
-        
-        setGameGrid(newGrid);
-      }
-
-      const wordScore = diff.crosswordWordScore;
-      setScore(prev => prev + wordScore);
-      
-      // Animate score
-      Animated.sequence([
-        Animated.timing(scoreScaleAnim, {
-          toValue: 1.3,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scoreScaleAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Check for game completion
-      const newFoundWords = [...foundCrosswordWords, upperWord];
-      if (newFoundWords.length === crosswordWords.length) {
-        setGameComplete(true);
-        gameCompleteRef.current = true;
-        
-        // Save completion data
-        try {
-          if (levelData && categoryName) {
-            const completionData = {
-              level: levelData.level,
-              category: categoryName,
-              score: score + wordScore,
-              foundBonusWords: foundBonusWords.length,
-              completedAt: new Date().toISOString(),
-              attempts: 1,
-              hintsUsed: 1 - hintsLeft,
-            };
-            
-            await upsertLocalLevel(completionData);
-            await mutateLocalStats({
-              levelsCompleted: 1,
-              totalScore: score + wordScore,
-              wordsFound: newFoundWords.length + foundBonusWords.length,
-            });
-            await updateGuestSnapshotFromProgress();
-            await syncUser();
-          }
-        } catch (error) {
-          console.warn("Failed to save completion data:", error);
-        }
-      }
-
-      return { success: true, type: 'crossword' as const, score: wordScore };
-    } else if (allValidWords.map(w => w.toUpperCase()).includes(upperWord)) {
-      // Handle bonus word found
-      setFoundBonusWords(prev => [...prev, upperWord]);
-      
-      const wordScore = diff.bonusWordScore;
-      setScore(prev => prev + wordScore);
-      
-      // Animate score
-      Animated.sequence([
-        Animated.timing(scoreScaleAnim, {
-          toValue: 1.2,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scoreScaleAnim, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      return { success: true, type: 'bonus' as const, score: wordScore };
-    }
-
-    return { success: false, type: 'invalid' as const };
   }, [
-    foundCrosswordWords,
-    foundBonusWords,
-    crosswordWords,
-    allValidWords,
-    wordPlacements,
-    gameGrid,
-    diff,
-    score,
-    hintsLeft,
+    baseWord,
+    difficulty,
     levelData,
-    categoryName,
-    scoreScaleAnim,
+    GRID_AREA_HEIGHT,
+    GRID_AREA_WIDTH,
+    extractWordPlacements,
+    createGameGridFromGenerated,
   ]);
 
-  // Handle word hint
-  const handleWordHint = useCallback((hintedWord: string) => {
-    if (hintsLeft <= 0) return;
-    
-    setHintedWords(prev => [...prev, hintedWord]);
-    setHintsLeft(prev => prev - 1);
-  }, [hintsLeft]);
+  // Handle word submission
+  const handleWordSubmit = useCallback(
+    async (word: string) => {
+      const upperWord = word.toUpperCase();
 
-  // Handle next level
+      if (
+        foundCrosswordWords.includes(upperWord) ||
+        foundBonusWords.includes(upperWord)
+      ) {
+        return { success: false, type: "duplicate" as const };
+      }
+
+      if (crosswordWords.map((w) => w.toUpperCase()).includes(upperWord)) {
+        // Reveal cells for this crossword word
+        setFoundCrosswordWords((prev) => [...prev, upperWord]);
+
+        const placement = wordPlacements.find(
+          (p) => p.word.toUpperCase() === upperWord
+        );
+        if (placement && gameGrid) {
+          const newGrid = gameGrid.map((row) => row.map((c) => ({ ...c })));
+          if (placement.direction === "horizontal") {
+            for (let i = 0; i < placement.word.length; i++) {
+              const col = placement.startCol + i;
+              newGrid[placement.startRow]?.[col] &&
+                (newGrid[placement.startRow][col].isRevealed = true);
+            }
+          } else {
+            for (let i = 0; i < placement.word.length; i++) {
+              const row = placement.startRow + i;
+              newGrid[row]?.[placement.startCol] &&
+                (newGrid[row][placement.startCol].isRevealed = true);
+            }
+          }
+          setGameGrid(newGrid);
+        }
+
+        const wordScore = 10;
+        setScore((prev) => prev + wordScore);
+
+        try {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch {}
+        Animated.sequence([
+          Animated.timing(scoreScaleAnim, {
+            toValue: 1.3,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scoreScaleAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        // Check for completion
+        const newFound = [...foundCrosswordWords, upperWord];
+        if (newFound.length === crosswordWords.length) {
+          setGameComplete(true);
+          gameCompleteRef.current = true;
+          try {
+            await Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success
+            );
+          } catch {}
+        }
+
+        return { success: true, type: "crossword" as const, score: wordScore };
+      } else if (
+        allValidWords.map((w) => w.toUpperCase()).includes(upperWord)
+      ) {
+        setFoundBonusWords((prev) => [...prev, upperWord]);
+        const wordScore = 5;
+        setScore((prev) => prev + wordScore);
+        try {
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch {}
+        Animated.sequence([
+          Animated.timing(scoreScaleAnim, {
+            toValue: 1.2,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scoreScaleAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        return { success: true, type: "bonus" as const, score: wordScore };
+      }
+
+      return { success: false, type: "invalid" as const };
+    },
+    [
+      foundCrosswordWords,
+      foundBonusWords,
+      crosswordWords,
+      allValidWords,
+      wordPlacements,
+      gameGrid,
+      scoreScaleAnim,
+    ]
+  );
+
+  // Handle word hint - returns true if hint was applied (free or paid), false on failure
+  const handleWordHint = useCallback(
+    async (hintedWord: string): Promise<boolean> => {
+      // First hint is free per game instance
+      if (hintsLeft > 0) {
+        setHintedWords((prev) => [...prev, hintedWord]);
+        setHintsLeft((prev) => prev - 1);
+        return true;
+      }
+      // After free hint, charge 5 gems per hint
+      try {
+        const progress = await loadGuestProgress();
+        if (!progress) throw new Error("No progress loaded");
+        const cost = 5;
+        const gems = progress.meta.gems ?? 0;
+        if (gems < cost) {
+          showToast("Not enough gems for a hint (5 needed)", "warning");
+          return false;
+        }
+        progress.meta.gems = gems - cost;
+        progress.updatedAt = new Date().toISOString();
+        await saveGuestProgress(progress);
+        await updateGuestSnapshotFromProgress(progress);
+        setHintedWords((prev) => [...prev, hintedWord]);
+        showToast("Hint used (-5 gems)", "success");
+        return true;
+      } catch (e) {
+        console.warn("Failed to purchase hint:", e);
+        showToast("Failed to use hint", "error");
+        return false;
+      }
+    },
+    [hintsLeft]
+  );
+
   const handleNextLevel = useCallback(() => {
     if (levelData && categoryName && onNavigate) {
       onNavigate("levels");
@@ -317,14 +479,14 @@ export function useGameLogic({
     hintAnim,
     hintsLeft,
     hintedWords,
-    
+
     // Refs
     gameCompleteRef,
     gridCellRefs,
     letterWheelRef,
     containerRef,
     scoreScaleAnim,
-    
+
     // Actions
     handleWordSubmit,
     handleWordHint,

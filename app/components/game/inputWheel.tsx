@@ -6,7 +6,15 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Animated, Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Svg, { Path, Polygon } from "react-native-svg";
 interface LetterWheelProps {
   letters?: string[];
@@ -14,8 +22,9 @@ interface LetterWheelProps {
   onLetterSelect?: (letter: string, index: number) => void;
   validWords?: string[];
   foundWords?: string[]; // Words already found
-  onHint?: (word: string) => void; // Callback when hint is used
+  onHint?: (word: string) => Promise<boolean> | boolean; // returns true if hint applied, false if failed
   hintsLeft?: number;
+  canUsePaidHints?: boolean; // If true, allow pressing hint even when hintsLeft is 0 (paid hint flows)
 }
 
 interface LetterPosition {
@@ -34,12 +43,10 @@ interface AnimatedLetter {
 
 const { width, height } = Dimensions.get("window");
 
-
 // Responsive values based on screen height
 const isSmallScreen = height < 700;
 const isMediumScreen = height >= 700 && height < 900;
-const isLargeScreen = height >= 900;
-
+// const isLargeScreen = height >= 900; // not used
 
 const LetterWheel: React.FC<LetterWheelProps> = ({
   letters = [],
@@ -49,6 +56,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   foundWords = [],
   onHint,
   hintsLeft = 1,
+  canUsePaidHints = true,
 }) => {
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [selectedLetters, setSelectedLetters] = useState<string[]>([]);
@@ -95,7 +103,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     // Ensure it doesn't exceed screen dimensions, leave some margin
     const maxSize = Math.min(width * 0.9, height * 0.4);
     return Math.min(baseSize, maxSize);
-  }, [radius, hexagonSize, width, height]);
+  }, [radius, hexagonSize]);
 
   const wheelCenter = wheelSize / 2;
 
@@ -206,7 +214,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
   const shuffleLetters = useCallback((): void => {
     if (isShuffling) return;
-    
+
     setIsShuffling(true);
     resetSelection();
 
@@ -232,11 +240,14 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       const lettersToShuffle = [...letters];
       for (let i = lettersToShuffle.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [lettersToShuffle[i], lettersToShuffle[j]] = [lettersToShuffle[j], lettersToShuffle[i]];
+        [lettersToShuffle[i], lettersToShuffle[j]] = [
+          lettersToShuffle[j],
+          lettersToShuffle[i],
+        ];
       }
-      
+
       setShuffledLetters(lettersToShuffle);
-      
+
       // Update animated letters with new order
       const newAnimatedLetters = lettersToShuffle.map((letter, index) => ({
         letter,
@@ -247,7 +258,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       setAnimatedLetters(newAnimatedLetters);
 
       // Animate letters appearing with delay
-      const fadeInAnimations = newAnimatedLetters.map((animLetter, index) => 
+      const fadeInAnimations = newAnimatedLetters.map((animLetter, index) =>
         Animated.sequence([
           Animated.delay(index * 100), // Staggered delay
           Animated.parallel([
@@ -261,7 +272,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
               duration: 300,
               useNativeDriver: true,
             }),
-          ])
+          ]),
         ])
       );
 
@@ -271,20 +282,24 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     });
   }, [letters, animatedLetters, resetSelection, isShuffling]);
 
-  const handleHint = useCallback((): void => {
-    if (hintsLeft <= 0) {
-      setHintMessage('You have used all your hints for this game.');
+  const handleHint = useCallback(async (): Promise<void> => {
+    const noFreeHints = hintsLeft <= 0;
+    if (noFreeHints && !canUsePaidHints) {
+      setHintMessage("You have used all your hints for this game.");
       setHintModalVisible(true);
       return;
     }
 
     // Find valid words that haven't been found yet
-    const unFoundWords = validWords.filter(word => 
-      !foundWords.some(foundWord => foundWord.toLowerCase() === word.toLowerCase())
+    const unFoundWords = validWords.filter(
+      (word) =>
+        !foundWords.some(
+          (foundWord) => foundWord.toLowerCase() === word.toLowerCase()
+        )
     );
 
     if (unFoundWords.length === 0) {
-      setHintMessage('All words have been found!');
+      setHintMessage("All words have been found!");
       setHintModalVisible(true);
       return;
     }
@@ -292,14 +307,33 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     // Pick a random unfound word
     const randomIndex = Math.floor(Math.random() * unFoundWords.length);
     const hintWord = unFoundWords[randomIndex];
-    
-    onHint?.(hintWord);
+
+    if (!onHint) {
+      setHintMessage(`Try the word: ${hintWord.toUpperCase()}`);
+      setHintModalVisible(true);
+      return;
+    }
+
+    // Ask parent to apply the hint (may deduct gems). If succeeds, show the hint word in the modal.
+    try {
+      const ok = await onHint(hintWord);
+      if (ok === false) {
+        setHintMessage("Couldn't use a hint right now.");
+        setHintModalVisible(true);
+        return;
+      }
+    } catch {
+      setHintMessage("Couldn't use a hint right now.");
+      setHintModalVisible(true);
+      return;
+    }
+
     setHintMessage(`Try the word: ${hintWord.toUpperCase()}`);
     setHintModalVisible(true);
-  }, [hintsLeft, validWords, foundWords, onHint]);
+  }, [hintsLeft, validWords, foundWords, onHint, canUsePaidHints]);
 
-  const isValidWord =
-    currentWord.length > 2 && validWords.includes(currentWord.toLowerCase());
+  // const isValidWord =
+  //   currentWord.length > 2 && validWords.includes(currentWord.toLowerCase());
 
   if (letters.length === 0) {
     return (
@@ -310,204 +344,206 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   }
 
   return (
-      <View style={styles.container}>
-        {/* Current word display */}
-        <Text style={styles.currentWord}>{currentWord || "Tap letters to form words"}</Text>
-        
-        <View style={styles.rowWithShuffle}>
-          <TouchableOpacity
-            style={[
-              styles.centerButton, 
-              styles.shuffleButton, 
-              styles.leftShuffleButton,
-              isShuffling && styles.disabledCenterButton
-            ]}
-            onPress={shuffleLetters}
-            disabled={isShuffling}
-          >
-            <Shuffle size={isSmallScreen ? 20 : 24} color="#ffffff" />
-          </TouchableOpacity>
-          
-          <View
-            style={[
-              styles.wheelContainer,
-              { width: wheelSize, height: wheelSize, borderRadius: wheelCenter },
-            ]}
-          >
-            <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-              <Path
-                d={connectionPath}
-                stroke="#4CAF50"
-                strokeWidth={3}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity={0.6}
-              />
+    <View style={styles.container}>
+      {/* Current word display */}
+      <Text style={styles.currentWord}>
+        {currentWord || "Tap letters to form words"}
+      </Text>
 
-              {shuffledLetters.map((letter, index) => {
-                const angle =
-                  (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
-                const x = Math.cos(angle) * radius + wheelCenter;
-                const y = Math.sin(angle) * radius + wheelCenter;
-                const isSelected = selectedIndices.includes(index);
+      <View style={styles.rowWithShuffle}>
+        <TouchableOpacity
+          style={[
+            styles.centerButton,
+            styles.shuffleButton,
+            styles.leftShuffleButton,
+            isShuffling && styles.disabledCenterButton,
+          ]}
+          onPress={shuffleLetters}
+          disabled={isShuffling}
+        >
+          <Shuffle size={isSmallScreen ? 20 : 24} color="#ffffff" />
+        </TouchableOpacity>
 
-                // Only render hexagon if letter is selected
-                if (!isSelected) return null;
-
-                return (
-                  <Polygon
-                    key={`hexagon-${index}`}
-                    points={createHexagonPath(x, y, hexagonSize)}
-                    fill="#4CAF50"
-                    stroke="#43A047"
-                    strokeWidth={1.5}
-                    opacity={0.95}
-                  />
-                );
-              })}
-            </Svg>
+        <View
+          style={[
+            styles.wheelContainer,
+            { width: wheelSize, height: wheelSize, borderRadius: wheelCenter },
+          ]}
+        >
+          <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Path
+              d={connectionPath}
+              stroke="#4CAF50"
+              strokeWidth={3}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.6}
+            />
 
             {shuffledLetters.map((letter, index) => {
               const angle =
                 (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
-              const x = Math.cos(angle) * radius;
-              const y = Math.sin(angle) * radius;
+              const x = Math.cos(angle) * radius + wheelCenter;
+              const y = Math.sin(angle) * radius + wheelCenter;
               const isSelected = selectedIndices.includes(index);
-              const selectionOrder = selectedIndices.indexOf(index) + 1;
-              const animLetter = animatedLetters[index];
 
-              if (!animLetter) return null;
+              // Only render hexagon if letter is selected
+              if (!isSelected) return null;
 
               return (
-                <Animated.View
-                  key={`${letter}-${index}`}
-                  style={[
-                    styles.letterHexagon,
-                    {
-                      left: wheelCenter + x - hexagonSize,
-                      top: wheelCenter + y - hexagonSize,
-                      width: hexagonSize * 2,
-                      height: hexagonSize * 2,
-                      opacity: animLetter.opacity,
-                      transform: [{ scale: animLetter.scale }],
-                    },
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      justifyContent: 'center', 
-                      alignItems: 'center' 
-                    }}
-                    onPress={() => addLetter(letter, index)}
-                    activeOpacity={0.7}
-                    disabled={isShuffling}
-                  >
-                    <Text
-                      style={[
-                        styles.letterText,
-                        isSelected && styles.letterTextSelected,
-                      ]}
-                    >
-                      {letter.toUpperCase()}
-                    </Text>
-                    {isSelected && (
-                      <View style={styles.selectionNumber}>
-                        <Text style={styles.selectionNumberText}>
-                          {selectionOrder}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                </Animated.View>
+                <Polygon
+                  key={`hexagon-${index}`}
+                  points={createHexagonPath(x, y, hexagonSize)}
+                  fill="#4CAF50"
+                  stroke="#43A047"
+                  strokeWidth={1.5}
+                  opacity={0.95}
+                />
               );
             })}
-          </View>
-          
-          <TouchableOpacity
-            style={[
-              styles.centerButton,
-              styles.hintButton,
-              styles.rightHintButton,
-              hintsLeft <= 0 && styles.disabledCenterButton,
-            ]}
-            onPress={handleHint}
-            disabled={hintsLeft <= 0}
-          >
-            <Lightbulb size={isSmallScreen ? 20 : 24} color="#ffffff" />
-            <Text style={styles.hintCountText}>{hintsLeft}</Text>
-          </TouchableOpacity>
-        </View>
+          </Svg>
 
-        {/* Control Buttons outside the wheel */}
-        <View style={styles.centerControlsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.centerButton,
-              styles.removeButton,
-              selectedLetters.length === 0 && styles.disabledCenterButton,
-            ]}
-            onPress={removeLetter}
-            disabled={selectedLetters.length === 0}
-          >
-            <Eraser size={isSmallScreen ? 20 : 24} color="#ffffff" />
-          </TouchableOpacity>
+          {shuffledLetters.map((letter, index) => {
+            const angle =
+              (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            const isSelected = selectedIndices.includes(index);
+            const selectionOrder = selectedIndices.indexOf(index) + 1;
+            const animLetter = animatedLetters[index];
 
-          <TouchableOpacity
-            style={[
-              styles.centerButton,
-              styles.submitCenterButton,
-              currentWord.length < 2 && styles.disabledCenterButton,
-            ]}
-            onPress={submitWord}
-            disabled={currentWord.length < 2}
-          >
-            <Check size={isSmallScreen ? 20 : 24} color="#ffffff" />
-          </TouchableOpacity>
+            if (!animLetter) return null;
 
-          <TouchableOpacity
-            style={[
-              styles.centerButton,
-              styles.clearButton,
-              selectedLetters.length === 0 && styles.disabledCenterButton,
-            ]}
-            onPress={resetSelection}
-            disabled={selectedLetters.length === 0}
-          >
-            <X size={isSmallScreen ? 20 : 24} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Hint Modal */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={hintModalVisible}
-          onRequestClose={() => setHintModalVisible(false)}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setHintModalVisible(false)}
-          >
-            <View style={styles.modalContent}>
-              <View style={styles.hintCard}>
-                <Lightbulb size={28} color="#FFD700" style={styles.hintIcon} />
-                <Text style={styles.hintTitle}>HINT</Text>
-                <Text style={styles.hintText}>{hintMessage}</Text>
+            return (
+              <Animated.View
+                key={`${letter}-${index}`}
+                style={[
+                  styles.letterHexagon,
+                  {
+                    left: wheelCenter + x - hexagonSize,
+                    top: wheelCenter + y - hexagonSize,
+                    width: hexagonSize * 2,
+                    height: hexagonSize * 2,
+                    opacity: animLetter.opacity,
+                    transform: [{ scale: animLetter.scale }],
+                  },
+                ]}
+              >
                 <TouchableOpacity
-                  style={styles.hintCloseButton}
-                  onPress={() => setHintModalVisible(false)}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPress={() => addLetter(letter, index)}
+                  activeOpacity={0.7}
+                  disabled={isShuffling}
                 >
-                  <Text style={styles.hintCloseButtonText}>Got it!</Text>
+                  <Text
+                    style={[
+                      styles.letterText,
+                      isSelected && styles.letterTextSelected,
+                    ]}
+                  >
+                    {letter.toUpperCase()}
+                  </Text>
+                  {isSelected && (
+                    <View style={styles.selectionNumber}>
+                      <Text style={styles.selectionNumberText}>
+                        {selectionOrder}
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Modal>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.centerButton,
+            styles.hintButton,
+            styles.rightHintButton,
+            hintsLeft <= 0 && !canUsePaidHints && styles.disabledCenterButton,
+          ]}
+          onPress={handleHint}
+          disabled={hintsLeft <= 0 && !canUsePaidHints}
+        >
+          <Lightbulb size={isSmallScreen ? 20 : 24} color="#ffffff" />
+          <Text style={styles.hintCountText}>{hintsLeft}</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Control Buttons outside the wheel */}
+      <View style={styles.centerControlsContainer}>
+        <TouchableOpacity
+          style={[
+            styles.centerButton,
+            styles.removeButton,
+            selectedLetters.length === 0 && styles.disabledCenterButton,
+          ]}
+          onPress={removeLetter}
+          disabled={selectedLetters.length === 0}
+        >
+          <Eraser size={isSmallScreen ? 20 : 24} color="#ffffff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.centerButton,
+            styles.submitCenterButton,
+            currentWord.length < 2 && styles.disabledCenterButton,
+          ]}
+          onPress={submitWord}
+          disabled={currentWord.length < 2}
+        >
+          <Check size={isSmallScreen ? 20 : 24} color="#ffffff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.centerButton,
+            styles.clearButton,
+            selectedLetters.length === 0 && styles.disabledCenterButton,
+          ]}
+          onPress={resetSelection}
+          disabled={selectedLetters.length === 0}
+        >
+          <X size={isSmallScreen ? 20 : 24} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Hint Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={hintModalVisible}
+        onRequestClose={() => setHintModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setHintModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.hintCard}>
+              <Lightbulb size={28} color="#FFD700" style={styles.hintIcon} />
+              <Text style={styles.hintTitle}>HINT</Text>
+              <Text style={styles.hintText}>{hintMessage}</Text>
+              <TouchableOpacity
+                style={styles.hintCloseButton}
+                onPress={() => setHintModalVisible(false)}
+              >
+                <Text style={styles.hintCloseButtonText}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
   );
 };
 
@@ -523,7 +559,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    width: '100%',
+    width: "100%",
     marginBottom: isSmallScreen ? 4 : 8,
   },
   leftShuffleButton: {
@@ -533,16 +569,16 @@ const styles = StyleSheet.create({
     marginLeft: isSmallScreen ? 8 : 16,
   },
   hintButton: {
-  backgroundColor: '#F59E0B', // solid gold
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F59E0B", // solid gold
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: isSmallScreen ? 4 : 6,
     minWidth: isSmallScreen ? 50 : 60,
   },
   hintCountText: {
-    color: '#fffbe6',
-    fontWeight: 'bold',
+    color: "#fffbe6",
+    fontWeight: "bold",
     marginLeft: 4,
     fontSize: isSmallScreen ? 14 : 16,
   },
@@ -553,7 +589,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textTransform: "uppercase",
     marginBottom: isSmallScreen ? 20 : 30,
-    fontFamily: 'Helvetica',
+    fontFamily: "Helvetica",
   },
   wheelContainer: {
     position: "relative",
@@ -583,7 +619,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: isSmallScreen ? -10 : -12,
     right: isSmallScreen ? -6 : -8,
-  backgroundColor: "rgba(239,68,68,0.7)",
+    backgroundColor: "rgba(239,68,68,0.7)",
     borderRadius: isSmallScreen ? 10 : 12,
     width: isSmallScreen ? 20 : 24,
     height: isSmallScreen ? 20 : 24,
@@ -611,7 +647,7 @@ const styles = StyleSheet.create({
     borderRadius: isSmallScreen ? 20 : 24,
     justifyContent: "center",
     alignItems: "center",
-  backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFFFFF",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -621,19 +657,19 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.1)",
   },
   removeButton: {
-  backgroundColor: "#EF4444", // solid red
+    backgroundColor: "#EF4444", // solid red
   },
   shuffleButton: {
-  backgroundColor: "#F59E0B", // solid orange
+    backgroundColor: "#F59E0B", // solid orange
   },
   submitCenterButton: {
-  backgroundColor: "#10B981", // solid green
+    backgroundColor: "#10B981", // solid green
   },
   clearButton: {
-  backgroundColor: "#8B5CF6", // solid purple
+    backgroundColor: "#8B5CF6", // solid purple
   },
   disabledCenterButton: {
-  backgroundColor: "#D1D5DB", // solid gray
+    backgroundColor: "#D1D5DB", // solid gray
     opacity: 0.6,
   },
   centerButtonText: {
@@ -647,20 +683,20 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    width: '80%',
+    width: "80%",
     maxWidth: 300,
   },
   hintCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -674,26 +710,26 @@ const styles = StyleSheet.create({
   },
   hintTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#22C55E',
+    fontWeight: "bold",
+    color: "#22C55E",
     marginBottom: 12,
-    fontFamily: 'Helvetica',
+    fontFamily: "Helvetica",
   },
   hintText: {
     fontSize: 18,
-    color: '#374151',
-    textAlign: 'center',
+    color: "#374151",
+    textAlign: "center",
     marginBottom: 20,
     lineHeight: 24,
-    fontFamily: 'Helvetica',
+    fontFamily: "Helvetica",
   },
   hintCloseButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: "#22C55E",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 25,
     minWidth: 120,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -703,10 +739,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   hintCloseButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontFamily: 'Helvetica',
+    fontWeight: "bold",
+    textAlign: "center",
+    fontFamily: "Helvetica",
   },
 });

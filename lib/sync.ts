@@ -1,24 +1,23 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import {
   buildInitialProgress,
   derivePlayerLevel,
-  getUnlockedCategories,
   loadGuestProgress,
   saveGuestProgress,
 } from "@/hooks/guest-progress";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clampEnergy, getDefaultEnergy } from "./energy";
 import { supabase } from "./supabase";
 import type {
+  LevelConflict,
+  LevelProgressRow,
   LocalUserSnapshot,
   ProfileRow,
-  UserStatsRow,
-  LevelProgressRow,
-  SyncResult,
-  SyncOptions,
-  LevelConflict,
   SubscriptionTier,
+  SyncOptions,
+  SyncResult,
+  UserStatsRow,
 } from "./syncTypes";
 
 const LOCAL_USER_SNAPSHOT_KEY = "wordscapes_user_snapshot_v1";
@@ -89,18 +88,39 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
       typeof snapshot.stats?.gems === "number"
         ? snapshot.stats.gems
         : progress.meta.gems;
+    // Determine freshness: compare snapshot stats timestamp vs local guest progress
+    const localUpdatedAt = existing?.updatedAt
+      ? new Date(existing.updatedAt).getTime()
+      : 0;
+    const statsUpdatedAt = snapshot.stats?.updated_at
+      ? new Date(snapshot.stats.updated_at).getTime()
+      : 0;
+    const preferRemoteStats = statsUpdatedAt > localUpdatedAt;
 
     progress.meta.playerName = preferredName || progress.meta.playerName;
     progress.meta.avatar = snapshot.profile.avatar || progress.meta.avatar;
-    progress.meta.xp = remoteXp;
-    progress.meta.gems = remoteGems;
+    // Merge stats with freshness awareness:
+    // - If remote stats are newer, take remote values
+    // - If local is newer (or equal), keep local values (allows legitimate decreases like spending gems)
+    const localXp = existing?.meta.xp ?? 0;
+    const localGems = existing?.meta.gems ?? progress.meta.gems;
+    progress.meta.xp = preferRemoteStats ? remoteXp : localXp;
+    progress.meta.gems = preferRemoteStats ? remoteGems : localGems;
     const remoteEnergyValue =
       typeof snapshot.stats?.energy === "number"
         ? snapshot.stats.energy
-        : existing?.meta.energy ?? progress.meta.energy ?? getDefaultEnergy();
-    progress.meta.energy = clampEnergy(remoteEnergyValue);
+        : undefined;
+    const localEnergyValue =
+      typeof existing?.meta.energy === "number"
+        ? existing.meta.energy
+        : progress.meta.energy ?? getDefaultEnergy();
+    progress.meta.energy = clampEnergy(
+      preferRemoteStats && typeof remoteEnergyValue === "number"
+        ? remoteEnergyValue
+        : localEnergyValue
+    );
 
-    const derived = derivePlayerLevel(remoteXp);
+    const derived = derivePlayerLevel(progress.meta.xp);
     progress.meta.playerLevel = derived.level;
 
     const updatedAt =
@@ -110,18 +130,10 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
       new Date().toISOString();
     progress.updatedAt = updatedAt;
 
-    // Unlock categories based on derived player level
-    const unlockedCategories = new Set(
-      getUnlockedCategories(progress.meta.playerLevel)
-    );
-    Object.entries(progress.categories).forEach(([category, levels]) => {
-      const categoryUnlocked = unlockedCategories.has(category);
+    // Baseline unlock: only first 3 levels per category; further unlocks applied from remote level rows below
+    Object.values(progress.categories).forEach((levels) => {
       levels.forEach((lvl, idx) => {
-        if (categoryUnlocked) {
-          lvl.isUnlocked = true;
-        } else if (idx < 3) {
-          lvl.isUnlocked = true;
-        }
+        lvl.isUnlocked = idx < 3;
       });
     });
 
@@ -135,17 +147,17 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
     });
 
     levelsByTheme.forEach((rows, theme) => {
-      const category = progress.categories[theme];
-      if (!category) return;
+      const categoryLevels = progress.categories[theme];
+      if (!categoryLevels) return;
       // Sort incoming rows for predictable unlock logic
       const sorted = [...rows].sort((a, b) => a.level - b.level);
       let maxCompletedLevel = 0;
       sorted.forEach((remoteLevel) => {
-        const idx = category.findIndex(
+        const idx = categoryLevels.findIndex(
           (lvl) => lvl.level === remoteLevel.level
         );
         if (idx === -1) return;
-        const entry = category[idx];
+        const entry = categoryLevels[idx];
         entry.isUnlocked = true;
         if (remoteLevel.completed) {
           entry.isCompleted = true;
@@ -163,7 +175,7 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
         }
       });
       if (maxCompletedLevel > 0) {
-        category.forEach((lvl) => {
+        categoryLevels.forEach((lvl) => {
           if (lvl.level <= maxCompletedLevel + 1) {
             lvl.isUnlocked = true;
           }
