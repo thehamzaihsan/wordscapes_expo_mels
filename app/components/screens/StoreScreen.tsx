@@ -93,6 +93,7 @@ export default function CombinedStoreScreen({
       features: [
         "5000 Weekly Gems",
         "No Ads",
+        "Unlimited Energy",
         "Exclusive Levels"
       ],
       popular: false,
@@ -110,7 +111,9 @@ export default function CombinedStoreScreen({
       features: [
         "Unlimited Gems",
         "No Ads",
+        "Unlimited Energy",
         "Exclusive Levels",
+        "Priority Support"
       ],
       popular: true,
       badge: "BEST VALUE",
@@ -215,6 +218,7 @@ export default function CombinedStoreScreen({
               <Text style={styles.gemAmount}>
                 {offer.gems.toLocaleString()}
               </Text>
+              <Text style={styles.gemLabel}>Gems</Text>
             </View>
           </View>
 
@@ -359,9 +363,9 @@ export default function CombinedStoreScreen({
               </View>
               <View style={styles.currencyBadge}>
                 <View style={[styles.currencyIcon]}>
-                  <Text style={styles.currencyEmoji}>🟡</Text>
+                  <Text style={styles.currencyEmoji}>⚡</Text>
                 </View>
-                <Text style={styles.currencyText}>750</Text>
+                <Text style={styles.currencyText}>75/100</Text>
               </View>
             </View>
           </View>
@@ -494,6 +498,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  currencyLabel: {
+    color: "#9ca3af",
+    fontSize: 12,
+    fontWeight: "500",
   },
   titleContainer: {
     alignItems: "center",
@@ -640,6 +649,11 @@ const styles = StyleSheet.create({
     color: "#10b981",
     fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
     fontWeight: "bold",
+  },
+  gemLabel: {
+    color: "#9ca3af",
+    fontSize: isSmallScreen ? 12 : 14,
+    fontWeight: "500",
   },
   offerName: {
     color: "#fff",

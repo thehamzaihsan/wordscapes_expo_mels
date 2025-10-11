@@ -194,13 +194,14 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
         </TouchableOpacity>
         
         <View style={styles.headerContent}>
-          <Text style={styles.title}>⚡ XP SHOP</Text>
+          <Text style={styles.title}>⭐ XP SHOP</Text>
           <Text style={styles.subtitle}>Boost Your Progress</Text>
           
           {/* Current Gems */}
           <View style={styles.gemsDisplay}>
             <Text style={styles.gemsIcon}>💎</Text>
             <Text style={styles.gemsText}>{progress?.meta.gems || 0}</Text>
+            <Text style={styles.gemsLabel}>Gems</Text>
           </View>
         </View>
       </BlurView>
@@ -295,6 +296,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                 <View style={styles.packageCost}>
                   <Text style={styles.packageGems}>{pkg.gems}</Text>
                   <Text style={styles.packageGemsIcon}>💎</Text>
+                  <Text style={styles.packageGemsLabel}>Gems</Text>
                 </View>
                 
                 <View style={[
@@ -398,6 +400,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  gemsLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
@@ -567,6 +574,11 @@ const styles = StyleSheet.create({
   },
   packageGemsIcon: {
     fontSize: 16,
+  },
+  packageGemsLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontWeight: "500",
   },
   purchaseButton: {
     backgroundColor: "#8B5CF6",

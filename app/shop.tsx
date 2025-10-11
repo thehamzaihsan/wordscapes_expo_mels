@@ -1,13 +1,26 @@
-import React from "react";
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback } from "react";
+import { BackHandler, Platform } from "react-native";
 import LoadingScreen from "./components/common/LoadingScreen";
-import { useCallback } from 'react';
-import { BackHandler, Platform } from 'react-native';
-import StoreScreen from './components/screens/StoreScreen'
+import StoreScreen from "./components/screens/StoreScreen";
 
 export default function ShopRoute() {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  const { session, loading } = useSupabaseAuth();
+
+  // Redirect to levels only when this route is focused, to avoid stealing
+  // control during flows like password recovery on other screens.
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading && !session) {
+        router.replace("/login");
+      }
+      console.log(session);
+      return undefined;
+    }, [loading, session, router])
+  );
 
   // Handle Android back button
   useFocusEffect(
@@ -17,8 +30,11 @@ export default function ShopRoute() {
         return true; // Prevent default behavior
       };
 
-      if (Platform.OS === 'android') {
-        const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      if (Platform.OS === "android") {
+        const subscription = BackHandler.addEventListener(
+          "hardwareBackPress",
+          onBackPress
+        );
         return () => subscription.remove();
       }
     }, [router])
@@ -27,7 +43,7 @@ export default function ShopRoute() {
   const handleNavigate = (screen: string) => {
     setIsLoading(true);
     setTimeout(() => {
-      if (screen === 'levels') {
+      if (screen === "levels") {
         router.back();
       }
       setTimeout(() => setIsLoading(false), 100);

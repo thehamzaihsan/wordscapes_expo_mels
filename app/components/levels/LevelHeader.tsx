@@ -45,7 +45,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
             onPress={onShopPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.resourceIcon}>🟡</Text>
+            <Text style={styles.resourceIcon}>⚡</Text>
             <Text
               style={[
                 styles.resourceText,
