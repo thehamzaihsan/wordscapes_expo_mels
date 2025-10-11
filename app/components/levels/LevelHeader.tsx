@@ -117,7 +117,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
                 <ThemedButton
                   title="⚡ Buy XP"
                   variant="outline"
-                  size="xs"
+                  size="sm"
                   onPress={() => onNavigate('xpshop')}
                   style={[styles.buyXpButton, { borderColor: theme.colors.primary }]}
                 />

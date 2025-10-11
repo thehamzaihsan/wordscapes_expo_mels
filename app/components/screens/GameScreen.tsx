@@ -8,11 +8,11 @@ import {
   generateLevelFromJSON,
   initializeGameManager,
 } from "@/hooks/game-manager";
-import { 
-  loadGuestProgress, 
-  useHint, 
+import {
+  loadGuestProgress,
   purchaseHints,
-  type GuestProgressPayload 
+  useHint,
+  type GuestProgressPayload
 } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { mutateLocalStats, syncUser, upsertLocalLevel } from "@/lib/sync";
