@@ -20,8 +20,9 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ showTitle = true }) => {
 
   const themes = [
     { name: 'light', label: '☀️ Light', description: 'Clean and bright' },
-    { name: 'dark', label: '🌙 Dark', description: 'Easy on the eyes' },
-    { name: 'game', label: '🎮 Game', description: 'Immersive gaming' },
+    // Hide dark and game themes for now
+    // { name: 'dark', label: '🌙 Dark', description: 'Easy on the eyes' },
+    // { name: 'game', label: '🎮 Game', description: 'Immersive gaming' },
   ] as const;
 
   return (

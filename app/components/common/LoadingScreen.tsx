@@ -8,7 +8,7 @@ const LoadingScreen: React.FC = () => {
   
   return (
     <View style={styles.container}>
-      <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
+      <BackgroundImage  />
       <ThemedText variant='heading3'>Loading</ThemedText>
       <View style={styles.progressContainer}>
         <ActivityIndicator 
@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 24,
+    color: '#fff' !,
   },
   progressContainer: {
     width: 220,

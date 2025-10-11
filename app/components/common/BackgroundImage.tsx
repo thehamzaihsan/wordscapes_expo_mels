@@ -6,86 +6,118 @@
 import { useTheme } from '@/hooks/useTheme';
 import { Image } from 'expo-image';
 import React from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
-const { width, height } = Dimensions.get('screen');
+import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// Use a static import so it works reliably on native and web
+import bgImage from '../../../images/default_background.jpg';
 
 interface BackgroundImageProps {
   blurRadius?: number;
   overlayOpacity?: number;
 }
 
-const BackgroundImage: React.FC<BackgroundImageProps> = ({ 
+const BackgroundImage: React.FC<BackgroundImageProps> = ({
   blurRadius = 0,
-  overlayOpacity 
+  overlayOpacity,
 }) => {
   const { theme } = useTheme();
-  
-  // Dynamic opacity based on theme for better text readability
+  const insets = useSafeAreaInsets();
+
+  // Extend the background to cover behind safe-area paddings
+  const containerInsetStyle = {
+    top: -insets.top,
+    bottom: -insets.bottom,
+    left: -insets.left,
+    right: -insets.right,
+  } as const;
+
   const getOverlayOpacity = () => {
     if (overlayOpacity !== undefined) return overlayOpacity;
-    
     switch (theme.name) {
       case 'light':
-        return 0.1; // Reduced overlay for light theme (was 0.85)
+        return 0.1;
       case 'dark':
-        return 0.25;  // Reduced overlay for dark theme (was 0.7)
+        return 0.25;
       case 'game':
-        return 0.15;  // Minimal overlay for game theme (was 0.6)
+        return 0.15;
       default:
-        return 0.75;   // Reduced default overlay (was 0.75)
+        return 0.75;
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Background Image with Blur */}
-      <Image
-        source={require("../../../images/default_background.jpg")}
-        style={styles.backgroundImage}
-        contentFit="cover"
-        blurRadius={blurRadius}
-        priority="high"
-        cachePolicy="memory-disk"
-      />
+    <View
+      pointerEvents="none"
+      style={[styles.container, containerInsetStyle]}
+    >
+     
+        {/* <View>
+          <Text>hello</Text>
+          <Image
+            source={bgImage}
+            style={styles.backgroundImage}
+            // resizeMode="cover"
+            // imageStyle={
+            //   blurRadius > 0
+            //     ? {
+            //         filter: `blur(${blurRadius}px)`,
+            //         WebkitFilter: `blur(${blurRadius}px)`,
+            //       } as any
+            //     : undefined
+            // }
+          />
+        </View> */}
+        <Image
+          source={bgImage}
+          style={styles.backgroundImage}
+          contentFit="cover"
+          blurRadius={blurRadius}
+          priority="high"
+          cachePolicy="memory-disk"
+          transition={200}
+        />
       
+
       {/* Theme-aware overlay for text readability */}
-      <View 
+      <View
+        pointerEvents="none"
         style={[
           styles.overlay,
-          { 
+          {
             backgroundColor: theme.colors.background,
-            opacity: getOverlayOpacity()
-          }
-        ]} 
+            opacity: getOverlayOpacity(),
+          },
+        ]}
       />
+
+      {/* Fallback background for web if image fails to load */}
+      {Platform.OS === 'web' && (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.fallbackBackground,
+            { backgroundColor: theme.colors.surfaceSecondary },
+          ]}
+        />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
+    ...StyleSheet.absoluteFillObject, // fill parent
     zIndex: 0,
   },
   backgroundImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    zIndex: 1,
+    ...StyleSheet.absoluteFillObject,
   },
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
-    zIndex: 2,
+    ...StyleSheet.absoluteFillObject,
+  },
+  fallbackBackground: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1, // keep behind the image
   },
 });
 

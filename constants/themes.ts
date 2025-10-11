@@ -253,9 +253,9 @@ export const LightTheme = {
     textInverse: '#ffffff',
     
     // Border colors
-    border: BaseColors.gray[300],
-    borderSecondary: BaseColors.gray[200],
-    borderTertiary: BaseColors.gray[100],
+    border: BaseColors.gray[400],
+    borderSecondary: BaseColors.gray[300],
+    borderTertiary: BaseColors.gray[200],
     
     // Game specific
     gameBackground: BaseColors.purple[50],
@@ -273,10 +273,10 @@ export const LightTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.2)',
     
     // Glassmorphism colors (theme-aware) - Fixed for light mode visibility
-    glassmorphismBackground: 'rgba(222, 222, 222, 0.72)',
-    glassmorphismBorder: 'rgba(213, 213, 213, 0.85)',
-    glassmorphismBackgroundStrong: 'rgba(206, 206, 206, 0.82)',
-    glassmorphismBorderStrong: 'rgba(207, 207, 207, 0.53)',
+    glassmorphismBackground: 'rgba(255, 255, 255, 0.64)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 1)',
+    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.73)',
+    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.77)',
     
     // Status bar
     statusBar: BaseColors.gray[900],
@@ -343,9 +343,9 @@ export const DarkTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.3)',
     
     // Glassmorphism colors (theme-aware)
-    glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
+    glassmorphismBackground: 'rgba(0, 0, 0, 0.97)',
     glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
-    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBackgroundStrong: 'rgba(0, 0, 0, 1)',
     glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
     
     // Status bar
@@ -416,7 +416,7 @@ export const GameTheme = {
     // Glassmorphism colors (theme-aware)
     glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
     glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
-    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBackgroundStrong: 'rgba(49, 53, 70, 0.6)',
     glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
     
     // Status bar

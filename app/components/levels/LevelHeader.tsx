@@ -1,6 +1,10 @@
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { ChevronLeft } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 
 interface LevelHeaderProps {
   displayName: string;
@@ -19,60 +23,73 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
   onProfilePress,
   onNavigate,
 }) => {
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { derivePlayerLevel } = require('@/hooks/guest-progress');
   
   return (
-    <View style={styles.header}>
+    <ThemedCard variant="glassStrong" padding="lg" style={styles.header}>
       {/* Top Row: Back Button on left, Resources and Avatar on right */}
       <View style={styles.headerTop}>
-        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-          <ChevronLeft size={20} color="white" />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+        <ThemedButton
+          title="Back"
+          variant="glass"
+          size="sm"
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
+          onPress={onBackPress}
+          style={styles.backButton}
+        />
         
         <View style={styles.resourcesContainer}>
           <TouchableOpacity
-            style={styles.resourceItem}
+            style={[styles.resourceItem, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}
             onPress={onShopPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.resourceIcon}>💎</Text>
-            <Text style={styles.resourceText}>{guestMeta?.gems ?? 0}</Text>
+            <ThemedText style={styles.resourceIcon}>💎</ThemedText>
+            <ThemedText variant="body2" weight="semibold" style={styles.resourceText}>
+              {guestMeta?.gems ?? 0}
+            </ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.resourceItem}
+            style={[styles.resourceItem, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}
             onPress={onShopPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.resourceIcon}>⚡</Text>
-            <Text
+            <ThemedText style={styles.resourceIcon}>⚡</ThemedText>
+            <ThemedText 
+              variant="body2" 
+              weight="semibold" 
               style={[
                 styles.resourceText,
                 {
-                  color:
-                    (guestMeta?.energy ?? 0) > 50 ? "#10B981" : "#EF4444",
+                  color: (guestMeta?.energy ?? 0) > 50 ? theme.colors.success : theme.colors.error,
                 },
               ]}
             >
               {guestMeta?.energy ?? 0}/100
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={onProfilePress}
-            style={styles.avatarButton}
+            style={[styles.avatarButton, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.primary }]}
             activeOpacity={0.7}
           >
-            <Text style={styles.avatarIcon}>{guestMeta?.avatar || "🧩"}</Text>
+            <ThemedText style={styles.avatarIcon}>{guestMeta?.avatar || "🧩"}</ThemedText>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Player Info */}
       <View style={styles.playerInfo}>
-        <Text style={styles.playerName}>{displayName}</Text>
-        <Text style={styles.levelText}>Level {guestMeta?.playerLevel ?? 0}</Text>
+        <ThemedText variant="heading3" weight="bold" style={styles.playerName}>
+          {displayName}
+        </ThemedText>
+        <ThemedText variant="body1" weight="semibold" color="primary" style={styles.levelText}>
+          Level {guestMeta?.playerLevel ?? 0}
+        </ThemedText>
         
         {/* XP Progress Bar */}
         {(() => {
@@ -94,177 +111,139 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
           return (
             <>
               <View style={styles.xpLabelContainer}>
-                <Text style={styles.xpLabel}>
+                <ThemedText variant="caption" color="textSecondary" style={styles.xpLabel}>
                   {within}/{needed} XP (Total {xp})
-                </Text>
-                <TouchableOpacity 
-                  style={styles.buyXpButton}
+                </ThemedText>
+                <ThemedButton
+                  title="⚡ Buy XP"
+                  variant="outline"
+                  size="xs"
                   onPress={() => onNavigate('xpshop')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.buyXpText}>⚡ Buy XP</Text>
-                </TouchableOpacity>
+                  style={[styles.buyXpButton, { borderColor: theme.colors.primary }]}
+                />
               </View>
               {nextCategory && nextCategoryRemaining > 0 && (
-                <Text style={styles.nextUnlockText}>
+                <ThemedText variant="caption" color="primary" weight="semibold" style={styles.nextUnlockText}>
                   {nextCategoryRemaining} XP to unlock {nextCategory}
-                </Text>
+                </ThemedText>
               )}
               <View style={styles.xpBarContainer}>
-                <View style={styles.xpBarBackground}>
-                  <View style={[styles.xpBar, { width: `${pct}%` }]} />
+                <View style={[styles.xpBarBackground, { backgroundColor: theme.colors.border }]}>
+                  <View style={[styles.xpBar, { backgroundColor: theme.colors.primary, width: `${pct}%` }]} />
                 </View>
               </View>
             </>
           );
         })()}
       </View>
-    </View>
+    </ThemedCard>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   header: {
-    backgroundColor: "rgba(31,41,55,0.85)",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: "#374151",
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+    borderRadius:0,
   },
   headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.md,
   },
   backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    paddingEnd: 16,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+    alignSelf: 'flex-start' as const,
   },
   resourcesContainer: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
+    flexDirection: 'row' as const,
+    gap: theme.spacing.sm,
+    alignItems: 'center' as const,
   },
   resourceItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.lg,
     gap: 4,
+    borderWidth: 1,
   },
   resourceIcon: {
     fontSize: 16,
   },
   resourceText: {
-    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "600",
   },
   avatarButton: {
     width: 40,
     height: 40,
-    borderRadius: 16,
-    backgroundColor: "#374151",
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: theme.borderRadius.lg,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     borderWidth: 2,
-    borderColor: "#8B5CF6",
   },
   avatarIcon: {
     fontSize: 20,
   },
   playerInfo: {
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
+    alignItems: 'center' as const,
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
   },
   playerName: {
-    color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: "bold",
   },
   levelText: {
-    color: "#8B5CF6",
     fontSize: 16,
-    fontWeight: "600",
   },
   xpLabelContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 2,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.xs,
+    width: '100%',
   },
   xpLabel: {
-    color: "#9CA3AF",
     fontSize: 12,
-    textAlign: "left",
+    textAlign: 'left' as const,
     flex: 1,
   },
   buyXpButton: {
-    backgroundColor: "rgba(139,92,246,0.2)",
-    paddingHorizontal: 8,
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.sm,
     borderWidth: 1,
-    borderColor: "rgba(139,92,246,0.4)",
-  },
-  buyXpText: {
-    color: "#8B5CF6",
-    fontSize: 10,
-    fontWeight: "600",
   },
   nextUnlockText: {
-    color: "#8B5CF6",
     fontSize: 10,
-    textAlign: "center",
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  nextUnlockText: {
-    color: "#8B5CF6",
-    fontSize: 10,
-    textAlign: "center",
-    fontWeight: "600",
-    marginBottom: 4,
+    textAlign: 'center' as const,
+    marginBottom: theme.spacing.xs,
   },
   xpBarContainer: {
-    alignItems: "center",
-    width: "100%",
+    alignItems: 'center' as const,
+    width: '100%',
   },
   xpBarBackground: {
-    width: "85%",
+    width: '85%',
     height: 10,
-    backgroundColor: "rgba(55,65,81,0.85)",
     borderRadius: 6,
-    overflow: "hidden",
+    overflow: 'hidden' as const,
     borderWidth: 1,
-    borderColor: "rgba(75,85,99,0.3)",
   },
   xpBar: {
-    height: "100%",
-    backgroundColor: "rgba(139,92,246,0.8)",
+    height: '100%',
     borderRadius: 5,
-    shadowColor: "#8B5CF6",
+    shadowColor: theme.colors.primary,
     shadowOffset: {
       width: 0,
       height: 1,
     },
     shadowOpacity: 0.3,
     shadowRadius: 2,
+    elevation: 2,
   },
 });
 

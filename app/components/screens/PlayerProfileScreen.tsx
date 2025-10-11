@@ -8,20 +8,23 @@ import {
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { pullRemote, syncUser } from "@/lib/sync";
 import { showToast } from "@/lib/toast";
-import { BlurView } from "expo-blur";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Edit3, LogOut, Trash2, User } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
+  StatusBar,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedInput from "../ui/ThemedInput";
+import ThemedText from "../ui/ThemedText";
 
 interface PlayerProfileScreenProps {
   onNavigate: (screen: string) => void;
@@ -32,6 +35,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
   onNavigate,
   onLogout,
 }) => {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { user } = useSupabaseAuth();
   const [progress, setProgress] = useState<GuestProgressPayload | null>(null);
   const [nameDraft, setNameDraft] = useState("");
@@ -144,349 +150,369 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <BlurView intensity={50} tint="dark" style={styles.header}>
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => onNavigate("levels")}
-        >
-          <ChevronLeft size={20} color="white" />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>PLAYER PROFILE</Text>
-        <Text style={styles.subtitle}>Account & Progress Overview</Text>
-      </BlurView>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
         showsVerticalScrollIndicator={false}
       >
+        
+        {/* Back Button */}
+        <ThemedButton
+          title="Back"
+          variant="glass"
+          size="sm"
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
+          onPress={() => onNavigate("levels")}
+          style={styles.backButton}
+        />
+
+        {/* Header Card */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
+          <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+            PLAYER PROFILE
+          </ThemedText>
+          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+            Account & Progress Overview
+          </ThemedText>
+        </ThemedCard>
+
         {/* Identity Section */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Identity</Text>
-          <View style={styles.rowGap}>
-            <TextInput
-              style={styles.input}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            Identity
+          </ThemedText>
+          
+          <View style={styles.inputContainer}>
+            <ThemedInput
+              label="Display Name"
               value={nameDraft}
               onChangeText={setNameDraft}
               placeholder="Display Name"
-              placeholderTextColor="#6B7280"
+              variant="outlined"
+              leftIcon={<User size={20} color={theme.colors.textSecondary} />}
               maxLength={20}
-              returnKeyType="done"
-              blurOnSubmit
-              onSubmitEditing={handleSaveName}
+              style={styles.input}
             />
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleSaveName}
-              disabled={savingName}
-            >
-              <Text style={styles.primaryButtonText}>
-                {savingName ? "Saving..." : "Save Name"}
-              </Text>
-            </TouchableOpacity>
           </View>
-          {progress && (
-            <Text style={styles.muted}>
-              {progress.meta.avatar || "🧩"} Player Level:{" "}
-              {progress.meta.playerLevel} • Total XP: {progress.meta.xp}
-            </Text>
-          )}
-          {derived && (
-            <View style={styles.xpBarWrapper}>
-              <View style={styles.xpLabelRow}>
-                <Text style={styles.xpCaption}>
-                  {derived.levelXp}/{derived.nextLevelXp} XP to next level
-                </Text>
+
+          <ThemedButton
+            title={savingName ? "Saving..." : "Update Name"}
+            variant="primary"
+            size="md"
+            fullWidth
+            isLoading={savingName}
+            disabled={savingName || !nameDraft.trim()}
+            onPress={handleSaveName}
+            leftIcon={<Edit3 size={16} color={theme.colors.textInverse} />}
+            style={styles.updateButton}
+          />
+        </ThemedCard>
+
+        {/* Avatar Section */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            Avatar
+          </ThemedText>
+          
+          <View style={styles.avatarGrid}>
+            {avatars.map((icon, idx) => {
+              const isSelected = avatarDraft === icon;
+              return (
                 <TouchableOpacity
-                  style={styles.buyXpButton}
-                  onPress={() => onNavigate("xpshop")}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.buyXpText}>⚡ Buy XP</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.xpBarBackground}>
-                <View
+                  key={icon + idx}
                   style={[
-                    styles.xpBarFill,
-                    {
-                      width: `${
-                        (derived.levelXp / derived.nextLevelXp) * 100
-                      }%`,
-                    },
+                    styles.avatarItem,
+                    { borderColor: isSelected ? theme.colors.primary : theme.colors.border },
+                    { backgroundColor: isSelected ? `${theme.colors.primary}20` : theme.colors.surfaceSecondary }
                   ]}
+                  onPress={() => handleSelectAvatar(icon)}
+                >
+                  <ThemedText style={styles.avatarText}>{icon}</ThemedText>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {avatarDraft && avatarDraft !== progress?.meta.avatar && (
+            <ThemedButton
+              title={savingAvatar ? "Updating..." : "Update Avatar"}
+              variant="outline"
+              size="md"
+              fullWidth
+              isLoading={savingAvatar}
+              disabled={savingAvatar}
+              onPress={handleUpdateAvatar}
+              style={styles.updateButton}
+            />
+          )}
+        </ThemedCard>
+
+        {/* Progress Overview */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            Progress Overview
+          </ThemedText>
+          
+          {stats && (
+            <View style={styles.statsGrid}>
+              <View style={[styles.statBox, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+                <ThemedText variant="heading3" weight="bold" color="primary">
+                  {stats.completedLevels}
+                </ThemedText>
+                <ThemedText variant="caption" color="textSecondary">
+                  Completed
+                </ThemedText>
+              </View>
+              <View style={[styles.statBox, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+                <ThemedText variant="heading3" weight="bold" color="primary">
+                  {stats.completionPercent}%
+                </ThemedText>
+                <ThemedText variant="caption" color="textSecondary">
+                  Progress
+                </ThemedText>
+              </View>
+              <View style={[styles.statBox, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+                <ThemedText variant="heading3" weight="bold" color="primary">
+                  {stats.categories}
+                </ThemedText>
+                <ThemedText variant="caption" color="textSecondary">
+                  Categories
+                </ThemedText>
+              </View>
+            </View>
+          )}
+        </ThemedCard>
+
+        {/* Player Stats */}
+        {progress && derived && (
+          <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+            <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+              Player Stats
+            </ThemedText>
+            
+            <View style={styles.resourceRow}>
+              <View style={[styles.resourcePill, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+                <ThemedText style={styles.resourceEmoji}>💎</ThemedText>
+                <ThemedText variant="body2" weight="semibold">
+                  {progress.meta.gems}
+                </ThemedText>
+              </View>
+              <View style={[styles.resourcePill, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+                <ThemedText style={styles.resourceEmoji}>⚡</ThemedText>
+                <ThemedText variant="body2" weight="semibold">
+                  {progress.meta.energy}
+                </ThemedText>
+              </View>
+              <View style={[styles.resourcePill, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+                <ThemedText style={styles.resourceEmoji}>💡</ThemedText>
+                <ThemedText variant="body2" weight="semibold">
+                  {progress.meta.hints || 0}
+                </ThemedText>
+              </View>
+            </View>
+
+            {/* XP Progress Bar */}
+            <View style={styles.xpSection}>
+              <View style={styles.xpLabelRow}>
+                <ThemedText variant="body2" weight="semibold">
+                  Level {derived.level}
+                </ThemedText>
+                <ThemedText variant="caption" color="textSecondary">
+                  {derived.levelXp} / {derived.nextLevelXp} XP
+                </ThemedText>
+              </View>
+              <View style={[styles.xpBarBackground, { backgroundColor: theme.colors.border }]}>
+                <View 
+                  style={[
+                    styles.xpBarFill, 
+                    { 
+                      backgroundColor: theme.colors.primary,
+                      width: `${(derived.levelXp / derived.nextLevelXp) * 100}%`
+                    }
+                  ]} 
                 />
               </View>
             </View>
-          )}
-        </View>
-
-        {/* Stats Section */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Stats</Text>
-          {stats ? (
-            <View style={styles.statsGrid}>
-              <Stat
-                label="Levels"
-                value={`${stats.completedLevels}/${stats.totalLevels}`}
-              />
-              <Stat label="Completion" value={`${stats.completionPercent}%`} />
-              <Stat label="Attempts" value={`${stats.totalAttempts}`} />
-              <Stat label="Categories" value={`${stats.categories}`} />
-            </View>
-          ) : (
-            <Text style={styles.muted}>Loading stats...</Text>
-          )}
-        </View>
-
-        {/* Avatar Selection */}
-        {progress && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Avatar</Text>
-            <View style={styles.avatarGrid}>
-              {avatars.map((a) => {
-                const active = (avatarDraft ?? progress.meta.avatar) === a;
-                return (
-                  <TouchableOpacity
-                    key={a}
-                    style={[
-                      styles.avatarItem,
-                      active && styles.avatarItemActive,
-                    ]}
-                    onPress={() => handleSelectAvatar(a)}
-                  >
-                    <Text style={styles.avatarText}>{a}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {avatarDraft !== (progress.meta.avatar ?? null) && (
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={handleUpdateAvatar}
-                disabled={savingAvatar}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {savingAvatar ? "Updating..." : "Update Avatar"}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          </ThemedCard>
         )}
 
-        {/* Account Management */}
-        <View style={styles.card}>
-          <TouchableOpacity onPress={() => setShowAdvanced((v) => !v)}>
-            <Text style={styles.sectionTitle}>
-              {showAdvanced ? "Account ▲" : "Account ▼"}
-            </Text>
-          </TouchableOpacity>
+        {/* Advanced Section */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedButton
+            title={showAdvanced ? "Hide Advanced" : "Show Advanced"}
+            variant="ghost"
+            size="sm"
+            onPress={() => setShowAdvanced(!showAdvanced)}
+            style={styles.toggleButton}
+          />
+
           {showAdvanced && (
-            <View style={styles.rowGap}>
-              <TouchableOpacity
-                style={styles.dangerButton}
+            <View style={styles.advancedSection}>
+              <ThemedButton
+                title="Delete Local Data"
+                variant="outline"
+                size="md"
+                fullWidth
                 onPress={handleDeleteAccount}
-              >
-                <Text style={styles.dangerButtonText}>
-                  Delete Account (Local)
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.outlineButton}
-                onPress={() => showToast("Cloud sync coming soon", "info")}
-              >
-                <Text style={styles.outlineButtonText}>Sync (Future)</Text>
-              </TouchableOpacity>
+                leftIcon={<Trash2 size={16} color={theme.colors.error} />}
+                style={[styles.dangerButton, { borderColor: theme.colors.error }]}
+              />
             </View>
           )}
-        </View>
+        </ThemedCard>
 
-        {/* Logout */}
-        <View style={styles.footerSpace} />
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-          <Text style={styles.logoutButtonText}>Log Out</Text>
-        </TouchableOpacity>
+        {/* Logout Button */}
+        <ThemedButton
+          title="Sign Out"
+          variant="secondary"
+          size="lg"
+          fullWidth
+          onPress={onLogout}
+          leftIcon={<LogOut size={20} color={theme.colors.text} />}
+          style={styles.logoutButton}
+        />
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
   );
 };
 
-const Stat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <View style={styles.statBox}>
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </View>
-);
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#121213" },
-  header: {
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#27272a",
+const createStyles = (theme: any) => ({
+  container: {
+    flex: 1,
+    position: 'relative' as const,
+    backgroundColor: 'transparent',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-start' as const,
+  },
+  backButton: {
+    alignSelf: 'flex-start' as const,
+    marginBottom: theme.spacing.lg,
+  },
+  headerCard: {
+    marginBottom: theme.spacing.lg,
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  card: {
+    marginBottom: theme.spacing.lg,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   title: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    marginBottom: theme.spacing.xs,
   },
-  subtitle: { color: "#9CA3AF", fontSize: 12, marginTop: 4 },
-  scroll: { padding: 20, paddingBottom: 120, gap: 20 },
-  card: {
-    backgroundColor: "#1F2937",
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#374151",
-    gap: 12,
+  subtitle: {
+    lineHeight: 18,
   },
-  sectionTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  rowGap: { gap: 12 },
+  sectionTitle: {
+    marginBottom: theme.spacing.base,
+  },
+  inputContainer: {
+    marginBottom: theme.spacing.base,
+  },
   input: {
-    backgroundColor: "#374151",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: "#FFFFFF",
-    fontSize: 14,
+    borderRadius: theme.borderRadius.md,
   },
-  primaryButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
+  updateButton: {
+    marginTop: theme.spacing.sm,
   },
-  primaryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-  secondaryButton: {
-    backgroundColor: "#334155",
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 12,
-    alignItems: "center",
-  },
-  secondaryButtonText: { color: "#FBBF24", fontSize: 13, fontWeight: "600" },
-  dangerButton: {
-    backgroundColor: "#DC2626",
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  dangerButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  outlineButton: {
-    borderWidth: 1,
-    borderColor: "#8B5CF6",
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  outlineButtonText: { color: "#8B5CF6", fontSize: 13, fontWeight: "600" },
-  logoutButton: {
-    backgroundColor: "#475569",
-    paddingVertical: 14,
-    marginHorizontal: 20,
-    borderRadius: 14,
-    alignItems: "center",
-  },
-  logoutButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  muted: { color: "#9CA3AF", fontSize: 12 },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    rowGap: 16,
-    columnGap: 12,
-  },
-  statBox: {
-    width: "30%",
-    backgroundColor: "#111827",
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#1f2937",
-  },
-  statValue: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  statLabel: { color: "#9CA3AF", fontSize: 11, marginTop: 4 },
-  inlineStats: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  resourcePill: {
-    flexDirection: "row",
-    backgroundColor: "#111827",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "#1f2937",
-  },
-  resourceEmoji: { fontSize: 14 },
-  resourceText: { color: "#F1F5F9", fontSize: 13, fontWeight: "600" },
-  xpBarWrapper: { marginTop: 10, gap: 6 },
-  xpLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  buyXpButton: {
-    backgroundColor: "rgba(139,92,246,0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(139,92,246,0.4)",
-  },
-  buyXpText: {
-    color: "#8B5CF6",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  xpBarBackground: {
-    height: 8,
-    backgroundColor: "#374151",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  xpBarFill: { height: "100%", backgroundColor: "#8B5CF6" },
-  xpCaption: { color: "#9CA3AF", fontSize: 11 },
-  footerSpace: { height: 40 },
   avatarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.base,
   },
   avatarItem: {
     width: 56,
     height: 56,
-    borderRadius: 16,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     borderWidth: 2,
-    borderColor: "#1f2937",
   },
-  avatarItemActive: {
-    borderColor: "#8B5CF6",
-    backgroundColor: "#1e1b4b",
+  avatarText: { 
+    fontSize: 26 
   },
-  avatarText: { fontSize: 26 },
-  backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    alignSelf: "flex-start",
-    paddingEnd: 16,
-    marginBottom: 16,
+  statsGrid: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-around' as const,
+    gap: theme.spacing.sm,
   },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
+  statBox: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+  },
+  resourceRow: {
+    flexDirection: 'row' as const,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.base,
+    justifyContent: 'center' as const,
+  },
+  resourcePill: {
+    flexDirection: 'row' as const,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: 20,
+    alignItems: 'center' as const,
+    gap: 6,
+    borderWidth: 1,
+  },
+  resourceEmoji: { 
+    fontSize: 14 
+  },
+  xpSection: {
+    marginTop: theme.spacing.sm,
+  },
+  xpLabelRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.xs,
+  },
+  xpBarBackground: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden' as const,
+  },
+  xpBarFill: { 
+    height: '100%' 
+  },
+  toggleButton: {
+    alignSelf: 'center' as const,
+  },
+  advancedSection: {
+    marginTop: theme.spacing.base,
+  },
+  dangerButton: {
+    marginTop: theme.spacing.sm,
+  },
+  logoutButton: {
+    marginTop: theme.spacing.base,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
 });
 
