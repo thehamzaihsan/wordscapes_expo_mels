@@ -1,47 +1,20 @@
 import { useTheme } from '@/hooks/useTheme';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Bar as ProgressBar } from 'react-native-progress';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import ThemedText from '../ui/ThemedText';
+import BackgroundImage from './BackgroundImage';
 const LoadingScreen: React.FC = () => {
   const { theme } = useTheme();
-  const [progress, setProgress] = useState(0);
   
-  useEffect(() => {
-    let startTime = Date.now();
-    const duration = 1000; // 1 second
-
-    const updateProgress = () => {
-      const now = Date.now();
-      const timePassed = now - startTime;
-      const newProgress = Math.min(timePassed / duration, 1);
-      
-      if (newProgress < 1) {
-        setProgress(newProgress);
-        requestAnimationFrame(updateProgress);
-      } else {
-        setProgress(1);
-      }
-    };
-
-    requestAnimationFrame(updateProgress);
-
-    return () => {
-      startTime = 0;
-    };
-  }, []);
-
   return (
     <View style={styles.container}>
+      <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
       <ThemedText variant='heading3'>Loading</ThemedText>
       <View style={styles.progressContainer}>
-        <ProgressBar 
-          progress={progress}
-          width={200} 
-          color={'#ffffff'}
-          unfilledColor={theme.colors.background} 
-          borderWidth={0}
-          height={12}
+        <ActivityIndicator 
+          size="large" 
+          color={theme.colors.primary} 
+          style={{ marginTop: theme.spacing.md }}
         />
       </View>
     </View>
@@ -57,7 +30,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4cd0fcff',
+    backgroundColor: 'transparent',
     zIndex: 9999,
   },
   text: {
