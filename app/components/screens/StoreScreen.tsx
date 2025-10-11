@@ -1,6 +1,8 @@
+import { loadGuestProgress, type GuestProgressPayload } from "@/hooks/guest-progress";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -33,10 +35,41 @@ export default function CombinedStoreScreen({
   const [activeTab, setActiveTab] = useState<"shop" | "subscription">("shop");
   const [shopIndex, setShopIndex] = useState(0);
   const [subscriptionIndex, setSubscriptionIndex] = useState(0);
+  const [progress, setProgress] = useState<GuestProgressPayload | null>(null);
+  const [loading, setLoading] = useState(true);
   const shopScrollX = useRef(new Animated.Value(0)).current;
   const subscriptionScrollX = useRef(new Animated.Value(0)).current;
   const shopScrollViewRef = useRef<ScrollView>(null);
   const subscriptionScrollViewRef = useRef<ScrollView>(null);
+
+  // Load guest progress data on component mount and when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      
+      const loadProgressData = async () => {
+        setLoading(true);
+        try {
+          const gp = await loadGuestProgress();
+          if (isActive) {
+            setProgress(gp);
+          }
+        } catch (error) {
+          console.error("Failed to load progress:", error);
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
+        }
+      };
+
+      loadProgressData();
+      
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   const shopOffers = [
     {
@@ -359,13 +392,23 @@ export default function CombinedStoreScreen({
                 <View style={[styles.currencyIcon]}>
                   <Text style={styles.currencyEmoji}>💎</Text>
                 </View>
-                <Text style={styles.currencyText}>1245</Text>
+                <Text style={styles.currencyText}>
+                  {loading ? "..." : (progress?.meta.gems ?? 0)}
+                </Text>
               </View>
               <View style={styles.currencyBadge}>
                 <View style={[styles.currencyIcon]}>
                   <Text style={styles.currencyEmoji}>⚡</Text>
                 </View>
-                <Text style={styles.currencyText}>75/100</Text>
+                <Text style={[
+                  styles.currencyText,
+                  {
+                    color: loading ? "#fff" : 
+                           (progress?.meta.energy ?? 0) > 50 ? "#10B981" : "#EF4444"
+                  }
+                ]}>
+                  {loading ? "..." : `${progress?.meta.energy ?? 0}/100`}
+                </Text>
               </View>
             </View>
           </View>
