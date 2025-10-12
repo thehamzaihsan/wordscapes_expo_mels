@@ -1,8 +1,16 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import LottieView from "lottie-react-native";
-import { ChevronLeft } from "lucide-react-native";
-import { useEffect, useRef } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
 import {
@@ -58,6 +66,7 @@ export default function GameScreen({
     // actions
     handleWordSubmit,
     handleWordHint,
+    revealWordCells,
     // handleNextLevel,
   } = useGameLogic({
     difficulty,
@@ -66,6 +75,24 @@ export default function GameScreen({
     categoryName,
     onNavigate,
   });
+
+  // --- Sound toggle (persisted) ---
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const v = await AsyncStorage.getItem("@game_sound_enabled");
+        if (v != null) setSoundEnabled(JSON.parse(v));
+      } catch {}
+    })();
+  }, []);
+  const toggleSound = useCallback(async () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      await AsyncStorage.setItem("@game_sound_enabled", JSON.stringify(next));
+    } catch {}
+  }, [soundEnabled]);
 
   // Preload sounds
   const correctSoundRef = useRef<Audio.Sound | null>(null);
@@ -110,6 +137,127 @@ export default function GameScreen({
       completeSoundRef.current?.unloadAsync();
     };
   }, []);
+
+  // --- Flying letter animation setup ---
+  type AnimatingLetter = {
+    id: string;
+    letter: string;
+    position: Animated.ValueXY;
+  };
+  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>(
+    []
+  );
+  const gridCellRefs = useRef<Record<string, View | null>>({});
+  const letterWheelRef = useRef<View>(null);
+  const containerRef = useRef<View>(null);
+
+  const measure = (ref: View) =>
+    new Promise<{ px: number; py: number; width: number; height: number }>(
+      (resolve) => {
+        ref.measure((x, y, width, height, px, py) =>
+          resolve({ px, py, width, height })
+        );
+      }
+    );
+
+  const startFloatingAnimation = useCallback(
+    (word: string) =>
+      new Promise<void>(async (resolve) => {
+        if (!containerRef.current || !letterWheelRef.current) {
+          resolve();
+          return;
+        }
+        const containerBox = await measure(containerRef.current);
+        const wheelBox = await measure(letterWheelRef.current);
+        const startX = wheelBox.px + wheelBox.width / 2 - containerBox.px;
+        const startY = wheelBox.py + wheelBox.height / 2 - containerBox.py;
+
+        const upper = word.toUpperCase();
+        const targets: { r: number; c: number }[] = [];
+        if (gameGrid && gameGrid.length) {
+          const rows = gameGrid.length;
+          const cols = gameGrid[0].length;
+          // Horizontal scan first
+          outer: for (let r = 0; r < rows; r++) {
+            for (let c = 0; c <= cols - upper.length; c++) {
+              let ok = true;
+              for (let i = 0; i < upper.length; i++) {
+                const cell = gameGrid[r][c + i];
+                if (!cell?.isActive || cell.letter !== upper[i]) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (ok) {
+                for (let i = 0; i < upper.length; i++)
+                  targets.push({ r, c: c + i });
+                break outer;
+              }
+            }
+          }
+          // If not found horizontally, try vertical
+          if (targets.length === 0) {
+            outer2: for (let r = 0; r <= rows - upper.length; r++) {
+              for (let c = 0; c < cols; c++) {
+                let ok = true;
+                for (let i = 0; i < upper.length; i++) {
+                  const cell = gameGrid[r + i][c];
+                  if (!cell?.isActive || cell.letter !== upper[i]) {
+                    ok = false;
+                    break;
+                  }
+                }
+                if (ok) {
+                  for (let i = 0; i < upper.length; i++)
+                    targets.push({ r: r + i, c });
+                  break outer2;
+                }
+              }
+            }
+          }
+        }
+
+        if (targets.length === 0) {
+          resolve();
+          return;
+        }
+
+        const letters: AnimatingLetter[] = [];
+        const animations: Animated.CompositeAnimation[] = [];
+        for (let i = 0; i < upper.length; i++) {
+          const t = targets[i];
+          const key = `${t.r}-${t.c}`;
+          const cellRef = gridCellRefs.current[key];
+          if (!cellRef) continue;
+          const cellBox = await measure(cellRef);
+          const endX = cellBox.px - containerBox.px;
+          const endY = cellBox.py - containerBox.py;
+          const item: AnimatingLetter = {
+            id: `${upper}-${i}`,
+            letter: upper[i],
+            position: new Animated.ValueXY({ x: startX, y: startY }),
+          };
+          letters.push(item);
+          animations.push(
+            Animated.timing(item.position, {
+              toValue: { x: endX, y: endY },
+              duration: 550,
+              useNativeDriver: false,
+            })
+          );
+        }
+        if (!letters.length) {
+          resolve();
+          return;
+        }
+        setAnimatingLetters(letters);
+        Animated.stagger(90, animations).start(() => {
+          setAnimatingLetters([]);
+          resolve();
+        });
+      }),
+    [gameGrid]
+  );
 
   // Persist completion exactly once per level clear
   const persistedRef = useRef(false);
@@ -171,7 +319,7 @@ export default function GameScreen({
   ]);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} ref={containerRef}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => onNavigate?.("levels")}
@@ -180,7 +328,16 @@ export default function GameScreen({
           <ChevronLeft size={16} color="#22C55E" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.score}>Score: {score}</Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.score}>Score: {score}</Text>
+          <TouchableOpacity onPress={toggleSound} style={styles.soundToggle}>
+            {soundEnabled ? (
+              <Volume2 size={18} color="#111827" />
+            ) : (
+              <VolumeX size={18} color="#6B7280" />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -191,12 +348,41 @@ export default function GameScreen({
         <Text style={styles.infoText}>No grid</Text>
       ) : (
         <>
+          {/* Floating letters overlay */}
+          {animatingLetters.length > 0 && (
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+              {animatingLetters.map((it) => (
+                <Animated.View
+                  key={it.id}
+                  style={[
+                    styles.cell,
+                    styles.revealedCell,
+                    {
+                      position: "absolute",
+                      width: cellSize,
+                      height: cellSize,
+                      transform: it.position.getTranslateTransform(),
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.revealedText, { fontSize: cellSize * 0.5 }]}
+                  >
+                    {it.letter}
+                  </Text>
+                </Animated.View>
+              ))}
+            </View>
+          )}
           <View style={styles.gridContainer}>
             {gameGrid.map((row, r) => (
               <View key={r} style={styles.row}>
                 {row.map((cell, c) => (
                   <View
                     key={`${r}-${c}`}
+                    ref={(el) => {
+                      if (el) gridCellRefs.current[`${r}-${c}`] = el;
+                    }}
                     style={[
                       styles.cell,
                       { width: cellSize, height: cellSize },
@@ -224,22 +410,30 @@ export default function GameScreen({
             ))}
           </View>
 
-          <View style={styles.wheel}>
+          <View style={styles.wheel} ref={letterWheelRef} collapsable={false}>
             {letters.length ? (
               <LetterWheel
                 letters={letters}
                 onLetterSelect={() => {}}
                 onWordComplete={async (w) => {
-                  const result = await handleWordSubmit(w);
+                  const result = await handleWordSubmit(w, {
+                    deferReveal: true,
+                  });
                   try {
                     if (result?.success) {
                       if (result.type === "crossword") {
-                        await correctSoundRef.current?.replayAsync();
+                        if (soundEnabled)
+                          await correctSoundRef.current?.replayAsync();
+                        // Fire floating animation toward target cells
+                        await startFloatingAnimation(w);
+                        revealWordCells(w);
                       } else if (result.type === "bonus") {
-                        await bonusSoundRef.current?.replayAsync();
+                        if (soundEnabled)
+                          await bonusSoundRef.current?.replayAsync();
                       }
                     } else {
-                      await wrongSoundRef.current?.replayAsync();
+                      if (soundEnabled)
+                        await wrongSoundRef.current?.replayAsync();
                     }
                   } catch {}
                 }}
@@ -271,7 +465,8 @@ export default function GameScreen({
               <View style={{ height: 0, width: 0 }}>
                 {/* Trigger on open */}
                 {(() => {
-                  completeSoundRef.current?.replayAsync().catch(() => {});
+                  if (soundEnabled)
+                    completeSoundRef.current?.replayAsync().catch(() => {});
                   return null;
                 })()}
               </View>
@@ -300,6 +495,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   backButton: {
     flexDirection: "row",
     gap: 6,
@@ -311,6 +507,15 @@ const styles = StyleSheet.create({
   },
   backButtonText: { color: "#22C55E", fontWeight: "600" },
   score: { fontSize: 18, fontWeight: "bold", color: "#22C55E" },
+  soundToggle: {
+    marginLeft: 8,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D1D5DB",
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
   infoText: { color: "#6B7280" },
   errorText: { color: "red" },
   gridContainer: { marginTop: 8 },
