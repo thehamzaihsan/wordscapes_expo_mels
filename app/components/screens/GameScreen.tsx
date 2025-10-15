@@ -1,9 +1,3 @@
-import { Audio } from "expo-av";
-import LottieView from "lottie-react-native";
-import { ChevronLeft } from "lucide-react-native";
-import { useEffect, useRef } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
 import { Difficulty } from "@/constants/difficulty";
 import {
   completeLevelAndPersist,
@@ -11,8 +5,16 @@ import {
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+import { Audio } from "expo-av";
+import LottieView from "lottie-react-native";
+import { ChevronLeft } from "lucide-react-native";
+import { useEffect, useRef } from "react";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import LetterWheel from "../game/inputWheel";
 import { useGameLogic } from "../game/useGameLogic";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 
 interface GameScreenProps {
   onNavigate?: (screen: string) => void;
@@ -258,8 +260,8 @@ export default function GameScreen({
 
       <Modal transparent visible={gameComplete} onRequestClose={() => {}}>
         <View style={styles.modalContainer}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>LEVEL COMPLETED</Text>
+          <ThemedCard style={styles.modalCard} variant="glassStrong" padding="lg">
+            <ThemedText >LEVEL COMPLETED</ThemedText>
             <LottieView
               source={require("../../../assets/animations/level-complete.json")}
               autoPlay
@@ -276,15 +278,16 @@ export default function GameScreen({
                 })()}
               </View>
             )}
-            <TouchableOpacity
+            <ThemedButton
+              variant="primary"
+              title="Back to Levels"
               style={styles.nextButton}
               onPress={() => {
                 onNavigate?.("levels");
               }}
             >
-              <Text style={styles.nextButtonText}>Back to Levels</Text>
-            </TouchableOpacity>
-          </View>
+            </ThemedButton>
+          </ThemedCard>
         </View>
       </Modal>
     </View>
@@ -352,7 +355,6 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: "80%",
-    backgroundColor: "#1F2937",
     padding: 20,
     borderRadius: 16,
     alignItems: "center",

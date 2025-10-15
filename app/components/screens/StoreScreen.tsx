@@ -1,5 +1,6 @@
 import economy from "@/constants/economy.json";
 import { loadGuestProgress, type GuestProgressPayload } from "@/hooks/guest-progress";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
@@ -16,7 +17,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { startPurchase } from "../hooks/PaypalCheckout";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.75;
@@ -34,6 +39,9 @@ interface CombinedStoreScreenProps {
 export default function CombinedStoreScreen({
   onNavigate,
 }: CombinedStoreScreenProps) {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [activeTab, setActiveTab] = useState<"shop" | "subscription">("shop");
   const [shopIndex, setShopIndex] = useState(0);
   const [subscriptionIndex, setSubscriptionIndex] = useState(0);
@@ -236,28 +244,30 @@ export default function CombinedStoreScreen({
           },
         ]}
       >
-        <TouchableOpacity
-          style={[styles.offerCard, { backgroundColor: offer.bgColor }]}
-          activeOpacity={0.8}
-          disabled={index !== shopIndex}
-        >
+        <ThemedCard variant="glass" padding="lg" style={[styles.offerCard, { backgroundColor: offer.bgColor }]}>
           {offer.popular && (
             <View style={styles.popularBadge}>
-              <Text style={styles.popularText}>POPULAR</Text>
+              <ThemedText variant="caption" weight="bold" style={styles.popularText}>
+                POPULAR
+              </ThemedText>
             </View>
           )}
 
           <View style={styles.gemsHeader}>
             <View style={styles.gemAmountBadge}>
               <Text style={styles.gemEmoji}>💎</Text>
-              <Text style={styles.gemAmount}>
+              <ThemedText variant="heading3" weight="bold" color="primary" style={styles.gemAmount}>
                 {offer.gems.toLocaleString()}
-              </Text>
-              <Text style={styles.gemLabel}>Gems</Text>
+              </ThemedText>
+              <ThemedText variant="caption" color="textSecondary" style={styles.gemLabel}>
+                Gems
+              </ThemedText>
             </View>
           </View>
 
-          <Text style={styles.offerName}>{offer.name}</Text>
+          <ThemedText variant="body1" weight="bold" align="center" style={styles.offerName}>
+            {offer.name}
+          </ThemedText>
 
           <View style={styles.imageContainer}>
             <Image
@@ -266,8 +276,7 @@ export default function CombinedStoreScreen({
               resizeMode="contain"
             />
           </View>
-        </TouchableOpacity>
-
+        </ThemedCard>
 
         <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex} onPress={() => startPurchase(offer.price)}>
           <LinearGradient
@@ -275,10 +284,10 @@ export default function CombinedStoreScreen({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.priceButton}
-            
-            
           >
-            <Text style={styles.priceText}>{offer.price}</Text>
+            <ThemedText variant="body1" weight="bold" style={styles.priceText}>
+              {offer.price}
+            </ThemedText>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -315,23 +324,20 @@ export default function CombinedStoreScreen({
           },
         ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.subscriptionCard,
-            { backgroundColor: subscription.bgColor },
-          ]}
-          activeOpacity={0.8}
-          disabled={index !== subscriptionIndex}
-        >
+        <ThemedCard variant="glass" padding="lg" style={[styles.subscriptionCard, { backgroundColor: subscription.bgColor }]}>
           {subscription.popular && (
             <View style={styles.popularBadge}>
-              <Text style={styles.popularText}>{subscription.badge}</Text>
+              <ThemedText variant="caption" weight="bold" style={styles.popularText}>
+                {subscription.badge}
+              </ThemedText>
             </View>
           )}
 
           {subscription.save && (
             <View style={styles.saveBadge}>
-              <Text style={styles.saveText}>SAVE {subscription.save}</Text>
+              <ThemedText variant="caption" weight="bold" style={styles.saveText}>
+                SAVE {subscription.save}
+              </ThemedText>
             </View>
           )}
 
@@ -339,25 +345,32 @@ export default function CombinedStoreScreen({
             <Text style={styles.icon}>{subscription.icon}</Text>
           </View>
 
-          <Text style={styles.subscriptionName}>{subscription.name}</Text>
+          <ThemedText variant="body1" weight="bold" align="center" style={styles.subscriptionName}>
+            {subscription.name}
+          </ThemedText>
 
           <View style={styles.featuresList}>
             {subscription.features.map((feature: string, idx: number) => (
               <View key={idx} style={styles.featureItem}>
-                <Text style={styles.checkmark}>✓</Text>
-                <Text style={styles.featureText}>{feature}</Text>
+                <ThemedText variant="body2" weight="bold" color="success" style={styles.checkmark}>
+                  ✓
+                </ThemedText>
+                <ThemedText variant="body2" style={styles.featureText}>
+                  {feature}
+                </ThemedText>
               </View>
             ))}
           </View>
 
           <View style={styles.priceSection}>
-            <Text style={styles.originalPrice}>
+            <ThemedText variant="body2" color="textSecondary" style={styles.originalPrice}>
               {subscription.originalPrice}
-            </Text>
-            <Text style={styles.currentPrice}>{subscription.price}</Text>
-          
+            </ThemedText>
+            <ThemedText variant="heading3" weight="bold" color="primary" style={styles.currentPrice}>
+              {subscription.price}
+            </ThemedText>
           </View>
-        </TouchableOpacity>
+        </ThemedCard>
 
         <TouchableOpacity
           activeOpacity={0.8}
@@ -369,7 +382,9 @@ export default function CombinedStoreScreen({
             end={{ x: 1, y: 0 }}
             style={styles.subscribeButton}
           >
-            <Text style={styles.subscribeText}>SUBSCRIBE NOW</Text>
+            <ThemedText variant="body1" weight="bold" style={styles.subscribeText}>
+              SUBSCRIBE NOW
+            </ThemedText>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -377,471 +392,377 @@ export default function CombinedStoreScreen({
   };
 
   return (
-    <LinearGradient colors={["#1a1a2e", "#0f0f23"]} style={styles.container}>
-      <View style={styles.mainContainer}>
-        <ScrollView
-          style={styles.mainScrollView}
-          contentContainerStyle={styles.mainScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => onNavigate("levels")}
-              style={styles.backButton}
-            >
-              <ChevronLeft size={16} color={"white"} />
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-            <View style={styles.currencyContainer}>
-              <View style={styles.currencyBadge}>
-                <View style={[styles.currencyIcon]}>
-                  <Text style={styles.currencyEmoji}>💎</Text>
-                </View>
-                <Text style={styles.currencyText}>
-                  {loading ? "..." : (progress?.meta.gems ?? 0)}
-                </Text>
-              </View>
-              <View style={styles.currencyBadge}>
-                <View style={[styles.currencyIcon]}>
-                  <Text style={styles.currencyEmoji}>⚡</Text>
-                </View>
-                <Text style={[
-                  styles.currencyText,
-                  {
-                    color: loading ? "#fff" : 
-                           (progress?.meta.energy ?? 0) > 50 ? "#10B981" : "#EF4444"
-                  }
-                ]}>
-                  {loading ? "..." : `${progress?.meta.energy ?? 0}/100`}
-                </Text>
-              </View>
-            </View>
-          </View>
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
+        showsVerticalScrollIndicator={false}
+      >
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <ThemedButton
+            title="Back"
+            variant="glass"
+            size="sm"
+            leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
+            onPress={() => onNavigate("levels")}
+            style={styles.backButton}
+          />
 
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === "shop" && styles.activeTab]}
+          <View style={styles.currencyContainer}>
+            <ThemedCard variant="glass" padding="sm" style={styles.currencyBadge}>
+              <View style={styles.currencyIcon}>
+                <Text style={styles.currencyEmoji}>💎</Text>
+              </View>
+              <ThemedText variant="body1" weight="bold" color="primary">
+                {loading ? "..." : (progress?.meta.gems ?? 0)}
+              </ThemedText>
+            </ThemedCard>
+            
+            <ThemedCard variant="glass" padding="sm" style={styles.currencyBadge}>
+              <View style={styles.currencyIcon}>
+                <Text style={styles.currencyEmoji}>⚡</Text>
+              </View>
+              <ThemedText 
+                variant="body1" 
+                weight="bold" 
+                style={{
+                  color: loading ? theme.colors.text : 
+                         (progress?.meta.energy ?? 0) > 50 ? theme.colors.success : theme.colors.error
+                }}
+              >
+                {loading ? "..." : `${progress?.meta.energy ?? 0}/100`}
+              </ThemedText>
+            </ThemedCard>
+          </View>
+        </View>
+
+        {/* Tab Selector */}
+        <ThemedCard variant="glass" padding="xs" style={styles.tabContainer}>
+          <View style={styles.tabSelector}>
+            <ThemedButton
+              title="SHOP"
+              variant={activeTab === "shop" ? "primary" : "ghost"}
+              size="md"
               onPress={() => setActiveTab("shop")}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "shop" && styles.activeTabText,
-                ]}
-              >
-                SHOP
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === "subscription" && styles.activeTab,
-              ]}
+              style={[styles.tab, activeTab === "shop" && styles.activeTab]}
+            />
+            <ThemedButton
+              title="PREMIUM"
+              variant={activeTab === "subscription" ? "primary" : "ghost"}
+              size="md"
               onPress={() => setActiveTab("subscription")}
+              style={[styles.tab, activeTab === "subscription" && styles.activeTab]}
+            />
+          </View>
+        </ThemedCard>
+
+        {/* Carousel Container */}
+        <View style={styles.carouselContainer}>
+          {activeTab === "shop" && (
+            <Animated.ScrollView
+              ref={shopScrollViewRef}
+              horizontal
+              snapToInterval={CARD_WIDTH + CARD_SPACING}
+              decelerationRate="fast"
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carouselScrollContent}
+              onScroll={handleScroll}
+              onMomentumScrollEnd={handleMomentumScrollEnd}
+              scrollEventThrottle={16}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "subscription" && styles.activeTabText,
-                ]}
-              >
-                PREMIUM
-              </Text>
-            </TouchableOpacity>
-          </View>
+              {shopOffers.map(renderShopCard)}
+            </Animated.ScrollView>
+          )}
 
-          <View style={styles.carouselContainer}>
-            {activeTab === "shop" && (
-              <Animated.ScrollView
-                ref={shopScrollViewRef}
-                horizontal
-                snapToInterval={CARD_WIDTH + CARD_SPACING}
-                decelerationRate="fast"
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                onScroll={handleScroll}
-                onMomentumScrollEnd={handleMomentumScrollEnd} // FIX: Added this prop
-                scrollEventThrottle={16}
-              >
-                {shopOffers.map(renderShopCard)}
-              </Animated.ScrollView>
-            )}
+          {activeTab === "subscription" && (
+            <Animated.ScrollView
+              ref={subscriptionScrollViewRef}
+              horizontal
+              snapToInterval={CARD_WIDTH + CARD_SPACING}
+              decelerationRate="fast"
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carouselScrollContent}
+              onScroll={handleScroll}
+              onMomentumScrollEnd={handleMomentumScrollEnd}
+              scrollEventThrottle={16}
+            >
+              {subscriptions.map(renderSubscriptionCard)}
+            </Animated.ScrollView>
+          )}
+        </View>
 
-            {activeTab === "subscription" && (
-              <Animated.ScrollView
-                ref={subscriptionScrollViewRef}
-                horizontal
-                snapToInterval={CARD_WIDTH + CARD_SPACING}
-                decelerationRate="fast"
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                onScroll={handleScroll}
-                onMomentumScrollEnd={handleMomentumScrollEnd} // FIX: Added this prop
-                scrollEventThrottle={16}
-              >
-                {subscriptions.map(renderSubscriptionCard)}
-              </Animated.ScrollView>
-            )}
-          </View>
-
-          
-        </ScrollView>
-      </View>
-    </LinearGradient>
+        {/* Dots Indicator */}
+        <View style={styles.dotsContainer}>
+          {items.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                currentIndex === index && styles.activeDot,
+              ]}
+            />
+          ))}
+        </View>
+        
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   container: {
     flex: 1,
+    position: 'relative' as const,
+    backgroundColor: 'transparent',
   },
-  mainContainer: {
-    flex: 1,
-    paddingTop: 0,
-  },
-  mainScrollView: {
+  scrollContainer: {
     flex: 1,
   },
-  mainScrollContent: {
-    flexGrow: 1
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-start' as const,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.lg,
   },
-  backText: {
-    color: "#8b5cf6",
-    fontSize: 16,
-    fontWeight: "600",
+  backButton: {
+    alignSelf: 'flex-start' as const,
   },
   currencyContainer: {
-    flexDirection: "row",
-    gap: 12,
+    flexDirection: 'row' as const,
+    gap: theme.spacing.sm,
   },
   currencyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(31, 41, 55, 0.8)",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: "rgba(75, 85, 99, 0.3)",
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.xs,
+    minWidth: 70,
   },
   currencyIcon: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 6,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   currencyEmoji: {
-    fontSize: 18,
-  },
-  currencyText: {
-    color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-  currencyLabel: {
-    color: "#9ca3af",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  titleContainer: {
-    alignItems: "center",
-    marginTop: isSmallScreen ? 4 : 8,
-    marginBottom: isSmallScreen ? 8 : 16,
-  },
-  title: {
-    color: "#fff",
-    fontSize: isSmallScreen ? 28 : isMediumScreen ? 32 : 36,
-    fontWeight: "bold",
-    letterSpacing: 2,
-  },
-  subtitle: {
-    color: "#9ca3af",
-    fontSize: isSmallScreen ? 12 : 14,
-    marginTop: 4,
   },
   tabContainer: {
-    flexDirection: "row",
-    marginHorizontal: isSmallScreen ? 30 : 50,
-    marginVertical: isSmallScreen ? 12 : 16,
-    backgroundColor: "rgba(31, 41, 55, 0.3)",
-    borderRadius: 30,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.2)",
+    marginBottom: theme.spacing.lg,
+  },
+  tabSelector: {
+    flexDirection: 'row' as const,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xs,
   },
   tab: {
     flex: 1,
-    paddingVertical: isSmallScreen ? 10 : 12,
-    alignItems: "center",
-    borderRadius: 26,
+    marginHorizontal: theme.spacing.xs,
   },
   activeTab: {
-    backgroundColor: "#8b5cf6",
-    shadowColor: "#8b5cf6",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  tabText: {
-    color: "#9ca3af",
-    fontSize: isSmallScreen ? 12 : 14,
-    fontWeight: "600",
-    letterSpacing: 1,
-  },
-  activeTabText: {
-    color: "#fff",
-    fontWeight: "bold",
+    // Additional styling if needed
   },
   carouselContainer: {
-    height: isSmallScreen ? height * 0.6 : isMediumScreen ? height * 0.7 : height * 0.8,
-    flexDirection: "row",
-    alignItems: "center",
-    position: "relative",
-    marginVertical: isSmallScreen ? 10 : 20,
+    height: isSmallScreen ? 380 : isMediumScreen ? 420 : 460,
+    marginBottom: theme.spacing.md,
   },
-  scrollContent: {
+  carouselScrollContent: {
     paddingHorizontal: (width - CARD_WIDTH) / 2,
+    alignItems: 'flex-start' as const,
   },
   cardWrapper: {
     width: CARD_WIDTH,
     marginHorizontal: CARD_SPACING / 2,
   },
   offerCard: {
-    width: "100%",
-    borderRadius: 24,
-    padding: isSmallScreen ? 20 : isMediumScreen ? 35 : 50,
-    backgroundColor: "rgba(31, 41, 55, 0.4)",
-    borderWidth: 2,
-    borderColor: "rgba(139, 92, 246, 0.3)",
-    position: "relative",
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 15,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.md,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
   subscriptionCard: {
-    width: "100%",
-    borderRadius: 24,
-    padding: isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
-    backgroundColor: "rgba(31, 41, 55, 0.4)",
-    borderWidth: 2,
-    borderColor: "rgba(139, 92, 246, 0.3)",
-    position: "relative",
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 15,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.md,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
     minHeight: isSmallScreen ? 300 : isMediumScreen ? 340 : 380,
   },
   popularBadge: {
-    position: "absolute",
-    top: -1,
-    right: -1,
-    backgroundColor: "#ef4444",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderBottomLeftRadius: 16,
-    borderTopRightRadius: 22,
+    position: 'absolute' as const,
+    top: theme.spacing.sm,
+    right: theme.spacing.sm,
+    backgroundColor: theme.colors.warning,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
     zIndex: 10,
   },
   popularText: {
-    color: "#fff",
+    color: theme.colors.surface,
     fontSize: 11,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
+    fontWeight: 'bold' as const,
   },
   saveBadge: {
-    position: "absolute",
-    top: 20,
-    left: 20,
-    backgroundColor: "rgba(251, 191, 36, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(251, 191, 36, 0.3)",
+    position: 'absolute' as const,
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
+    backgroundColor: theme.colors.success,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    zIndex: 10,
   },
   saveText: {
-    color: "#fbbf24",
+    color: theme.colors.surface,
     fontSize: 11,
-    fontWeight: "bold",
+    fontWeight: 'bold' as const,
   },
-  gemsHeader: { alignItems: "center", marginBottom: isSmallScreen ? 8 : 12 },
+  gemsHeader: {
+    alignItems: 'center' as const,
+    marginBottom: isSmallScreen ? 8 : 12,
+  },
   gemAmountBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-
-    gap: 8,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
   },
   gemEmoji: {
     fontSize: isSmallScreen ? 16 : 20,
   },
   gemAmount: {
-    color: "#10b981",
     fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
-    fontWeight: "bold",
   },
   gemLabel: {
-    color: "#9ca3af",
     fontSize: isSmallScreen ? 12 : 14,
-    fontWeight: "500",
   },
   offerName: {
-    color: "#fff",
-    fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 22,
-    fontWeight: "bold",
-    textAlign: "center",
+    textAlign: 'center' as const,
     marginBottom: isSmallScreen ? 12 : 16,
-    textTransform: "uppercase",
+    textTransform: 'uppercase' as const,
     letterSpacing: 1,
+    color: theme.colors.text,
+  },
+  subscriptionName: {
+    textAlign: 'center' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
   },
   imageContainer: {
     height: isSmallScreen ? 120 : isMediumScreen ? 150 : 180,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     marginVertical: isSmallScreen ? 8 : 12,
-    position: "relative",
+    position: 'relative' as const,
   },
   offerImage: {
     width: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
     height: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
-    resizeMode: "contain",
+    resizeMode: 'contain' as const,
     zIndex: 2,
   },
   iconContainer: {
-    alignItems: "center",
+    alignItems: 'center' as const,
     marginTop: isSmallScreen ? 12 : 20,
     marginBottom: isSmallScreen ? 12 : 16,
   },
   icon: {
     fontSize: isSmallScreen ? 40 : isMediumScreen ? 50 : 60,
   },
-  subscriptionName: {
-    color: "#fff",
-    fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  period: {
-    color: "#9ca3af",
-    fontSize: isSmallScreen ? 12 : 14,
-    textAlign: "center",
-    marginTop: 4,
-    marginBottom: isSmallScreen ? 16 : 20,
-  },
   featuresList: {
     marginVertical: isSmallScreen ? 12 : 20,
     paddingHorizontal: isSmallScreen ? 5 : 10,
   },
   featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     marginBottom: 4,
   },
   checkmark: {
-    color: "#10b981",
     fontSize: isSmallScreen ? 16 : 18,
-    fontWeight: "bold",
     marginRight: isSmallScreen ? 8 : 12,
   },
-  featureText: { color: "#fff", fontSize: isSmallScreen ? 12 : 14, flex: 1 },
+  featureText: {
+    fontSize: isSmallScreen ? 12 : 14,
+    flex: 1,
+    color: theme.colors.text,
+  },
   priceSection: {
-    alignItems: "center",
-    marginTop: "auto",
+    alignItems: 'center' as const,
+    marginTop: 'auto' as const,
     paddingTop: 3,
   },
   originalPrice: {
-    color: "#6b7280",
     fontSize: isSmallScreen ? 14 : 16,
-    textDecorationLine: "line-through",
+    textDecorationLine: 'line-through' as const,
     marginBottom: 4,
   },
   currentPrice: {
-    color: "#10b981",
     fontSize: isSmallScreen ? 24 : isMediumScreen ? 28 : 32,
-    fontWeight: "bold",
-  },
-  billingPeriod: {
-    color: "#9ca3af",
-    fontSize: isSmallScreen ? 10 : 12,
-    marginTop: 4,
   },
   priceButton: {
-    borderRadius: 16,
+    borderRadius: theme.borderRadius.md,
     paddingVertical: isSmallScreen ? 12 : 16,
-    alignItems: "center",
-    marginTop: isSmallScreen ? 16 : isMediumScreen ? 24 : 34,
+    alignItems: 'center' as const,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
   priceText: {
-    color: "#fff",
+    color: theme.colors.surface,
     fontSize: isSmallScreen ? 22 : isMediumScreen ? 26 : 28,
-    fontWeight: "bold",
-  },
-  buyNowText: {
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: isSmallScreen ? 14 : 16,
-    fontWeight: "600",
-    letterSpacing: 1,
-    marginTop: 4,
   },
   subscribeButton: {
-    borderRadius: 16,
+    borderRadius: theme.borderRadius.md,
     paddingVertical: isSmallScreen ? 12 : 16,
-    alignItems: "center",
-    marginTop: isSmallScreen ? 12 : 20,
+    alignItems: 'center' as const,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
   subscribeText: {
-    color: "#fff",
+    color: theme.colors.surface,
     fontSize: isSmallScreen ? 16 : 18,
-    fontWeight: "bold",
     letterSpacing: 1,
   },
   dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     paddingVertical: isSmallScreen ? 10 : 16,
     paddingBottom: isSmallScreen ? 20 : 30,
-    gap: 8,
+    gap: theme.spacing.sm,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(139, 92, 246, 0.3)",
+    backgroundColor: theme.colors.primary + '30', // 30% opacity
   },
   activeDot: {
     width: 24,
-    backgroundColor: "#8b5cf6",
+    backgroundColor: theme.colors.primary,
   },
-  backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    paddingEnd: 16,
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
-  backButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
 });
