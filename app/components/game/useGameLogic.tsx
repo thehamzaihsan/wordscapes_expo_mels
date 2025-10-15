@@ -314,7 +314,12 @@ export function useGameLogic({
 
   // Handle word submission
   const handleWordSubmit = useCallback(
-    async (word: string) => {
+    async (
+      word: string,
+      opts?: {
+        deferReveal?: boolean;
+      }
+    ) => {
       const upperWord = word.toUpperCase();
 
       if (
@@ -331,22 +336,24 @@ export function useGameLogic({
         const placement = wordPlacements.find(
           (p) => p.word.toUpperCase() === upperWord
         );
-        if (placement && gameGrid) {
-          const newGrid = gameGrid.map((row) => row.map((c) => ({ ...c })));
-          if (placement.direction === "horizontal") {
-            for (let i = 0; i < placement.word.length; i++) {
-              const col = placement.startCol + i;
-              newGrid[placement.startRow]?.[col] &&
-                (newGrid[placement.startRow][col].isRevealed = true);
+        if (!opts?.deferReveal) {
+          if (placement && gameGrid) {
+            const newGrid = gameGrid.map((row) => row.map((c) => ({ ...c })));
+            if (placement.direction === "horizontal") {
+              for (let i = 0; i < placement.word.length; i++) {
+                const col = placement.startCol + i;
+                newGrid[placement.startRow]?.[col] &&
+                  (newGrid[placement.startRow][col].isRevealed = true);
+              }
+            } else {
+              for (let i = 0; i < placement.word.length; i++) {
+                const row = placement.startRow + i;
+                newGrid[row]?.[placement.startCol] &&
+                  (newGrid[row][placement.startCol].isRevealed = true);
+              }
             }
-          } else {
-            for (let i = 0; i < placement.word.length; i++) {
-              const row = placement.startRow + i;
-              newGrid[row]?.[placement.startCol] &&
-                (newGrid[row][placement.startCol].isRevealed = true);
-            }
+            setGameGrid(newGrid);
           }
-          setGameGrid(newGrid);
         }
 
         const wordScore = 10;
@@ -416,6 +423,32 @@ export function useGameLogic({
       gameGrid,
       scoreScaleAnim,
     ]
+  );
+
+  const revealWordCells = useCallback(
+    (word: string) => {
+      const upperWord = word.toUpperCase();
+      const placement = wordPlacements.find(
+        (p) => p.word.toUpperCase() === upperWord
+      );
+      if (!placement || !gameGrid) return;
+      const newGrid = gameGrid.map((row) => row.map((c) => ({ ...c })));
+      if (placement.direction === "horizontal") {
+        for (let i = 0; i < placement.word.length; i++) {
+          const col = placement.startCol + i;
+          newGrid[placement.startRow]?.[col] &&
+            (newGrid[placement.startRow][col].isRevealed = true);
+        }
+      } else {
+        for (let i = 0; i < placement.word.length; i++) {
+          const row = placement.startRow + i;
+          newGrid[row]?.[placement.startCol] &&
+            (newGrid[row][placement.startCol].isRevealed = true);
+        }
+      }
+      setGameGrid(newGrid);
+    },
+    [wordPlacements, gameGrid]
   );
 
   // Handle word hint - returns true if hint was applied (free or paid), false on failure
@@ -491,6 +524,7 @@ export function useGameLogic({
     handleWordSubmit,
     handleWordHint,
     handleNextLevel,
+    revealWordCells,
     setAnimatingLetters,
     setHintAnim,
   };
