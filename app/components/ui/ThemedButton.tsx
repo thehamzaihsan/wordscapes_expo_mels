@@ -187,7 +187,7 @@ const Button: React.FC<ButtonProps> = ({
           },
           text: { 
             color: disabled ? theme.colors.textTertiary : theme.colors.primary,
-            fontWeight: '600' as any,
+            fontWeight: '600',
           },
         };
       default:
@@ -275,14 +275,14 @@ const Button: React.FC<ButtonProps> = ({
     ...sizeStyles.container,
     ...(fullWidth && styles.fullWidth),
     ...(rounded && { borderRadius: theme.borderRadius.full }),
-    ...style,
+    ...(Array.isArray(style) ? StyleSheet.flatten(style) : style || {}),
   };
 
   const textStyleCombined: TextStyle = {
     ...styles.text,
     ...variantStyles.text,
     ...sizeStyles.text,
-    ...textStyle,
+    ...(Array.isArray(textStyle) ? StyleSheet.flatten(textStyle) : textStyle || {}),
   };
 
   return (

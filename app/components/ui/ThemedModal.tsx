@@ -153,12 +153,12 @@ const Modal: React.FC<ModalProps> = ({
 
   const renderContent = () => {
     const sizeStyles = getSizeStyles();
-    const modalContentStyle = [
+    const modalContentStyle = StyleSheet.flatten([
       styles.modalContent,
       sizeStyles,
       size === 'fullscreen' && styles.fullscreenContent,
       contentStyle,
-    ];
+    ]);
 
     const content = (
       <>

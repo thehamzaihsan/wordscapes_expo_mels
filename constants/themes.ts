@@ -88,23 +88,23 @@ export const Typography = {
     regular: Platform.OS === 'web' 
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios' 
-        ? 'HelveticaNeue' 
-        : 'Roboto',
+        ? 'Helvetica' 
+        : 'Helvetica',
     medium: Platform.OS === 'web'
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios'
-        ? 'HelveticaNeue-Medium'
-        : 'Roboto_medium',
+        ? 'Helvetica'
+        : 'Helvetica',
     bold: Platform.OS === 'web'
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios'
-        ? 'HelveticaNeue-Bold'
-        : 'Roboto_bold',
+        ? 'Helvetica'
+        : 'Helvetica',
     rounded: Platform.OS === 'web'
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios'
-        ? 'HelveticaNeue'
-        : 'Roboto',
+        ? 'Helvetica'
+        : 'Helvetica',
   },
   fontSizes: {
     xs: 12,

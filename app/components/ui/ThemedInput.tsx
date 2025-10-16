@@ -204,14 +204,14 @@ const Input: React.FC<InputProps> = ({
     ...sizeStyles.input,
     color: theme.colors.text,
     paddingRight: rightIcon ? 40 : 0, // Add padding when right icon is present
-    ...inputStyle,
+    ...(Array.isArray(inputStyle) ? StyleSheet.flatten(inputStyle) : inputStyle || {}),
   };
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, Array.isArray(containerStyle) ? StyleSheet.flatten(containerStyle) : containerStyle]}>
       {label && (
         <View style={styles.labelContainer}>
-          <Text style={[styles.label, labelStyle]}>
+          <Text style={[styles.label, Array.isArray(labelStyle) ? StyleSheet.flatten(labelStyle) : labelStyle]}>
             {label}
             {required && showRequiredIndicator && (
               <Text style={styles.required}> *</Text>

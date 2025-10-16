@@ -168,21 +168,11 @@ export default function RootLayout() {
     Helvetica: require("../assets/fonts/Helvetica.ttf"),
   });
 
-  // Set Helvetica as the default font for all Text components
+  // Initialize components when fonts are loaded
   React.useEffect(() => {
     if (fontsLoaded) {
-      // @ts-ignore
-      Text.defaultProps = Text.defaultProps || {};
-      // Only set if not already set (prevents infinite loop in Fast Refresh)
-      // @ts-ignore - defaultProps is not typed but still works for global font override
-      if (Text.defaultProps.style?.fontFamily !== "Helvetica") {
-        // @ts-ignore
-        Text.defaultProps.style = [
-          // @ts-ignore
-          Text.defaultProps.style || {},
-          { fontFamily: "Helvetica" },
-        ];
-      }
+      // Fonts are loaded and ready to use
+      console.log('Fonts loaded successfully');
     }
   }, [fontsLoaded]);
 

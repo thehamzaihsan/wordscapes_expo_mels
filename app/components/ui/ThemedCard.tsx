@@ -135,7 +135,7 @@ const Card: React.FC<CardProps> = ({
     ...variantStyles,
     ...paddingStyles,
     ...(rounded && { borderRadius: theme.borderRadius.xl3 }),
-    ...style,
+    ...(Array.isArray(style) ? StyleSheet.flatten(style) : style || {}),
   };
 
   if ('touchable' in props && props.touchable) {
