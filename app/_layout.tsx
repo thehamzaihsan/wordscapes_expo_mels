@@ -21,6 +21,7 @@ import {
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
+import BackgroundImage from "./components/common/BackgroundImage";
 function LayoutWithInsets() {
   useAutoSync();
   useEnergyRegen(); // Add energy regeneration hook
@@ -36,6 +37,7 @@ function LayoutWithInsets() {
   return (
     <View style={styles.container}>
       {/* Background: for web this sets document.body background; for native uses Image */}
+      <BackgroundImage />
 
       {/* App content always on top */}
       <View
@@ -170,10 +172,14 @@ function LayoutWithInsets() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: "relative",
+    width: "100%",
+    height: "100%",
   },
   contentContainer: {
     flex: 1,
     backgroundColor: "transparent",
+    zIndex: 2,
     position: "relative",
   },
 });
