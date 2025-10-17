@@ -1,7 +1,7 @@
 import { useSettings } from '@/hooks/useSettings';
 import { useTheme, useThemedStyles } from '@/hooks/useTheme';
 import { showToast } from '@/lib/toast';
-import { ChevronLeft, Settings as SettingsIcon } from 'lucide-react-native';
+import { ChevronLeft, Settings as SettingsIcon, Users } from 'lucide-react-native';
 import React from 'react';
 import {
   ScrollView,
@@ -214,6 +214,27 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
           </View>
         </ThemedCard>
 
+        {/* Credits Section */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            👥 Team
+          </ThemedText>
+          
+          <ThemedButton
+            title="Meet the Development Team"
+            variant="ghost"
+            size="md"
+            fullWidth
+            leftIcon={<Users size={20} color={theme.colors.primary} />}
+            onPress={() => onNavigate('credits')}
+            style={styles.creditsButton}
+          />
+          
+          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.creditsDescription}>
+            Learn more about the amazing developers who created this game
+          </ThemedText>
+        </ThemedCard>
+
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -287,6 +308,14 @@ const createStyles = (theme: any) => ({
   },
   infoContainer: {
     alignItems: 'center' as const,
+  },
+  creditsButton: {
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '20',
+  },
+  creditsDescription: {
+    lineHeight: 18,
   },
   bottomSpacing: {
     height: theme.spacing.xl4,

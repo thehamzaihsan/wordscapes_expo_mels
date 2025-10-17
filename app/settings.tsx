@@ -27,10 +27,14 @@ export default function SettingsRoute() {
 
   const handleNavigate = (screen: string) => {
     setIsLoading(true);
-    if (screen === 'back') {
-      router.back();
-    }
-    setTimeout(() => setIsLoading(false), 600);
+    setTimeout(() => {
+      if (screen === 'back') {
+        router.back();
+      } else if (screen === 'credits') {
+        router.push('/credits');
+      }
+      setTimeout(() => setIsLoading(false), 100);
+    }, 600);
   };
 
   return (
