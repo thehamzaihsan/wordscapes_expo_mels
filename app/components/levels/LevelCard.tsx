@@ -103,37 +103,6 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
                 </ThemedText>
               </View>
             )}
-            {/* Completed indicator */}
-            {level.isCompleted && (
-              <View style={styles.completedRewardContainer}>
-                <ThemedText variant="body2" color="success">
-                  Completed ✓
-                </ThemedText>
-              </View>
-            )}
-          </View>
-
-          {/* Status Badge */}
-          <View style={styles.statusSection}>
-            {level.isCompleted ? (
-              <View style={[styles.statusBadge, styles.completedBadge]}>
-                <ThemedText variant="caption" color="textInverse" weight="medium">
-                  ✓ Replay Available
-                </ThemedText>
-              </View>
-            ) : level.isUnlocked ? (
-              <View style={[styles.statusBadge, styles.newBadge]}>
-                <ThemedText variant="caption" color="textInverse" weight="medium">
-                  Ready to Play
-                </ThemedText>
-              </View>
-            ) : (
-              <View style={[styles.statusBadge, styles.inProgressBadge]}>
-                <ThemedText variant="caption" color="textInverse" weight="medium">
-                  Locked
-                </ThemedText>
-              </View>
-            )}
           </View>
         </View>
       </ThemedCard>
@@ -183,37 +152,11 @@ const createStyles = (theme: any) => ({
     alignItems: 'center' as const,
     marginBottom: theme.spacing.md,
   },
-  statusSection: {
-    marginTop: theme.spacing.sm,
-  },
-  statusBadge: {
-    paddingHorizontal: theme.spacing.base,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.xl,
-    alignSelf: 'flex-start' as const,
-  },
-  completedBadge: {
-    backgroundColor: `${theme.colors.success}B3`, // 70% opacity
-  },
-  inProgressBadge: {
-    backgroundColor: `${theme.colors.info}B3`, // 70% opacity
-  },
-  newBadge: {
-    backgroundColor: `${theme.colors.primary}B3`, // 70% opacity
-  },
   rewardContainer: {
     backgroundColor: theme.colors.backgroundSecondary,
     paddingVertical: theme.spacing.xs,
     paddingHorizontal: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
-  },
-  completedRewardContainer: {
-    backgroundColor: `${theme.colors.success}26`, // 15% opacity
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
-    borderWidth: 1,
-    borderColor: `${theme.colors.success}4D`, // 30% opacity
   },
 });
 
