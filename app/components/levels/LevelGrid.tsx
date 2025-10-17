@@ -34,24 +34,35 @@ const LevelGrid: React.FC<LevelGridProps> = ({
   const styles = useThemedStyles(createStyles);
   const { getUnlockedCategories } = require('@/hooks/guest-progress');
   
-  const currentLevels = levelCategories[selectedCategory] || [];
+  const allCurrentLevels = levelCategories[selectedCategory] || [];
+  // Filter out completed levels - show locked and unlocked levels that haven't been completed
+  const currentLevels = allCurrentLevels.filter(level => 
+    !level.isCompleted
+  );
   const unlockedCategories = getUnlockedCategories(guestMeta?.playerLevel || 0);
   const isCategoryUnlocked = unlockedCategories.includes(selectedCategory);
 
-  // Show empty state when no levels are available
+  // Show empty state when no levels are available or all levels are completed
   if (currentLevels.length === 0) {
+    // Check if there are levels but they're all completed
+    const hasCompletedLevels = allCurrentLevels.some(level => level.isCompleted);
+    const allLevelsCompleted = allCurrentLevels.length > 0 && allCurrentLevels.every(level => level.isCompleted);
+    
     return (
       <View style={styles.emptyContainer}>
         <ThemedCard variant="glassStrong" padding="xl" style={styles.emptyCard}>
           <View style={styles.emptyContent}>
             <ThemedText variant="heading1" style={styles.emptyIcon}>
-              🎯
+              {allLevelsCompleted ? "🏆" : "🎯"}
             </ThemedText>
             <ThemedText variant="heading3" weight="bold" align="center" style={styles.emptyTitle}>
-              No levels available
+              {allLevelsCompleted ? "Category Complete!" : "No levels available"}
             </ThemedText>
             <ThemedText variant="body2" align="center" color="textSecondary" style={styles.emptySubtext}>
-              Check back later for new content!
+              {allLevelsCompleted 
+                ? "Congratulations! You've completed all levels in this category." 
+                : "Check back later for new content!"
+              }
             </ThemedText>
           </View>
         </ThemedCard>
@@ -144,6 +155,7 @@ const LevelGrid: React.FC<LevelGridProps> = ({
             key={level.level}
             level={level}
             categoryName={selectedCategory}
+            guestMeta={guestMeta}
             onPress={onLevelPress}
           />
         ))}

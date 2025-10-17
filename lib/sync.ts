@@ -3,6 +3,7 @@ import levelsData from "@/constants/levels.json";
 import {
   buildInitialProgress,
   derivePlayerLevel,
+  getUnlockedCategories,
   loadGuestProgress,
   saveGuestProgress,
 } from "@/hooks/guest-progress";
@@ -79,7 +80,16 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
     const existing = await loadGuestProgress();
     const preferredName =
       snapshot.profile.username || existing?.meta.playerName;
-    const progress = buildInitialProgress(levelsData as any, preferredName);
+    
+    // Start with existing progress or build initial if none exists
+    let progress: GuestProgressPayload;
+    if (existing && existing.categories && Object.keys(existing.categories).length > 0) {
+      // Use existing progress as base to preserve category progress
+      progress = { ...existing };
+    } else {
+      // Only build initial progress if we have no existing data
+      progress = buildInitialProgress(levelsData as any, preferredName);
+    }
 
     // Carry over meta from snapshot stats/profile
     const remoteXp =
@@ -123,6 +133,30 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
     const derived = derivePlayerLevel(progress.meta.xp);
     progress.meta.playerLevel = derived.level;
 
+    // Ensure all categories that should be unlocked are added to progress
+    const unlockedCategories = getUnlockedCategories(progress.meta.playerLevel);
+    const levelDefinitions = levelsData as Record<string, any[]>;
+
+    // Add any newly unlocked categories to progress
+    unlockedCategories.forEach((categoryName) => {
+      if (!progress.categories[categoryName] && levelDefinitions[categoryName]) {
+        progress.categories[categoryName] = levelDefinitions[categoryName].map(
+          (lvl: any, idx: number) => ({
+            level: lvl.level ?? idx + 1,
+            baseWord: lvl.baseWord,
+            difficulty: lvl.difficulty,
+            isUnlocked: idx === 0, // unlock only first level of new category
+            isCompleted: false,
+            bestScore: 0,
+            attempts: 0,
+          })
+        );
+        console.log(
+          `[Category Unlock] Player level ${progress.meta.playerLevel} unlocked category: ${categoryName}`
+        );
+      }
+    });
+
     const updatedAt =
       snapshot.last_pulled_at ||
       snapshot.stats?.updated_at ||
@@ -130,58 +164,111 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
       new Date().toISOString();
     progress.updatedAt = updatedAt;
 
-    // Baseline unlock: only first 3 levels per category; further unlocks applied from remote level rows below
-    Object.values(progress.categories).forEach((levels) => {
-      levels.forEach((lvl, idx) => {
-        lvl.isUnlocked = idx < 3;
+    // If local progress is fresher than remote, preserve local level states
+    // Compare local guest progress updatedAt with the most recent remote timestamp
+    const remoteTimestamp = Math.max(
+      statsUpdatedAt,
+      ...snapshot.levels.map(l => new Date(l.updated_at || 0).getTime())
+    );
+    const shouldPreserveLocal = localUpdatedAt > remoteTimestamp;
+
+    if (shouldPreserveLocal && existing?.categories) {
+      // Preserve local level progress since it's newer
+      console.log('[sync] Local progress is fresher, preserving local level states', {
+        localUpdatedAt: new Date(localUpdatedAt).toISOString(),
+        remoteTimestamp: new Date(remoteTimestamp).toISOString(),
       });
-    });
-
-    // Apply remote level completions/unlocks
-    const levelsByTheme = new Map<string, LevelProgressRow[]>();
-    snapshot.levels.forEach((row) => {
-      const theme = row.theme || "Mountain";
-      const list = levelsByTheme.get(theme);
-      if (list) list.push(row);
-      else levelsByTheme.set(theme, [row]);
-    });
-
-    levelsByTheme.forEach((rows, theme) => {
-      const categoryLevels = progress.categories[theme];
-      if (!categoryLevels) return;
-      // Sort incoming rows for predictable unlock logic
-      const sorted = [...rows].sort((a, b) => a.level - b.level);
-      let maxCompletedLevel = 0;
-      sorted.forEach((remoteLevel) => {
-        const idx = categoryLevels.findIndex(
-          (lvl) => lvl.level === remoteLevel.level
-        );
-        if (idx === -1) return;
-        const entry = categoryLevels[idx];
-        entry.isUnlocked = true;
-        if (remoteLevel.completed) {
-          entry.isCompleted = true;
-          entry.lastCompletedAt =
-            remoteLevel.last_completed_at ||
-            remoteLevel.first_completed_at ||
-            remoteLevel.updated_at ||
-            updatedAt;
-          maxCompletedLevel = Math.max(maxCompletedLevel, remoteLevel.level);
-        } else {
-          maxCompletedLevel = Math.max(
-            maxCompletedLevel,
-            remoteLevel.level - 1
+      
+      // First, preserve all existing category progress
+      Object.keys(existing.categories).forEach((categoryName) => {
+        if (existing.categories[categoryName]) {
+          progress.categories[categoryName] = existing.categories[categoryName].map(localLevel => ({
+            ...localLevel
+          }));
+        }
+      });
+      
+      // Then ensure newly unlocked categories are still available
+      // (these were added in lines 141-158 but might not exist in existing.categories)
+      unlockedCategories.forEach((categoryName) => {
+        if (!existing.categories[categoryName] && levelDefinitions[categoryName]) {
+          // This category was just unlocked, make sure it stays in progress
+          progress.categories[categoryName] = levelDefinitions[categoryName].map(
+            (lvl: any, idx: number) => ({
+              level: lvl.level ?? idx + 1,
+              baseWord: lvl.baseWord,
+              difficulty: lvl.difficulty,
+              isUnlocked: idx === 0, // unlock only first level of new category
+              isCompleted: false,
+              bestScore: 0,
+              attempts: 0,
+            })
+          );
+          console.log(
+            `[Category Unlock] Preserving newly unlocked category during sync: ${categoryName}`
           );
         }
       });
-      if (maxCompletedLevel > 0) {
-        categoryLevels.forEach((lvl) => {
-          if (lvl.level <= maxCompletedLevel + 1) {
-            lvl.isUnlocked = true;
+    } else {
+      // Apply remote data - it's fresher or we have no local data
+      console.log('[sync] Applying remote level states', {
+        localUpdatedAt: new Date(localUpdatedAt).toISOString(),
+        remoteTimestamp: new Date(remoteTimestamp).toISOString(),
+      });
+      
+      // Baseline unlock: only first 3 levels per category; further unlocks applied from remote level rows below
+      Object.values(progress.categories).forEach((levels) => {
+        levels.forEach((lvl, idx) => {
+          lvl.isUnlocked = idx < 3;
+        });
+      });
+
+      // Apply remote level completions/unlocks
+      const levelsByTheme = new Map<string, LevelProgressRow[]>();
+      snapshot.levels.forEach((row) => {
+        const theme = row.theme || "Mountain";
+        const list = levelsByTheme.get(theme);
+        if (list) list.push(row);
+        else levelsByTheme.set(theme, [row]);
+      });
+
+      levelsByTheme.forEach((rows, theme) => {
+        const categoryLevels = progress.categories[theme];
+        if (!categoryLevels) return;
+        // Sort incoming rows for predictable unlock logic
+        const sorted = [...rows].sort((a, b) => a.level - b.level);
+        let maxCompletedLevel = 0;
+        sorted.forEach((remoteLevel) => {
+          const idx = categoryLevels.findIndex(
+            (lvl) => lvl.level === remoteLevel.level
+          );
+          if (idx === -1) return;
+          const entry = categoryLevels[idx];
+          entry.isUnlocked = true;
+          if (remoteLevel.completed) {
+            entry.isCompleted = true;
+            entry.lastCompletedAt =
+              remoteLevel.last_completed_at ||
+              remoteLevel.first_completed_at ||
+              remoteLevel.updated_at ||
+              updatedAt;
+            maxCompletedLevel = Math.max(maxCompletedLevel, remoteLevel.level);
+          } else {
+            maxCompletedLevel = Math.max(
+              maxCompletedLevel,
+              remoteLevel.level - 1
+            );
           }
         });
-      }
-    });
+        if (maxCompletedLevel > 0) {
+          categoryLevels.forEach((lvl) => {
+            if (lvl.level <= maxCompletedLevel + 1) {
+              lvl.isUnlocked = true;
+            }
+          });
+        }
+      });
+    }
 
     await saveGuestProgress(progress);
   } catch (err) {

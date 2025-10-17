@@ -1,7 +1,7 @@
 import { useSettings } from '@/hooks/useSettings';
 import { useTheme, useThemedStyles } from '@/hooks/useTheme';
 import { showToast } from '@/lib/toast';
-import { ChevronLeft, Settings as SettingsIcon } from 'lucide-react-native';
+import { ChevronLeft, Settings as SettingsIcon, Users, Bug } from 'lucide-react-native';
 import React from 'react';
 import {
   ScrollView,
@@ -33,8 +33,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
     );
   };
 
-  const handleReset = () => {
-    resetSettings();
+  const handleReset = async () => {
+    await resetSettings();
     showToast('Settings reset to default', 'success');
   };
 
@@ -98,23 +98,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
             🎨 Animations
           </ThemedText>
           
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
-                  Background Animations
-                </ThemedText>
-                <ThemedText variant="body2" color="textSecondary">
-                  Floating bubble animations in the background
-                </ThemedText>
-              </View>
-              <Switch
-                value={settings.backgroundAnimationsEnabled}
-                onValueChange={(value) => handleToggle('backgroundAnimationsEnabled', value)}
-                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-                thumbColor={settings.backgroundAnimationsEnabled ? theme.colors.textInverse : theme.colors.textTertiary}
-              />
-            </View>
-
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
                 <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
@@ -214,6 +197,48 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
           </View>
         </ThemedCard>
 
+        {/* Credits Section */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            👥 Team
+          </ThemedText>
+          
+          <ThemedButton
+            title="Meet the Development Team"
+            variant="ghost"
+            size="md"
+            fullWidth
+            leftIcon={<Users size={20} color={theme.colors.primary} />}
+            onPress={() => onNavigate('credits')}
+            style={styles.creditsButton}
+          />
+          
+          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.creditsDescription}>
+            Learn more about the amazing developers who created this game
+          </ThemedText>
+        </ThemedCard>
+
+        {/* Debug Section */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            🛠️ Debug
+          </ThemedText>
+          
+          <ThemedButton
+            title="Debug Tools"
+            variant="ghost"
+            size="md"
+            fullWidth
+            leftIcon={<Bug size={20} color={theme.colors.warning} />}
+            onPress={() => onNavigate('debug')}
+            style={styles.debugButton}
+          />
+          
+          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.debugDescription}>
+            Developer tools and debugging utilities
+          </ThemedText>
+        </ThemedCard>
+
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -287,6 +312,22 @@ const createStyles = (theme: any) => ({
   },
   infoContainer: {
     alignItems: 'center' as const,
+  },
+  creditsButton: {
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '20',
+  },
+  creditsDescription: {
+    lineHeight: 18,
+  },
+  debugButton: {
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.warning + '20',
+  },
+  debugDescription: {
+    lineHeight: 18,
   },
   bottomSpacing: {
     height: theme.spacing.xl4,

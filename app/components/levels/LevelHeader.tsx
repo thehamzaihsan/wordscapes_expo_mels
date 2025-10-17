@@ -95,14 +95,15 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
         {(() => {
           const xp = guestMeta?.xp ?? 0;
           const derived = derivePlayerLevel(xp);
-          const within = derived.levelXp;
-          const needed = derived.nextLevelXp;
-          const pct = Math.min(100, Math.max(0, (within / needed) * 100));
+          const currentLevel = derived.level;
+          const progressInCurrentLevel = derived.levelXp;
+          const xpNeededForNextLevel = derived.nextLevelXp;
+          const progressPercentage = Math.min(100, Math.max(0, (progressInCurrentLevel / xpNeededForNextLevel) * 100));
           
           // Check next category unlock
           const { getCategoryOrder, getUnlockedCategories, xpNeededToUnlockCategory } = require('@/hooks/guest-progress');
           const categoryOrder = getCategoryOrder();
-          const unlockedCategories = getUnlockedCategories(guestMeta?.playerLevel || 0);
+          const unlockedCategories = getUnlockedCategories(currentLevel);
           const nextCategoryIndex = unlockedCategories.length;
           const nextCategory = categoryOrder[nextCategoryIndex];
           const nextCategoryXP = nextCategory ? xpNeededToUnlockCategory(nextCategoryIndex) : 0;
@@ -111,9 +112,14 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
           return (
             <>
               <View style={styles.xpLabelContainer}>
-                <ThemedText variant="caption" color="textSecondary" style={styles.xpLabel}>
-                  {within}/{needed} XP (Total {xp})
-                </ThemedText>
+                <View style={styles.xpInfoContainer}>
+                  <ThemedText variant="caption" color="textSecondary" style={styles.xpLabel}>
+                    Level {currentLevel} Progress
+                  </ThemedText>
+                  <ThemedText variant="caption" color="textTertiary" style={styles.xpNumbers}>
+                    {progressInCurrentLevel} / {xpNeededForNextLevel} XP
+                  </ThemedText>
+                </View>
                 <ThemedButton
                   title="⚡ Buy XP"
                   variant="outline"
@@ -122,16 +128,24 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
                   style={[styles.buyXpButton, { borderColor: theme.colors.primary }]}
                 />
               </View>
-              {nextCategory && nextCategoryRemaining > 0 && (
-                <ThemedText variant="caption" color="primary" weight="semibold" style={styles.nextUnlockText}>
-                  {nextCategoryRemaining} XP to unlock {nextCategory}
-                </ThemedText>
-              )}
+              
+              {/* Progress Bar */}
               <View style={styles.xpBarContainer}>
                 <View style={[styles.xpBarBackground, { backgroundColor: theme.colors.border }]}>
-                  <View style={[styles.xpBar, { backgroundColor: theme.colors.primary, width: `${pct}%` }]} />
+                  <View style={[styles.xpBar, { backgroundColor: theme.colors.primary, width: `${progressPercentage}%` }]} />
                 </View>
+                <ThemedText variant="caption" color="primary" weight="medium" style={styles.progressText}>
+                  {Math.round(progressPercentage)}% to Level {currentLevel + 1}
+                </ThemedText>
               </View>
+              
+              {nextCategory && nextCategoryRemaining > 0 && (
+                <View style={styles.nextUnlockContainer}>
+                  <ThemedText variant="caption" color="primary" weight="semibold" style={styles.nextUnlockText}>
+                    🔓 Next: {nextCategory} category ({nextCategoryRemaining} XP needed)
+                  </ThemedText>
+                </View>
+              )}
             </>
           );
         })()}
@@ -203,35 +217,39 @@ const createStyles = (theme: any) => ({
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
     width: '100%',
   },
-  xpLabel: {
-    fontSize: 12,
-    textAlign: 'left' as const,
+  xpInfoContainer: {
     flex: 1,
+    alignItems: 'flex-start' as const,
+  },
+  xpLabel: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    marginBottom: 2,
+  },
+  xpNumbers: {
+    fontSize: 11,
   },
   buyXpButton: {
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 4,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 6,
     borderRadius: theme.borderRadius.sm,
     borderWidth: 1,
-  },
-  nextUnlockText: {
-    fontSize: 10,
-    textAlign: 'center' as const,
-    marginBottom: theme.spacing.xs,
   },
   xpBarContainer: {
     alignItems: 'center' as const,
     width: '100%',
+    marginBottom: theme.spacing.xs,
   },
   xpBarBackground: {
-    width: '85%',
-    height: 10,
+    width: '100%',
+    height: 12,
     borderRadius: 6,
     overflow: 'hidden' as const,
     borderWidth: 1,
+    marginBottom: theme.spacing.xs,
   },
   xpBar: {
     height: '100%',
@@ -244,6 +262,23 @@ const createStyles = (theme: any) => ({
     shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 2,
+  },
+  progressText: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+  },
+  nextUnlockContainer: {
+    width: '100%',
+    alignItems: 'center' as const,
+    marginTop: theme.spacing.xs,
+    paddingTop: theme.spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border + '40',
+  },
+  nextUnlockText: {
+    fontSize: 11,
+    textAlign: 'center' as const,
+    fontWeight: '600' as const,
   },
 });
 

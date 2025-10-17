@@ -9,9 +9,10 @@ import {
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { clampEnergy } from "@/lib/energy";
 import { showToast } from "@/lib/toast";
-import { Battery, ChevronLeft, Gem, Lightbulb, Zap } from "lucide-react-native";
+import { ChevronLeft, Gem, Zap, Battery } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StatusBar,
   View,
@@ -19,21 +20,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
-import ThemedModal from "../ui/ThemedModal";
 import ThemedText from "../ui/ThemedText";
 
 interface XPShopScreenProps {
   onNavigate: (screen: string) => void;
-  fromScreen?: string;
-}
-
-interface PurchaseModalData {
-  type: 'xp' | 'energy' | 'error';
-  title: string;
-  message: string;
-  amount?: number;
-  cost?: number;
-  onConfirm?: () => void;
+  fromScreen?: string; // Track where user came from
 }
 
 const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "levels" }) => {
@@ -43,8 +34,6 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
   const [progress, setProgress] = useState<GuestProgressPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalData, setModalData] = useState<PurchaseModalData | null>(null);
 
   useEffect(() => {
     loadProgressData();
@@ -52,6 +41,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   const loadProgressData = async () => {
     try {
+      // Trigger energy regeneration check first
       const gp = await triggerEnergyRegenCheck() || await loadGuestProgress();
       setProgress(gp);
     } catch (error) {
@@ -62,79 +52,67 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     }
   };
 
-  const showPurchaseModal = (data: PurchaseModalData) => {
-    setModalData(data);
-    setModalVisible(true);
-  };
-
-  const hideModal = () => {
-    setModalVisible(false);
-    setModalData(null);
-  };
-
   const handlePurchaseXP = async (xpAmount: number, gemsCost: number) => {
     if (!progress) return;
     
     if (progress.meta.gems < gemsCost) {
-      showPurchaseModal({
-        type: 'error',
-        title: 'Insufficient Gems',
-        message: `You need ${gemsCost} gems to purchase ${xpAmount} XP. You currently have ${progress.meta.gems} gems.`,
-      });
+      Alert.alert(
+        "Insufficient Gems",
+        `You need ${gemsCost} gems to purchase ${xpAmount} XP. You currently have ${progress.meta.gems} gems.`,
+        [{ text: "OK" }]
+      );
       return;
     }
 
-    showPurchaseModal({
-      type: 'xp',
-      title: 'Purchase XP',
-      message: `Purchase ${xpAmount} XP for ${gemsCost} gems?`,
-      amount: xpAmount,
-      cost: gemsCost,
-      onConfirm: () => confirmPurchaseXP(xpAmount, gemsCost),
-    });
-  };
+    Alert.alert(
+      "Purchase XP",
+      `Purchase ${xpAmount} XP for ${gemsCost} gems?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Purchase",
+          onPress: async () => {
+            setPurchasing(true);
+            try {
+              const updatedProgress = {
+                ...progress,
+                meta: {
+                  ...progress.meta,
+                  gems: progress.meta.gems - gemsCost,
+                  xp: progress.meta.xp + xpAmount,
+                },
+                updatedAt: new Date().toISOString(),
+              };
 
-  const confirmPurchaseXP = async (xpAmount: number, gemsCost: number) => {
-    if (!progress) return;
-    
-    setPurchasing(true);
-    hideModal();
-    
-    try {
-      const updatedProgress = {
-        ...progress,
-        meta: {
-          ...progress.meta,
-          gems: progress.meta.gems - gemsCost,
-          xp: progress.meta.xp + xpAmount,
+              // Recalculate player level
+              const derived = derivePlayerLevel(updatedProgress.meta.xp);
+              updatedProgress.meta.playerLevel = derived.level;
+
+              await saveGuestProgress(updatedProgress);
+              setProgress(updatedProgress);
+              
+              showToast(`Purchased ${xpAmount} XP!`, "success");
+            } catch (error) {
+              console.error("Purchase failed:", error);
+              showToast("Purchase failed", "error");
+            } finally {
+              setPurchasing(false);
+            }
+          },
         },
-        updatedAt: new Date().toISOString(),
-      };
-
-      const derived = derivePlayerLevel(updatedProgress.meta.xp);
-      updatedProgress.meta.playerLevel = derived.level;
-
-      await saveGuestProgress(updatedProgress);
-      setProgress(updatedProgress);
-      
-      showToast(`Purchased ${xpAmount} XP!`, "success");
-    } catch (error) {
-      console.error("Purchase failed:", error);
-      showToast("Purchase failed", "error");
-    } finally {
-      setPurchasing(false);
-    }
+      ]
+    );
   };
 
   const handlePurchaseEnergy = async (energyAmount: number, gemsCost: number) => {
     if (!progress) return;
     
     if (progress.meta.gems < gemsCost) {
-      showPurchaseModal({
-        type: 'error',
-        title: 'Insufficient Gems',
-        message: `You need ${gemsCost} gems to purchase ${energyAmount} energy. You currently have ${progress.meta.gems} gems.`,
-      });
+      Alert.alert(
+        "Insufficient Gems",
+        `You need ${gemsCost} gems to purchase ${energyAmount} energy. You currently have ${progress.meta.gems} gems.`,
+        [{ text: "OK" }]
+      );
       return;
     }
 
@@ -142,132 +120,49 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     const maxEnergy = economy.energy.refillMax;
     
     if (currentEnergy >= maxEnergy) {
-      showPurchaseModal({
-        type: 'error',
-        title: 'Energy Full',
-        message: `Your energy is already at maximum (${maxEnergy}/${maxEnergy}).`,
-      });
+      Alert.alert(
+        "Energy Full",
+        `Your energy is already at maximum (${maxEnergy}/${maxEnergy}).`,
+        [{ text: "OK" }]
+      );
       return;
     }
 
-    showPurchaseModal({
-      type: 'energy',
-      title: 'Purchase Energy',
-      message: `Purchase ${energyAmount} energy for ${gemsCost} gems?`,
-      amount: energyAmount,
-      cost: gemsCost,
-      onConfirm: () => confirmPurchaseEnergy(energyAmount, gemsCost),
-    });
-  };
+    Alert.alert(
+      "Purchase Energy",
+      `Purchase ${energyAmount} energy for ${gemsCost} gems?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Purchase",
+          onPress: async () => {
+            setPurchasing(true);
+            try {
+              const updatedProgress = {
+                ...progress,
+                meta: {
+                  ...progress.meta,
+                  gems: progress.meta.gems - gemsCost,
+                  energy: clampEnergy(progress.meta.energy + energyAmount),
+                  lastEnergyUpdate: new Date().toISOString(),
+                },
+                updatedAt: new Date().toISOString(),
+              };
 
-  const confirmPurchaseEnergy = async (energyAmount: number, gemsCost: number) => {
-    if (!progress) return;
-    
-    setPurchasing(true);
-    hideModal();
-    
-    try {
-      const updatedProgress = {
-        ...progress,
-        meta: {
-          ...progress.meta,
-          gems: progress.meta.gems - gemsCost,
-          energy: clampEnergy(progress.meta.energy + energyAmount),
-          lastEnergyUpdate: new Date().toISOString(),
+              await saveGuestProgress(updatedProgress);
+              setProgress(updatedProgress);
+              
+              showToast(`Purchased ${energyAmount} energy!`, "success");
+            } catch (error) {
+              console.error("Purchase failed:", error);
+              showToast("Purchase failed", "error");
+            } finally {
+              setPurchasing(false);
+            }
+          },
         },
-        updatedAt: new Date().toISOString(),
-      };
-
-      await saveGuestProgress(updatedProgress);
-      setProgress(updatedProgress);
-      
-      showToast(`Purchased ${energyAmount} energy!`, "success");
-    } catch (error) {
-      console.error("Purchase failed:", error);
-      showToast("Purchase failed", "error");
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
-  const handlePurchaseHints = (hintsAmount: number, gemsCost: number) => {
-    if (!progress) return;
-    
-    if (progress.meta.gems < gemsCost) {
-      showPurchaseModal({
-        type: 'error',
-        title: 'Insufficient Gems',
-        message: `You need ${gemsCost} gems to purchase ${hintsAmount} hints. You currently have ${progress.meta.gems} gems.`,
-      });
-      return;
-    }
-
-    showPurchaseModal({
-      type: 'xp',
-      title: 'Purchase Hints',
-      message: `Purchase ${hintsAmount} hints for ${gemsCost} gems?`,
-      amount: hintsAmount,
-      cost: gemsCost,
-      onConfirm: () => confirmPurchaseHints(hintsAmount, gemsCost),
-    });
-  };
-
-  const confirmPurchaseHints = async (hintsAmount: number, gemsCost: number) => {
-    if (!progress) return;
-    
-    setPurchasing(true);
-    hideModal();
-    
-    try {
-      const updatedProgress = {
-        ...progress,
-        meta: {
-          ...progress.meta,
-          gems: progress.meta.gems - gemsCost,
-          hints: (progress.meta.hints || 0) + hintsAmount,
-        },
-        updatedAt: new Date().toISOString(),
-      };
-
-      await saveGuestProgress(updatedProgress);
-      setProgress(updatedProgress);
-      
-      showToast(`Purchased ${hintsAmount} hints!`, "success");
-    } catch (error) {
-      console.error("Purchase failed:", error);
-      showToast("Purchase failed", "error");
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
-  const getHintPackages = () => {
-    const baseHintCost = economy.hints.cost;
-    const baseHintQuantity = economy.hints.quantity;
-    
-    return [
-      {
-        id: 1,
-        hints: baseHintQuantity,
-        gems: baseHintCost,
-        popular: false,
-        badge: null,
-      },
-      {
-        id: 2,
-        hints: baseHintQuantity * 5,
-        gems: Math.floor(baseHintCost * 4.2), // ~16% discount
-        popular: true,
-        badge: "POPULAR",
-      },
-      {
-        id: 3,
-        hints: baseHintQuantity * 10,
-        gems: Math.floor(baseHintCost * 7.5), // ~25% discount
-        popular: false,
-        badge: "BEST VALUE",
-      },
-    ];
+      ]
+    );
   };
 
   const getXPPackages = () => {
@@ -285,9 +180,23 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
       {
         id: 2,
         xp: baseXP * 3,
-        gems: Math.floor(baseGems * 2.5),
+        gems: Math.floor(baseGems * 2.5), // 20% bonus
         popular: true,
         badge: "POPULAR",
+      },
+      {
+        id: 3,
+        xp: baseXP * 6,
+        gems: Math.floor(baseGems * 4.5), // 25% bonus
+        popular: false,
+        badge: "BEST VALUE",
+      },
+      {
+        id: 4,
+        xp: baseXP * 10,
+        gems: Math.floor(baseGems * 7), // 30% bonus
+        popular: false,
+        badge: "MEGA PACK",
       },
     ];
   };
@@ -299,19 +208,71 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     return [
       {
         id: 1,
-        energy: Math.floor(refillAmount * 0.25),
+        energy: Math.floor(refillAmount * 0.25), // 25 energy
         gems: refillCost,
         popular: false,
         badge: null,
       },
       {
         id: 2,
-        energy: Math.floor(refillAmount * 0.5),
-        gems: Math.floor(refillCost * 1.8),
+        energy: Math.floor(refillAmount * 0.5), // 50 energy
+        gems: Math.floor(refillCost * 1.8), // 10% bonus
         popular: true,
         badge: "POPULAR",
       },
+      {
+        id: 3,
+        energy: refillAmount, // 100 energy (full refill)
+        gems: Math.floor(refillCost * 3.2), // 20% bonus
+        popular: false,
+        badge: "FULL REFILL",
+      },
+      {
+        id: 4,
+        energy: Math.floor(refillAmount * 1.5), // 150 energy (capped to max)
+        gems: Math.floor(refillCost * 4.5), // 25% bonus
+        popular: false,
+        badge: "MEGA BOOST",
+      },
     ];
+  };
+
+  const getCurrentLevelProgress = () => {
+    if (!progress) return null;
+    
+    const derived = derivePlayerLevel(progress.meta.xp);
+    const progressPercent = (derived.levelXp / derived.nextLevelXp) * 100;
+    
+    return {
+      currentLevel: derived.level,
+      xpInLevel: derived.levelXp,
+      xpNeeded: derived.nextLevelXp,
+      progressPercent,
+      totalXP: progress.meta.xp,
+    };
+  };
+
+  const getNextCategoryInfo = () => {
+    if (!progress) return null;
+    
+    const { getCategoryOrder, getUnlockedCategories, xpNeededToUnlockCategory } = require('@/hooks/guest-progress');
+    const categoryOrder = getCategoryOrder();
+    const unlockedCategories = getUnlockedCategories(progress.meta.playerLevel);
+    const nextCategoryIndex = unlockedCategories.length;
+    const nextCategory = categoryOrder[nextCategoryIndex];
+    
+    if (!nextCategory) return null;
+    
+    const requiredXP = xpNeededToUnlockCategory(nextCategoryIndex);
+    const remainingXP = Math.max(0, requiredXP - progress.meta.xp);
+    
+    return {
+      name: nextCategory,
+      emoji: nextCategory === 'Ocean' ? '🌊' : nextCategory === 'Forest' ? '🌲' : '🎯',
+      requiredXP,
+      remainingXP,
+      progressPercent: requiredXP > 0 ? (progress.meta.xp / requiredXP) * 100 : 100,
+    };
   };
 
   if (loading) {
@@ -327,9 +288,10 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     );
   }
 
+  const levelProgress = getCurrentLevelProgress();
+  const nextCategory = getNextCategoryInfo();
   const xpPackages = getXPPackages();
   const energyPackages = getEnergyPackages();
-  const hintPackages = getHintPackages();
 
   return (
     <View style={styles.container}>
@@ -345,6 +307,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
         showsVerticalScrollIndicator={false}
       >
         
+        {/* Back Button */}
         <ThemedButton
           title="Back"
           variant="glass"
@@ -354,6 +317,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
           style={styles.backButton}
         />
 
+        {/* Header Card */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
           <View style={styles.headerTitle}>
             <Zap size={24} color={theme.colors.primary} />
@@ -365,6 +329,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
             Purchase XP and Energy to boost your progress
           </ThemedText>
           
+          {/* Player Resources */}
           <View style={styles.resourcesDisplay}>
             <View style={styles.gemsDisplay}>
               <Gem size={20} color={theme.colors.warning} />
@@ -384,18 +349,87 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                 / {economy.energy.refillMax} energy
               </ThemedText>
             </View>
-            <View style={styles.hintsDisplay}>
-              <Lightbulb size={20} color={theme.colors.warning} />
-              <ThemedText variant="heading3" weight="bold" color="warning" style={styles.hintsText}>
-                {progress?.meta.hints || 0}
-              </ThemedText>
-              <ThemedText variant="caption" color="textSecondary">
-                hints
-              </ThemedText>
-            </View>
           </View>
         </ThemedCard>
 
+        {/* Current Progress Section */}
+        {levelProgress && (
+          <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+            <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+              Current Progress
+            </ThemedText>
+            
+            <View style={styles.levelInfo}>
+              <ThemedText variant="heading2" weight="bold" color="primary" style={styles.currentLevelText}>
+                Level {levelProgress.currentLevel}
+              </ThemedText>
+              <ThemedText variant="body1" weight="semibold" color="textSecondary" style={styles.xpText}>
+                {levelProgress.xpInLevel} / {levelProgress.xpNeeded} XP
+              </ThemedText>
+            </View>
+            
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarBackground, { backgroundColor: theme.colors.border }]}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      backgroundColor: theme.colors.primary,
+                      width: `${levelProgress.progressPercent}%` 
+                    }
+                  ]} 
+                />
+              </View>
+              <ThemedText variant="caption" color="textSecondary" align="center" style={styles.progressText}>
+                {Math.round(levelProgress.progressPercent)}% to next level
+              </ThemedText>
+            </View>
+            
+            <ThemedText variant="body2" color="textTertiary" align="center" style={styles.totalXpText}>
+              Total XP: {levelProgress.totalXP}
+            </ThemedText>
+          </ThemedCard>
+        )}
+
+        {/* Next Category Unlock */}
+        {nextCategory && (
+          <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+            <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+              Next Unlock
+            </ThemedText>
+            
+            <View style={styles.categoryInfo}>
+              <ThemedText style={styles.categoryEmoji}>{nextCategory.emoji}</ThemedText>
+              <View style={styles.categoryDetails}>
+                <ThemedText variant="heading4" weight="bold" style={styles.categoryName}>
+                  {nextCategory.name}
+                </ThemedText>
+                <ThemedText variant="body2" color="warning" weight="semibold" style={styles.categoryProgress}>
+                  {nextCategory.remainingXP} XP needed
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarBackground, { backgroundColor: theme.colors.border }]}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      backgroundColor: theme.colors.warning,
+                      width: `${nextCategory.progressPercent}%` 
+                    }
+                  ]} 
+                />
+              </View>
+              <ThemedText variant="caption" color="textSecondary" align="center" style={styles.progressText}>
+                {Math.round(nextCategory.progressPercent)}% complete
+              </ThemedText>
+            </View>
+          </ThemedCard>
+        )}
+
+        {/* XP Packages */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
             XP Packages
@@ -417,7 +451,9 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                 {pkg.badge && (
                   <View style={[
                     styles.packageBadge,
-                    { backgroundColor: pkg.popular ? theme.colors.primary : theme.colors.warning }
+                    pkg.popular 
+                      ? { backgroundColor: theme.colors.primary }
+                      : { backgroundColor: theme.colors.warning }
                   ]}>
                     <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
                       {pkg.badge}
@@ -456,6 +492,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
           </View>
         </ThemedCard>
 
+        {/* Energy Packages */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
             Energy Packages
@@ -477,7 +514,9 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                 {pkg.badge && (
                   <View style={[
                     styles.packageBadge,
-                    { backgroundColor: pkg.popular ? theme.colors.success : theme.colors.info }
+                    pkg.popular 
+                      ? { backgroundColor: theme.colors.success }
+                      : { backgroundColor: theme.colors.info }
                   ]}>
                     <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
                       {pkg.badge}
@@ -522,144 +561,48 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
           </View>
         </ThemedCard>
 
+        {/* Info Section */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
-            Hint Packages
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            💡 Power Up Benefits
           </ThemedText>
-          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.sectionSubtitle}>
-            Get help when you're stuck on difficult words!
-          </ThemedText>
-          
-          <View style={styles.packagesGrid}>
-            {hintPackages.map((pkg) => (
-              <View
-                key={pkg.id}
-                style={[
-                  styles.packageCard,
-                  { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border },
-                  pkg.popular && { borderColor: theme.colors.warning, backgroundColor: `${theme.colors.warning}10` }
-                ]}
-              >
-                {pkg.badge && (
-                  <View style={[
-                    styles.packageBadge,
-                    { backgroundColor: pkg.popular ? theme.colors.warning : theme.colors.primary }
-                  ]}>
-                    <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
-                      {pkg.badge}
-                    </ThemedText>
-                  </View>
-                )}
-                
-                <ThemedText variant="heading2" weight="bold" style={styles.packageXP}>
-                  +{pkg.hints}
-                </ThemedText>
-                <ThemedText variant="body2" color="textSecondary" weight="semibold" style={styles.packageXPLabel}>
-                  HINTS
-                </ThemedText>
-                
-                <View style={styles.packageCost}>
-                  <ThemedText variant="heading4" weight="bold" color="warning" style={styles.packageGems}>
-                    {pkg.gems}
-                  </ThemedText>
-                  <Gem size={16} color={theme.colors.warning} />
-                  <ThemedText variant="caption" color="textSecondary" style={styles.packageGemsLabel}>
-                    gems
-                  </ThemedText>
-                </View>
-                
-                <ThemedButton
-                  title={
-                    (progress?.meta.gems || 0) < pkg.gems 
-                      ? "Not enough gems" 
-                      : "Purchase"
-                  }
-                  variant={(progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"}
-                  size="sm"
-                  fullWidth
-                  disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems}
-                  onPress={() => handlePurchaseHints(pkg.hints, pkg.gems)}
-                  style={styles.purchaseButton}
-                />
-              </View>
-            ))}
+          <View style={styles.benefitsList}>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              <ThemedText weight="bold">XP Benefits:</ThemedText>
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Unlock new categories faster
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Progress through player levels
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Access exclusive content sooner
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Skip the level grinding
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={[styles.benefitText, { marginTop: 8 }]}>
+              <ThemedText weight="bold">Energy Benefits:</ThemedText>
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Play more levels immediately
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • No waiting for energy refills
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Maintain your gaming momentum
+            </ThemedText>
+            <ThemedText variant="body2" color="textSecondary" style={styles.benefitText}>
+              • Perfect for gaming sessions
+            </ThemedText>
           </View>
         </ThemedCard>
 
+        {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      {/* Custom Purchase Confirmation Modal */}
-      <ThemedModal
-        isVisible={modalVisible}
-        onClose={hideModal}
-        title={modalData?.title}
-        size="small"
-        backdrop="blur"
-        closeOnBackdropPress={true}
-        showCloseButton={false}
-      >
-        <View style={styles.modalContent}>
-          <ThemedText variant="body1" align="center" style={styles.modalMessage}>
-            {modalData?.message}
-          </ThemedText>
-          
-          {modalData?.type !== 'error' && modalData?.amount && modalData?.cost && (
-            <View style={styles.modalSummary}>
-              <View style={styles.modalSummaryRow}>
-                <ThemedText variant="body2" color="textSecondary">
-                  {modalData.type === 'xp' ? 'XP Amount:' : 'Energy Amount:'}
-                </ThemedText>
-                <ThemedText variant="body2" weight="semibold" color="primary">
-                  +{modalData.amount}
-                </ThemedText>
-              </View>
-              <View style={styles.modalSummaryRow}>
-                <ThemedText variant="body2" color="textSecondary">
-                  Cost:
-                </ThemedText>
-                <View style={styles.modalCostRow}>
-                  <ThemedText variant="body2" weight="semibold" color="warning">
-                    {modalData.cost}
-                  </ThemedText>
-                  <Gem size={14} color={theme.colors.warning} />
-                </View>
-              </View>
-            </View>
-          )}
-          
-          <View style={styles.modalButtons}>
-            {modalData?.type === 'error' ? (
-              <ThemedButton
-                title="OK"
-                variant="primary"
-                size="md"
-                fullWidth
-                onPress={hideModal}
-              />
-            ) : (
-              <>
-                <ThemedButton
-                  title="Cancel"
-                  variant="ghost"
-                  size="md"
-                  onPress={hideModal}
-                  style={styles.cancelButton}
-                />
-                <ThemedButton
-                  title="Purchase"
-                  variant="primary"
-                  size="md"
-                  onPress={modalData?.onConfirm || hideModal}
-                  disabled={purchasing}
-                  isLoading={purchasing}
-                  style={styles.confirmButton}
-                />
-              </>
-            )}
-          </View>
-        </View>
-      </ThemedModal>
     </View>
   );
 };
@@ -722,19 +665,10 @@ const createStyles = (theme: any) => ({
     justifyContent: 'center' as const,
     gap: theme.spacing.xs,
   },
-  hintsDisplay: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    gap: theme.spacing.xs,
-  },
   gemsText: {
     fontSize: 18,
   },
   energyText: {
-    fontSize: 18,
-  },
-  hintsText: {
     fontSize: 18,
   },
   card: {
@@ -750,6 +684,56 @@ const createStyles = (theme: any) => ({
   sectionSubtitle: {
     marginBottom: theme.spacing.lg,
   },
+  levelInfo: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.sm,
+  },
+  currentLevelText: {
+    fontSize: 20,
+  },
+  xpText: {
+    fontSize: 16,
+  },
+  progressBarContainer: {
+    marginBottom: theme.spacing.xs,
+  },
+  progressBarBackground: {
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden' as const,
+    marginBottom: theme.spacing.xs,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  progressText: {
+    fontSize: 12,
+  },
+  totalXpText: {
+    fontSize: 14,
+    marginTop: theme.spacing.xs,
+  },
+  categoryInfo: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  categoryEmoji: {
+    fontSize: 32,
+  },
+  categoryDetails: {
+    flex: 1,
+  },
+  categoryName: {
+    fontSize: 18,
+  },
+  categoryProgress: {
+    fontSize: 14,
+  },
   packagesGrid: {
     flexDirection: 'row' as const,
     flexWrap: 'wrap' as const,
@@ -757,7 +741,7 @@ const createStyles = (theme: any) => ({
     justifyContent: 'space-between' as const,
   },
   packageCard: {
-    width: '48%' as const,
+    width: '48%',
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.base,
     borderWidth: 2,
@@ -797,46 +781,15 @@ const createStyles = (theme: any) => ({
   purchaseButton: {
     marginTop: theme.spacing.xs,
   },
+  benefitsList: {
+    gap: theme.spacing.xs,
+  },
+  benefitText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
   bottomSpacing: {
     height: theme.spacing.xl4,
-  },
-  // Modal styles
-  modalContent: {
-    alignItems: 'center' as const,
-  },
-  modalMessage: {
-    marginBottom: theme.spacing.lg,
-    textAlign: 'center' as const,
-    lineHeight: 22,
-  },
-  modalSummary: {
-    width: '100%' as const,
-    marginBottom: theme.spacing.lg,
-    padding: theme.spacing.base,
-    backgroundColor: theme.colors.surfaceSecondary,
-    borderRadius: theme.borderRadius.md,
-  },
-  modalSummaryRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
-    marginBottom: theme.spacing.xs,
-  },
-  modalCostRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 4,
-  },
-  modalButtons: {
-    flexDirection: 'row' as const,
-    width: '100%' as const,
-    gap: theme.spacing.sm,
-  },
-  cancelButton: {
-    flex: 1,
-  },
-  confirmButton: {
-    flex: 1,
   },
 });
 

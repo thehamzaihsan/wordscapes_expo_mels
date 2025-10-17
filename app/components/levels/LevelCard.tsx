@@ -19,10 +19,11 @@ interface LevelData {
 interface LevelCardProps {
   level: LevelData;
   categoryName: string;
+  guestMeta?: any; // Add guestMeta to access energy
   onPress: (level: LevelData, categoryName: string) => void;
 }
 
-const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) => {
+const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, guestMeta, onPress }) => {
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
   
@@ -40,6 +41,11 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
     }
   };
 
+  // Check energy requirements
+  const energyCost = economy.energy.costPerLevel;
+  const currentEnergy = guestMeta?.energy || 0;
+  const hasEnoughEnergy = currentEnergy >= energyCost;
+
   if (!level.isUnlocked) {
     return (
       <ThemedCard variant="glassStrong" padding="lg" style={styles.lockedCard}>
@@ -53,10 +59,24 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
     );
   }
 
+  // Show energy insufficient state for unlocked levels that can't be played
+  if (level.isUnlocked && !level.isCompleted && !hasEnoughEnergy) {
+    return (
+      <ThemedCard variant="glassStrong" padding="lg" style={styles.energyInsufficientCard}>
+        <View style={styles.energyInsufficientOverlay}>
+          <ThemedText variant="heading1" color="textInverse">⚡</ThemedText>
+          <ThemedText variant="body2" color="textSecondary">
+            Need {energyCost} Energy
+          </ThemedText>
+        </View>
+      </ThemedCard>
+    );
+  }
+
   return (
     <TouchableOpacity
       onPress={() => onPress(level, categoryName)}
-      disabled={!level.isUnlocked}
+      disabled={!level.isUnlocked || level.isCompleted || !hasEnoughEnergy}
       activeOpacity={0.8}
     >
       <ThemedCard
@@ -65,6 +85,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
         style={[
           styles.levelCard,
           !level.isUnlocked && styles.levelCardLocked,
+          !hasEnoughEnergy && level.isUnlocked && !level.isCompleted && styles.levelCardEnergyInsufficient,
         ]}
       >
         <View style={styles.levelContent}>
@@ -103,37 +124,6 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
                 </ThemedText>
               </View>
             )}
-            {/* Completed indicator */}
-            {level.isCompleted && (
-              <View style={styles.completedRewardContainer}>
-                <ThemedText variant="body2" color="success">
-                  Completed ✓
-                </ThemedText>
-              </View>
-            )}
-          </View>
-
-          {/* Status Badge */}
-          <View style={styles.statusSection}>
-            {level.isCompleted ? (
-              <View style={[styles.statusBadge, styles.completedBadge]}>
-                <ThemedText variant="caption" color="textInverse" weight="medium">
-                  ✓ Replay Available
-                </ThemedText>
-              </View>
-            ) : level.isUnlocked ? (
-              <View style={[styles.statusBadge, styles.newBadge]}>
-                <ThemedText variant="caption" color="textInverse" weight="medium">
-                  Ready to Play
-                </ThemedText>
-              </View>
-            ) : (
-              <View style={[styles.statusBadge, styles.inProgressBadge]}>
-                <ThemedText variant="caption" color="textInverse" weight="medium">
-                  Locked
-                </ThemedText>
-              </View>
-            )}
           </View>
         </View>
       </ThemedCard>
@@ -151,12 +141,26 @@ const createStyles = (theme: any) => ({
   levelCardLocked: {
     opacity: 0.6,
   },
+  levelCardEnergyInsufficient: {
+    opacity: 0.7,
+  },
   lockedCard: {
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     minHeight: 140,
   },
+  energyInsufficientCard: {
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    minHeight: 140,
+    opacity: 0.8,
+    backgroundColor: 'rgba(255, 165, 0, 0.1)', // Orange tint for energy warning
+  },
   lockOverlay: {
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  energyInsufficientOverlay: {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
@@ -183,37 +187,11 @@ const createStyles = (theme: any) => ({
     alignItems: 'center' as const,
     marginBottom: theme.spacing.md,
   },
-  statusSection: {
-    marginTop: theme.spacing.sm,
-  },
-  statusBadge: {
-    paddingHorizontal: theme.spacing.base,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.xl,
-    alignSelf: 'flex-start' as const,
-  },
-  completedBadge: {
-    backgroundColor: `${theme.colors.success}B3`, // 70% opacity
-  },
-  inProgressBadge: {
-    backgroundColor: `${theme.colors.info}B3`, // 70% opacity
-  },
-  newBadge: {
-    backgroundColor: `${theme.colors.primary}B3`, // 70% opacity
-  },
   rewardContainer: {
     backgroundColor: theme.colors.backgroundSecondary,
     paddingVertical: theme.spacing.xs,
     paddingHorizontal: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
-  },
-  completedRewardContainer: {
-    backgroundColor: `${theme.colors.success}26`, // 15% opacity
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
-    borderWidth: 1,
-    borderColor: `${theme.colors.success}4D`, // 30% opacity
   },
 });
 

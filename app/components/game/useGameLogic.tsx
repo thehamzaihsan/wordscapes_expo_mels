@@ -12,6 +12,7 @@ import {
   generateCrosswordLevelWithBaseword,
 } from "@/hooks/game-manager";
 import { loadGuestProgress, saveGuestProgress } from "@/hooks/guest-progress";
+import { useLevelProgress } from "@/hooks/useLevelProgress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { showToast } from "@/lib/toast";
 
@@ -57,6 +58,18 @@ export function useGameLogic({
   categoryName,
   onNavigate,
 }: UseGameLogicProps) {
+  // Temporary progress management
+  const {
+    tempProgress,
+    isLoading: tempProgressLoading,
+    saveTempProgress,
+    clearTempProgress,
+    hasTempProgress
+  } = useLevelProgress(categoryName, levelData?.level);
+
+  // Flag to track if restoration has already been performed
+  const restorationPerformed = useRef(false);
+
   // Core game state
   const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
   const [letters, setLetters] = useState<string[]>([]);
@@ -74,14 +87,28 @@ export function useGameLogic({
   );
   const [cellSize, setCellSize] = useState(40);
 
-  // Hint state
+  // Hint state - now using global hints from guest progress
   const [hintAnim, setHintAnim] = useState<{
     row: number;
     col: number;
     anim: Animated.Value;
   } | null>(null);
-  const [hintsLeft, setHintsLeft] = useState(1);
+  const [globalHints, setGlobalHints] = useState(0);
   const [hintedWords, setHintedWords] = useState<string[]>([]);
+
+  // Load global hints from guest progress
+  useEffect(() => {
+    const loadHints = async () => {
+      try {
+        const { loadGuestProgress } = await import("@/hooks/guest-progress");
+        const progress = await loadGuestProgress();
+        setGlobalHints(progress?.meta.hints || 0);
+      } catch (error) {
+        console.warn('Failed to load hints:', error);
+      }
+    };
+    loadHints();
+  }, []);
 
   // Refs
   const gameCompleteRef = useRef(false);
@@ -202,6 +229,10 @@ export function useGameLogic({
   // Initialize game using the crossword generator so every word gets boxes
   useEffect(() => {
     let cancelled = false;
+    
+    // Reset restoration flag when new level loads
+    restorationPerformed.current = false;
+    
     (async () => {
       try {
         setLoading(true);
@@ -312,6 +343,59 @@ export function useGameLogic({
     createGameGridFromGenerated,
   ]);
 
+  // Save temporary progress whenever found words or score changes
+  useEffect(() => {
+    if (!loading && !gameComplete && (foundCrosswordWords.length > 0 || foundBonusWords.length > 0 || score > 0)) {
+      // Debounce saving to avoid too frequent saves
+      const timeoutId = setTimeout(() => {
+        saveTempProgress(foundCrosswordWords, foundBonusWords, score);
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [foundCrosswordWords, foundBonusWords, score, loading, gameComplete, saveTempProgress]);
+
+  // Clear temporary progress when game is completed
+  useEffect(() => {
+    if (gameComplete) {
+      clearTempProgress();
+    }
+  }, [gameComplete, clearTempProgress]);
+
+  // Handle level completion and persistence
+  useEffect(() => {
+    if (gameComplete && levelData && categoryName) {
+      const handleCompletion = async () => {
+        try {
+          const { completeLevelAndPersist } = await import("@/hooks/guest-progress");
+          
+          console.log('[LevelComplete] Persisting level completion:', {
+            category: categoryName,
+            level: levelData.level,
+            score,
+            foundCrosswordWords: foundCrosswordWords.length,
+            foundBonusWords: foundBonusWords.length
+          });
+          
+          await completeLevelAndPersist({
+            category: categoryName,
+            levelNumber: levelData.level,
+            score,
+            bonusWords: foundBonusWords.length,
+            crosswordWords: foundCrosswordWords.length,
+            attempts: 1, // Could track this if needed
+          });
+          
+          console.log('[LevelComplete] Level completion persisted successfully');
+        } catch (error) {
+          console.error('[LevelComplete] Failed to persist level completion:', error);
+        }
+      };
+      
+      handleCompletion();
+    }
+  }, [gameComplete, levelData, categoryName, score, foundCrosswordWords, foundBonusWords]);
+
   // Handle word submission
   const handleWordSubmit = useCallback(
     async (
@@ -321,15 +405,25 @@ export function useGameLogic({
       }
     ) => {
       const upperWord = word.toUpperCase();
+      
+      console.log('[WordSubmit] Attempting to submit word:', {
+        word: upperWord,
+        foundCrosswordWords: foundCrosswordWords,
+        foundBonusWords: foundBonusWords,
+        crosswordWords: crosswordWords.map(w => w.toUpperCase()),
+        allValidWords: allValidWords.slice(0, 5) // Show first 5 for debugging
+      });
 
       if (
         foundCrosswordWords.includes(upperWord) ||
         foundBonusWords.includes(upperWord)
       ) {
+        console.log('[WordSubmit] Word is duplicate:', upperWord);
         return { success: false, type: "duplicate" as const };
       }
 
       if (crosswordWords.map((w) => w.toUpperCase()).includes(upperWord)) {
+        console.log('[WordSubmit] Found crossword word:', upperWord);
         // Reveal cells for this crossword word
         setFoundCrosswordWords((prev) => [...prev, upperWord]);
 
@@ -391,6 +485,7 @@ export function useGameLogic({
       } else if (
         allValidWords.map((w) => w.toUpperCase()).includes(upperWord)
       ) {
+        console.log('[WordSubmit] Found bonus word:', upperWord);
         setFoundBonusWords((prev) => [...prev, upperWord]);
         const wordScore = 5;
         setScore((prev) => prev + wordScore);
@@ -412,6 +507,11 @@ export function useGameLogic({
         return { success: true, type: "bonus" as const, score: wordScore };
       }
 
+      console.log('[WordSubmit] Word not found in any list:', {
+        upperWord,
+        isInCrosswords: crosswordWords.map((w) => w.toUpperCase()).includes(upperWord),
+        isInAllValid: allValidWords.map((w) => w.toUpperCase()).includes(upperWord)
+      });
       return { success: false, type: "invalid" as const };
     },
     [
@@ -451,39 +551,129 @@ export function useGameLogic({
     [wordPlacements, gameGrid]
   );
 
-  // Handle word hint - returns true if hint was applied (free or paid), false on failure
+  // Restore temporary progress after game initialization (ONLY ONCE)
+  useEffect(() => {
+    console.log('[TempProgress] Restoration effect triggered:', {
+      tempProgressLoading,
+      loading,
+      hasTempProgress,
+      hasGameGrid: !!gameGrid,
+      wordPlacementsLength: wordPlacements.length,
+      crosswordWordsLength: crosswordWords.length,
+      restorationPerformed: restorationPerformed.current
+    });
+    
+    if (!tempProgressLoading && !loading && tempProgress && hasTempProgress && 
+        gameGrid && wordPlacements.length > 0 && crosswordWords.length > 0 &&
+        !restorationPerformed.current) {
+      
+      console.log('[TempProgress] Performing ONE-TIME restoration');
+      restorationPerformed.current = true;
+      
+      // Validate that we're restoring progress for the right level
+      const validCrosswordWords = tempProgress.foundCrosswordWords.filter(word => 
+        crosswordWords.map(w => w.toUpperCase()).includes(word.toUpperCase())
+      );
+      
+      const validBonusWords = tempProgress.foundBonusWords.filter(word => 
+        allValidWords.map(w => w.toUpperCase()).includes(word.toUpperCase())
+      );
+      
+      console.log('[TempProgress] Restoring temporary progress:', {
+        foundCrosswordWords: validCrosswordWords,
+        foundBonusWords: validBonusWords,
+        originalCrosswordWords: tempProgress.foundCrosswordWords,
+        originalBonusWords: tempProgress.foundBonusWords,
+        score: tempProgress.score,
+        totalCrosswordWords: crosswordWords.length,
+        wordPlacements: wordPlacements.length
+      });
+      
+      // Batch reveal all found crossword words at once
+      if (validCrosswordWords.length > 0 || validBonusWords.length > 0) {
+        const newGrid = gameGrid.map((row) => row.map((c) => ({ ...c })));
+        let gridUpdated = false;
+        
+        validCrosswordWords.forEach((word) => {
+          const upperWord = word.toUpperCase();
+          const placement = wordPlacements.find(
+            (p) => p.word.toUpperCase() === upperWord
+          );
+          
+          console.log(`[TempProgress] Revealing cells for word: ${word}`);
+          
+          if (placement) {
+            gridUpdated = true;
+            if (placement.direction === "horizontal") {
+              for (let i = 0; i < placement.word.length; i++) {
+                const col = placement.startCol + i;
+                if (newGrid[placement.startRow]?.[col]) {
+                  newGrid[placement.startRow][col].isRevealed = true;
+                }
+              }
+            } else {
+              for (let i = 0; i < placement.word.length; i++) {
+                const row = placement.startRow + i;
+                if (newGrid[row]?.[placement.startCol]) {
+                  newGrid[row][placement.startCol].isRevealed = true;
+                }
+              }
+            }
+          }
+        });
+        
+        // Update all state at once to avoid multiple re-renders
+        setFoundCrosswordWords(validCrosswordWords);
+        setFoundBonusWords(validBonusWords);
+        setScore(tempProgress.score);
+        
+        if (gridUpdated) {
+          setGameGrid(newGrid);
+        }
+        
+        // Check if game should be completed based on restored progress
+        if (validCrosswordWords.length === crosswordWords.length) {
+          console.log('[TempProgress] Level should be completed - setting gameComplete');
+          setGameComplete(true);
+          gameCompleteRef.current = true;
+        }
+      }
+    }
+  }, [tempProgressLoading, loading, tempProgress, hasTempProgress, gameGrid, wordPlacements, crosswordWords, allValidWords]);
+
+  // Handle word hint - returns true if hint was applied, false if no hints available
   const handleWordHint = useCallback(
     async (hintedWord: string): Promise<boolean> => {
-      // First hint is free per game instance
-      if (hintsLeft > 0) {
-        setHintedWords((prev) => [...prev, hintedWord]);
-        setHintsLeft((prev) => prev - 1);
-        return true;
-      }
-      // After free hint, charge 5 gems per hint
-      try {
-        const progress = await loadGuestProgress();
-        if (!progress) throw new Error("No progress loaded");
-        const cost = 5;
-        const gems = progress.meta.gems ?? 0;
-        if (gems < cost) {
-          showToast("Not enough gems for a hint (5 needed)", "warning");
+      // Check if player has global hints available
+      if (globalHints > 0) {
+        try {
+          const { loadGuestProgress, saveGuestProgress } = await import("@/hooks/guest-progress");
+          const progress = await loadGuestProgress();
+          if (!progress || (progress.meta.hints || 0) < 1) {
+            return false;
+          }
+          
+          // Deduct hint from global count
+          progress.meta.hints = (progress.meta.hints || 0) - 1;
+          progress.updatedAt = new Date().toISOString();
+          await saveGuestProgress(progress);
+          
+          // Update local state
+          setGlobalHints(progress.meta.hints);
+          setHintedWords((prev) => [...prev, hintedWord]);
+          
+          console.log(`[Hint] Used hint for word: ${hintedWord}. Remaining hints: ${progress.meta.hints}`);
+          return true;
+        } catch (error) {
+          console.warn('Failed to use hint:', error);
           return false;
         }
-        progress.meta.gems = gems - cost;
-        progress.updatedAt = new Date().toISOString();
-        await saveGuestProgress(progress);
-        await updateGuestSnapshotFromProgress(progress);
-        setHintedWords((prev) => [...prev, hintedWord]);
-        showToast("Hint used (-5 gems)", "success");
-        return true;
-      } catch (e) {
-        console.warn("Failed to purchase hint:", e);
-        showToast("Failed to use hint", "error");
-        return false;
       }
+      
+      // No hints available - return false to trigger modal
+      return false;
     },
-    [hintsLeft]
+    [globalHints]
   );
 
   const handleNextLevel = useCallback(() => {
@@ -510,7 +700,7 @@ export function useGameLogic({
     animatingLetters,
     cellSize,
     hintAnim,
-    hintsLeft,
+    globalHints,
     hintedWords,
 
     // Refs

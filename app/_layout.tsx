@@ -1,4 +1,6 @@
 import { initializeGameManager } from "@/hooks/game-manager";
+import { useEnergyRegen } from "@/hooks/useEnergyRegen";
+import { cleanupOldTempProgress } from "@/hooks/useLevelProgress";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
@@ -18,11 +20,10 @@ import {
 import AnimatedSplashScreen from '../app/components/screens/SplashScreen';
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
-
-// SplashScreen.preventAutoHideAsync();
-
+import BackgroundImage from "./components/common/BackgroundImage";
 function LayoutWithInsets() {
   useAutoSync();
+  useEnergyRegen(); // Add energy regeneration hook
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const { theme } = useTheme();
@@ -32,9 +33,27 @@ function LayoutWithInsets() {
     updateGlobalSettings(settings);
   }, [settings]);
 
+  // Initialize app and cleanup old temporary progress
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Initialize game manager
+        initializeGameManager();
+        
+        // Cleanup old temporary progress data
+        await cleanupOldTempProgress();
+      } catch (error) {
+        console.warn('Failed to initialize app:', error);
+      }
+    };
+    
+    initializeApp();
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* Background: for web this sets document.body background; for native uses Image */}
+      <BackgroundImage />
 
       {/* App content always on top */}
       <View
@@ -156,6 +175,10 @@ function LayoutWithInsets() {
             name="glassmorphism-demo"
             options={{ headerShown: false, gestureEnabled: true }}
           />
+          <Stack.Screen
+            name="xpshop"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
         </Stack>
       </View>
     </View>
@@ -165,10 +188,14 @@ function LayoutWithInsets() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: "relative",
+    width: "100%",
+    height: "100%",
   },
   contentContainer: {
     flex: 1,
     backgroundColor: "transparent",
+    zIndex: 2,
     position: "relative",
   },
 });
