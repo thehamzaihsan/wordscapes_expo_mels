@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Path, Polygon } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 interface LetterWheelProps {
   letters?: string[];
   onWordComplete?: (word: string) => void;
@@ -107,8 +107,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
   const wheelCenter = wheelSize / 2;
 
-  // Create hexagon path for SVG
-  const createHexagonPath = (
+  // Create hexagon path as SVG path (more reliable on web)
+  const createHexagonSVGPath = (
     centerX: number,
     centerY: number,
     size: number
@@ -118,9 +118,15 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       const angle = (i * Math.PI) / 3;
       const x = centerX + size * Math.cos(angle);
       const y = centerY + size * Math.sin(angle);
-      points.push(`${x},${y}`);
+      points.push({ x, y });
     }
-    return points.join(" ");
+    
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      path += ` L ${points[i].x} ${points[i].y}`;
+    }
+    path += ' Z'; // Close the path
+    return path;
   };
 
   useEffect(() => {
@@ -392,9 +398,9 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
               if (!isSelected) return null;
 
               return (
-                <Polygon
+                <Path
                   key={`hexagon-${index}`}
-                  points={createHexagonPath(x, y, hexagonSize)}
+                  d={createHexagonSVGPath(x, y, hexagonSize)}
                   fill="#4CAF50"
                   stroke="#43A047"
                   strokeWidth={1.5}
@@ -438,7 +444,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                     alignItems: "center",
                   }}
                   onPress={() => addLetter(letter, index)}
-                  activeOpacity={0.7}
+                  activeOpacity={1}
                   disabled={isShuffling}
                 >
                   <Text

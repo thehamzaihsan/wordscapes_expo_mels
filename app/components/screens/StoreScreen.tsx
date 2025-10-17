@@ -1,5 +1,5 @@
 import economy from "@/constants/economy.json";
-import { loadGuestProgress, type GuestProgressPayload } from "@/hooks/guest-progress";
+import { loadGuestProgress, triggerEnergyRegenCheck, type GuestProgressPayload } from "@/hooks/guest-progress";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
@@ -61,7 +61,8 @@ export default function CombinedStoreScreen({
       const loadProgressData = async () => {
         setLoading(true);
         try {
-          const gp = await loadGuestProgress();
+          // Trigger energy regeneration check first
+          const gp = await triggerEnergyRegenCheck() || await loadGuestProgress();
           if (isActive) {
             setProgress(gp);
           }
@@ -278,7 +279,7 @@ export default function CombinedStoreScreen({
           </View>
         </ThemedCard>
 
-        <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex} onPress={() => startPurchase(offer.price)}>
+        <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex} onPress={() => startPurchase(offer.usd)}>
           <LinearGradient
             colors={offer.colors}
             start={{ x: 0, y: 0 }}
@@ -375,6 +376,10 @@ export default function CombinedStoreScreen({
         <TouchableOpacity
           activeOpacity={0.8}
           disabled={index !== subscriptionIndex}
+          onPress={() => {
+            // TODO: Implement subscription purchase
+            console.log("Subscription purchase not implemented yet");
+          }}
         >
           <LinearGradient
             colors={subscription.colors}

@@ -1,6 +1,6 @@
 import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
-import { clampEnergy, getDefaultEnergy } from "@/lib/energy";
+import { clampEnergy, getDefaultEnergy, applyEnergyRegeneration } from "@/lib/energy";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 
 import { supabase } from "@/lib/supabase";
@@ -45,6 +45,8 @@ export interface GuestMeta {
   avatar?: string;
   /** Available hints that can be used across all levels */
   hints?: number;
+  /** Last time energy was updated for regeneration calculations */
+  lastEnergyUpdate?: string;
 }
 
 export interface GuestProgressPayload {
@@ -68,6 +70,7 @@ const defaultMeta: GuestMeta = {
   playerLevel: 0,
   avatar: "🧩",
   hints: 0, // Start with 0 hints, user must purchase them
+  lastEnergyUpdate: new Date().toISOString(),
 };
 
 /**
@@ -244,6 +247,32 @@ function keyForUser(uid: string | null): string {
   return uid ? `${STORAGE_KEY_PREFIX}${uid}` : STORAGE_KEY_GUEST;
 }
 
+/**
+ * Check and apply energy regeneration based on time passed since last update
+ */
+export function checkAndApplyEnergyRegeneration(
+  progress: GuestProgressPayload
+): { progress: GuestProgressPayload; energyGained: number } {
+  if (!progress.meta.lastEnergyUpdate) {
+    // If no lastEnergyUpdate, set it to now and don't regenerate
+    progress.meta.lastEnergyUpdate = new Date().toISOString();
+    return { progress, energyGained: 0 };
+  }
+
+  const result = applyEnergyRegeneration(
+    progress.meta.energy,
+    progress.meta.lastEnergyUpdate
+  );
+
+  if (result.shouldUpdate) {
+    progress.meta.energy = result.newEnergy;
+    progress.meta.lastEnergyUpdate = new Date().toISOString();
+    progress.updatedAt = new Date().toISOString();
+  }
+
+  return { progress, energyGained: result.energyGained };
+}
+
 export async function loadGuestProgress(): Promise<GuestProgressPayload | null> {
   try {
     const uid = await getActiveUserId();
@@ -276,6 +305,7 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
             : DEFAULT_ENERGY_CAP
         ),
         hints: typeof parsed.meta?.hints === "number" ? parsed.meta.hints : 0,
+        lastEnergyUpdate: parsed.meta?.lastEnergyUpdate || new Date().toISOString(),
       };
 
       // Migration for version 4: Combine coins + gems into single gems currency
@@ -340,7 +370,16 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
       // Persist migrated structure (fire & forget)
       saveGuestProgress(parsed).catch(() => {});
     }
-    return parsed;
+    
+    // Apply energy regeneration based on time passed
+    const { progress: updatedProgress, energyGained } = checkAndApplyEnergyRegeneration(parsed);
+    
+    // If energy was gained, save the updated progress
+    if (energyGained > 0) {
+      saveGuestProgress(updatedProgress).catch(() => {});
+    }
+    
+    return updatedProgress;
   } catch (e) {
     console.warn("Failed to load guest progress", e);
     return null;
@@ -445,6 +484,7 @@ export function applyLevelCompletion(
   // Always deduct energy (regardless of first completion or not)
   // Dynamic energy cost from economy config
   progress.meta.energy = Math.max(0, progress.meta.energy - 5); // small energy cost
+  progress.meta.lastEnergyUpdate = new Date().toISOString(); // Update energy timestamp
 
   // Recalculate playerLevel from total xp
   const derived = derivePlayerLevel(progress.meta.xp);
@@ -561,6 +601,7 @@ export async function resetGuestEconomy(): Promise<GuestProgressPayload | null> 
   if (!progress) return null;
   progress.meta.gems = defaultMeta.gems;
   progress.meta.energy = DEFAULT_ENERGY_CAP;
+  progress.meta.lastEnergyUpdate = new Date().toISOString();
   progress.updatedAt = new Date().toISOString();
   await saveGuestProgress(progress);
   updateGuestSnapshotFromProgress(progress).catch(() => {});
@@ -610,6 +651,28 @@ export async function purchaseHints(): Promise<GuestProgressPayload | null> {
   await saveGuestProgress(progress);
   updateGuestSnapshotFromProgress(progress).catch(() => {});
   return progress;
+}
+
+/**
+ * Manually trigger energy regeneration check and return updated progress
+ */
+export async function triggerEnergyRegenCheck(): Promise<GuestProgressPayload | null> {
+  try {
+    const progress = await loadGuestProgress();
+    if (!progress) return null;
+
+    const { progress: updatedProgress, energyGained } = checkAndApplyEnergyRegeneration(progress);
+    
+    if (energyGained > 0) {
+      await saveGuestProgress(updatedProgress);
+      return updatedProgress;
+    }
+    
+    return progress;
+  } catch (error) {
+    console.warn('Failed to check energy regeneration:', error);
+    return null;
+  }
 }
 
 /**

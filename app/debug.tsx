@@ -3,9 +3,9 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 import BackgroundImage from "./components/common/BackgroundImage";
 import LoadingScreen from "./components/common/LoadingScreen";
-import XPShopScreen from "./components/screens/XPShopScreen_new";
+import DebugScreen from "./components/screens/DebugScreen";
 
-export default function XPShopRoute() {
+export default function DebugRoute() {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -17,6 +17,8 @@ export default function XPShopRoute() {
       router.push("/profile");
     } else if (screen === "shop") {
       router.push("/shop");
+    } else if (screen === "xpshop") {
+      router.push("/xpshop");
     }
     setTimeout(() => setIsLoading(false), 600);
   };
@@ -25,7 +27,7 @@ export default function XPShopRoute() {
     <View style={{ flex: 1 }}>
       <BackgroundImage />
       {isLoading && <LoadingScreen progress={0.7} />}
-      <XPShopScreen onNavigate={handleNavigate} />
+      <DebugScreen onNavigate={handleNavigate} />
     </View>
   );
 }

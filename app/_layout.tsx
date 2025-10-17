@@ -1,5 +1,6 @@
 import { initializeGameManager } from "@/hooks/game-manager";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
+import { useEnergyRegen } from "@/hooks/useEnergyRegen";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
 import { useFonts } from "expo-font";
@@ -22,6 +23,7 @@ import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
 function LayoutWithInsets() {
   useAutoSync();
+  useEnergyRegen(); // Add energy regeneration hook
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const { theme } = useTheme();
@@ -153,6 +155,10 @@ function LayoutWithInsets() {
           />
           <Stack.Screen
             name="glassmorphism-demo"
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="xpshop"
             options={{ headerShown: false, gestureEnabled: true }}
           />
         </Stack>

@@ -3,15 +3,17 @@ import {
   clearGuestProgress,
   derivePlayerLevel,
   loadGuestProgress,
+  triggerEnergyRegenCheck,
   updateGuestAvatar,
   updateGuestName,
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import { getTimeUntilNextEnergyRegen, getDefaultEnergy } from "@/lib/energy";
 import { pullRemote, syncUser } from "@/lib/sync";
 import { showToast } from "@/lib/toast";
-import { ChevronLeft, Edit3, LogOut, Trash2, User } from "lucide-react-native";
+import { ChevronLeft, Edit3, LogOut, Trash2, User, Clock } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -45,6 +47,10 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [energyRegenInfo, setEnergyRegenInfo] = useState<{
+    timeRemaining: string;
+    nextRegenTime: Date;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -57,16 +63,53 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
         }
       }
       if (!active) return;
-      const gp = await loadGuestProgress();
+      // Trigger energy regeneration check first
+      const gp = await triggerEnergyRegenCheck() || await loadGuestProgress();
       if (!active) return;
       setProgress(gp);
       if (gp?.meta.playerName) setNameDraft(gp.meta.playerName);
       if (gp?.meta.avatar) setAvatarDraft(gp.meta.avatar);
+      
+      // Update energy regeneration info
+      updateEnergyRegenInfo(gp);
     })();
     return () => {
       active = false;
     };
   }, [user?.id]);
+
+  // Function to update energy regeneration info
+  const updateEnergyRegenInfo = (gp: GuestProgressPayload | null) => {
+    if (!gp || !gp.meta.lastEnergyUpdate) {
+      setEnergyRegenInfo(null);
+      return;
+    }
+
+    const maxEnergy = getDefaultEnergy();
+    
+    // If energy is already at max, no need to show regen timer
+    if (gp.meta.energy >= maxEnergy) {
+      setEnergyRegenInfo(null);
+      return;
+    }
+
+    const regenInfo = getTimeUntilNextEnergyRegen(gp.meta.lastEnergyUpdate);
+    setEnergyRegenInfo({
+      timeRemaining: regenInfo.formattedTime,
+      nextRegenTime: regenInfo.nextRegenTime,
+    });
+  };
+
+  // Set up interval to update energy regeneration timer every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (progress) {
+        updateEnergyRegenInfo(progress);
+      }
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [progress]);
 
   const handleSaveName = async () => {
     if (!nameDraft.trim()) {
@@ -78,6 +121,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
       const sanitized = nameDraft.trim().slice(0, 20);
       const updated = await updateGuestName(sanitized);
       setProgress(updated);
+      updateEnergyRegenInfo(updated);
       showToast("Display name updated", "success");
       if (user?.id) {
         syncUser(user.id).catch(() => {});
@@ -115,6 +159,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
     try {
       const updated = await updateGuestAvatar(avatarDraft);
       setProgress(updated);
+      updateEnergyRegenInfo(updated);
       showToast("Avatar updated", "success");
       if (user?.id) {
         syncUser(user.id).catch(() => {});
@@ -317,6 +362,24 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
               </View>
             </View>
 
+            {/* Energy Regeneration Timer */}
+            {energyRegenInfo && (
+              <View style={styles.energyRegenSection}>
+                <View style={styles.energyRegenHeader}>
+                  <Clock size={16} color={theme.colors.primary} />
+                  <ThemedText variant="body2" weight="semibold" color="primary" style={styles.energyRegenTitle}>
+                    Next Energy Regen
+                  </ThemedText>
+                </View>
+                <ThemedText variant="body2" color="textSecondary" style={styles.energyRegenTime}>
+                  +5 energy in {energyRegenInfo.timeRemaining}
+                </ThemedText>
+                <ThemedText variant="caption" color="textTertiary" style={styles.energyRegenNote}>
+                  Energy automatically regenerates every hour when below maximum
+                </ThemedText>
+              </View>
+            )}
+
             {/* XP Progress Bar */}
             <View style={styles.xpSection}>
               <View style={styles.xpLabelRow}>
@@ -494,6 +557,29 @@ const createStyles = (theme: any) => ({
   },
   xpBarFill: { 
     height: '100%' 
+  },
+  energyRegenSection: {
+    marginTop: theme.spacing.base,
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  energyRegenHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
+  },
+  energyRegenTitle: {
+    fontSize: 14,
+  },
+  energyRegenTime: {
+    fontSize: 14,
+    marginBottom: theme.spacing.xs,
+  },
+  energyRegenNote: {
+    fontSize: 11,
+    lineHeight: 14,
   },
   toggleButton: {
     alignSelf: 'center' as const,
