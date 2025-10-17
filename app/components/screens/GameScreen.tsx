@@ -18,6 +18,7 @@ import {
   loadGuestProgress,
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
+import { useSettings } from "@/hooks/useSettings";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { supabase } from "@/lib/supabase";
 import { syncUser } from "@/lib/sync";
@@ -81,23 +82,13 @@ export default function GameScreen({
     onNavigate,
   });
 
-  // --- Sound toggle (persisted) ---
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  useEffect(() => {
-    (async () => {
-      try {
-        const v = await AsyncStorage.getItem("@game_sound_enabled");
-        if (v != null) setSoundEnabled(JSON.parse(v));
-      } catch {}
-    })();
-  }, []);
-  const toggleSound = useCallback(async () => {
-    const next = !soundEnabled;
-    setSoundEnabled(next);
-    try {
-      await AsyncStorage.setItem("@game_sound_enabled", JSON.stringify(next));
-    } catch {}
-  }, [soundEnabled]);
+  const { settings, updateSetting } = useSettings();
+  const soundEnabled = settings.soundEnabled;
+  const animationsEnabled = settings.animationsEnabled;
+
+  const toggleSound = useCallback(() => {
+    updateSetting('soundEnabled', !soundEnabled);
+  }, [soundEnabled, updateSetting]);
 
   // Preload sounds
   const correctSoundRef = useRef<Audio.Sound | null>(null);
@@ -168,6 +159,12 @@ export default function GameScreen({
   const startFloatingAnimation = useCallback(
     (word: string) =>
       new Promise<void>(async (resolve) => {
+        // If animations are disabled, skip the animation
+        if (!animationsEnabled) {
+          resolve();
+          return;
+        }
+
         if (!containerRef.current || !letterWheelRef.current) {
           resolve();
           return;
@@ -261,7 +258,7 @@ export default function GameScreen({
           resolve();
         });
       }),
-    [gameGrid]
+    [gameGrid, animationsEnabled]
   );
 
   // Persist completion exactly once per level clear
@@ -478,12 +475,19 @@ export default function GameScreen({
         <View style={styles.modalContainer}>
           <ThemedCard style={styles.modalCard} variant="glassStrong" padding="lg">
             <ThemedText >LEVEL COMPLETED</ThemedText>
-            <LottieView
-              source={require("../../../assets/animations/level-complete.json")}
-              autoPlay
-              loop={false}
-              style={{ width: 200, height: 200 }}
-            />
+            {animationsEnabled && (
+              <LottieView
+                source={require("../../../assets/animations/level-complete.json")}
+                autoPlay
+                loop={false}
+                style={{ width: 200, height: 200 }}
+              />
+            )}
+            {!animationsEnabled && (
+              <View style={{ width: 200, height: 200, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 60 }}>🎉</Text>
+              </View>
+            )}
             {/* Play complete sound once when modal opens */}
             {gameComplete && (
               <View style={{ height: 0, width: 0 }}>

@@ -33,8 +33,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
     );
   };
 
-  const handleReset = () => {
-    resetSettings();
+  const handleReset = async () => {
+    await resetSettings();
     showToast('Settings reset to default', 'success');
   };
 
@@ -98,23 +98,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
             🎨 Animations
           </ThemedText>
           
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
-                  Background Animations
-                </ThemedText>
-                <ThemedText variant="body2" color="textSecondary">
-                  Floating bubble animations in the background
-                </ThemedText>
-              </View>
-              <Switch
-                value={settings.backgroundAnimationsEnabled}
-                onValueChange={(value) => handleToggle('backgroundAnimationsEnabled', value)}
-                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-                thumbColor={settings.backgroundAnimationsEnabled ? theme.colors.textInverse : theme.colors.textTertiary}
-              />
-            </View>
-
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
                 <ThemedText variant="body1" weight="semibold" style={styles.settingLabel}>
