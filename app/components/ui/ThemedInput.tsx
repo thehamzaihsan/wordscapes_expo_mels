@@ -160,6 +160,8 @@ const Input: React.FC<InputProps> = ({
           input: {
             fontSize: theme.typography.fontSizes.sm,
             lineHeight: theme.typography.lineHeights.sm,
+            minHeight: 36,
+
           },
         };
       case 'lg':
@@ -172,6 +174,7 @@ const Input: React.FC<InputProps> = ({
           input: {
             fontSize: theme.typography.fontSizes.lg,
             lineHeight: theme.typography.lineHeights.lg,
+            minHeight: 56,
           },
         };
       default:
@@ -184,6 +187,7 @@ const Input: React.FC<InputProps> = ({
           input: {
             fontSize: theme.typography.fontSizes.base,
             lineHeight: theme.typography.lineHeights.base,
+            minHeight: 44,
           },
         };
     }
