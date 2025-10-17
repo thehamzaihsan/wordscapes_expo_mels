@@ -481,10 +481,9 @@ export function applyLevelCompletion(
     progress.meta.xp += bonusWordsFound * economy.xp.gainPerBonusWord; // XP per bonus word found
   }
 
-  // Always deduct energy (regardless of first completion or not)
-  // Dynamic energy cost from economy config
-  progress.meta.energy = Math.max(0, progress.meta.energy - 5); // small energy cost
-  progress.meta.lastEnergyUpdate = new Date().toISOString(); // Update energy timestamp
+  // Note: Energy was already deducted when starting the level
+  // Update energy timestamp for consistency
+  progress.meta.lastEnergyUpdate = new Date().toISOString();
 
   // Recalculate playerLevel from total xp
   const derived = derivePlayerLevel(progress.meta.xp);
@@ -518,7 +517,27 @@ export function applyLevelCompletion(
   return progress;
 }
 
-/** Convenience wrapper to load, modify, and persist */
+/** Deduct energy when starting a level */
+export async function deductEnergyForLevel(): Promise<boolean> {
+  const progress = await loadGuestProgress();
+  if (!progress) return false;
+  
+  const energyCost = economy.energy.costPerLevel;
+  const currentEnergy = progress.meta.energy || 0;
+  
+  if (currentEnergy < energyCost) {
+    return false; // Insufficient energy
+  }
+  
+  progress.meta.energy = Math.max(0, progress.meta.energy - energyCost);
+  progress.meta.lastEnergyUpdate = new Date().toISOString();
+  progress.updatedAt = new Date().toISOString();
+  
+  await saveGuestProgress(progress);
+  updateGuestSnapshotFromProgress(progress).catch(() => {});
+  
+  return true; // Energy successfully deducted
+}
 export async function completeLevelAndPersist(params: {
   category: string;
   levelNumber: number;

@@ -3,6 +3,7 @@ import levelsData from "@/constants/levels.json";
 import {
   buildInitialProgress,
   derivePlayerLevel,
+  getUnlockedCategories,
   loadGuestProgress,
   saveGuestProgress,
 } from "@/hooks/guest-progress";
@@ -122,6 +123,30 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
 
     const derived = derivePlayerLevel(progress.meta.xp);
     progress.meta.playerLevel = derived.level;
+
+    // Ensure all categories that should be unlocked are added to progress
+    const unlockedCategories = getUnlockedCategories(progress.meta.playerLevel);
+    const levelDefinitions = levelsData as Record<string, any[]>;
+
+    // Add any newly unlocked categories to progress
+    unlockedCategories.forEach((categoryName) => {
+      if (!progress.categories[categoryName] && levelDefinitions[categoryName]) {
+        progress.categories[categoryName] = levelDefinitions[categoryName].map(
+          (lvl: any, idx: number) => ({
+            level: lvl.level ?? idx + 1,
+            baseWord: lvl.baseWord,
+            difficulty: lvl.difficulty,
+            isUnlocked: idx === 0, // unlock only first level of new category
+            isCompleted: false,
+            bestScore: 0,
+            attempts: 0,
+          })
+        );
+        console.log(
+          `[Category Unlock] Player level ${progress.meta.playerLevel} unlocked category: ${categoryName}`
+        );
+      }
+    });
 
     const updatedAt =
       snapshot.last_pulled_at ||

@@ -155,6 +155,7 @@ const LevelGrid: React.FC<LevelGridProps> = ({
             key={level.level}
             level={level}
             categoryName={selectedCategory}
+            guestMeta={guestMeta}
             onPress={onLevelPress}
           />
         ))}

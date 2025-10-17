@@ -1,3 +1,4 @@
+import economy from "@/constants/economy.json";
 import { Difficulty } from "@/constants/difficulty";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
@@ -127,6 +128,40 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
               levelsData as any,
               preferredName
             );
+            
+            // If we have a snapshot with XP, ensure categories are properly unlocked
+            if (snapshot?.stats?.xp) {
+              const { derivePlayerLevel, getUnlockedCategories } = await import(
+                "@/hooks/guest-progress"
+              );
+              const derived = derivePlayerLevel(snapshot.stats.xp);
+              progressToUse.meta.xp = snapshot.stats.xp;
+              progressToUse.meta.playerLevel = derived.level;
+              
+              // Add any newly unlocked categories based on XP
+              const unlockedCategories = getUnlockedCategories(progressToUse.meta.playerLevel);
+              const levelDefinitions = levelsData as Record<string, any[]>;
+              
+              unlockedCategories.forEach((categoryName) => {
+                if (!progressToUse!.categories[categoryName] && levelDefinitions[categoryName]) {
+                  progressToUse!.categories[categoryName] = levelDefinitions[categoryName].map(
+                    (lvl: any, idx: number) => ({
+                      level: lvl.level ?? idx + 1,
+                      baseWord: lvl.baseWord,
+                      difficulty: lvl.difficulty,
+                      isUnlocked: idx === 0, // unlock only first level of new category
+                      isCompleted: false,
+                      bestScore: 0,
+                      attempts: 0,
+                    })
+                  );
+                  console.log(
+                    `[Category Unlock] Rebuilding progress - unlocked category: ${categoryName}`
+                  );
+                }
+              });
+            }
+            
             await saveGuestProgress(progressToUse);
           }
 
@@ -186,8 +221,31 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     onNavigate("shop");
   };
 
-  const handleLevelPress = (level: LevelData, categoryName: string) => {
+  const handleLevelPress = async (level: LevelData, categoryName: string) => {
     if (!level.isUnlocked || level.isCompleted) return;
+
+    // Check if player has enough energy to play the level
+    const energyCost = economy.energy.costPerLevel;
+    const currentEnergy = guestMeta?.energy || 0;
+    
+    if (currentEnergy < energyCost) {
+      // Show energy insufficient message or navigate to shop
+      console.warn("Insufficient energy to play level", { 
+        required: energyCost, 
+        current: currentEnergy 
+      });
+      // For now, just prevent navigation. Could show a modal later.
+      return;
+    }
+
+    // Deduct energy before starting the level
+    const { deductEnergyForLevel } = await import("@/hooks/guest-progress");
+    const energyDeducted = await deductEnergyForLevel();
+    
+    if (!energyDeducted) {
+      console.warn("Failed to deduct energy for level");
+      return;
+    }
 
     // Retrieve full level definition (letters + crossword words) from static levels.json
     const categoryDefs: any[] = (levelsData as any)[categoryName] || [];
