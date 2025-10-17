@@ -131,11 +131,19 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
     progress.updatedAt = updatedAt;
 
     // If local progress is fresher than remote, preserve local level states
-    const shouldPreserveLocal = localUpdatedAt > statsUpdatedAt;
+    // Compare local guest progress updatedAt with the most recent remote timestamp
+    const remoteTimestamp = Math.max(
+      statsUpdatedAt,
+      ...snapshot.levels.map(l => new Date(l.updated_at || 0).getTime())
+    );
+    const shouldPreserveLocal = localUpdatedAt > remoteTimestamp;
 
     if (shouldPreserveLocal && existing?.categories) {
       // Preserve local level progress since it's newer
-      console.log('[sync] Local progress is fresher, preserving local level states');
+      console.log('[sync] Local progress is fresher, preserving local level states', {
+        localUpdatedAt: new Date(localUpdatedAt).toISOString(),
+        remoteTimestamp: new Date(remoteTimestamp).toISOString(),
+      });
       Object.keys(existing.categories).forEach((categoryName) => {
         if (progress.categories[categoryName] && existing.categories[categoryName]) {
           progress.categories[categoryName] = existing.categories[categoryName].map(localLevel => ({
@@ -145,7 +153,10 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
       });
     } else {
       // Apply remote data - it's fresher or we have no local data
-      console.log('[sync] Applying remote level states');
+      console.log('[sync] Applying remote level states', {
+        localUpdatedAt: new Date(localUpdatedAt).toISOString(),
+        remoteTimestamp: new Date(remoteTimestamp).toISOString(),
+      });
       
       // Baseline unlock: only first 3 levels per category; further unlocks applied from remote level rows below
       Object.values(progress.categories).forEach((levels) => {
