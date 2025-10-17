@@ -3,7 +3,7 @@ import { loadGuestProgress, triggerEnergyRegenCheck, type GuestProgressPayload }
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Star, Zap, ShoppingBag, Gift } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -11,6 +11,7 @@ import {
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -167,6 +168,43 @@ export default function CombinedStoreScreen({
     },
   ];
 
+  // Web-specific navigation functions
+  const navigateLeft = () => {
+    if (activeTab === "shop") {
+      const newIndex = Math.max(0, shopIndex - 1);
+      setShopIndex(newIndex);
+      shopScrollViewRef.current?.scrollTo({
+        x: newIndex * (CARD_WIDTH + CARD_SPACING),
+        animated: true,
+      });
+    } else {
+      const newIndex = Math.max(0, subscriptionIndex - 1);
+      setSubscriptionIndex(newIndex);
+      subscriptionScrollViewRef.current?.scrollTo({
+        x: newIndex * (CARD_WIDTH + CARD_SPACING),
+        animated: true,
+      });
+    }
+  };
+
+  const navigateRight = () => {
+    if (activeTab === "shop") {
+      const newIndex = Math.min(shopOffers.length - 1, shopIndex + 1);
+      setShopIndex(newIndex);
+      shopScrollViewRef.current?.scrollTo({
+        x: newIndex * (CARD_WIDTH + CARD_SPACING),
+        animated: true,
+      });
+    } else {
+      const newIndex = Math.min(subscriptions.length - 1, subscriptionIndex + 1);
+      setSubscriptionIndex(newIndex);
+      subscriptionScrollViewRef.current?.scrollTo({
+        x: newIndex * (CARD_WIDTH + CARD_SPACING),
+        animated: true,
+      });
+    }
+  };
+
   const currentIndex = activeTab === "shop" ? shopIndex : subscriptionIndex;
   const items = activeTab === "shop" ? shopOffers : subscriptions;
   const scrollX = activeTab === "shop" ? shopScrollX : subscriptionScrollX;
@@ -187,16 +225,17 @@ export default function CombinedStoreScreen({
     }
   }, [activeTab]);
 
-  // FIX: The listener that caused the glitching has been removed.
-  // This event handler now only drives the animations.
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    {
-      useNativeDriver: false,
-    }
-  );
+  // FIX: Handle scroll events properly for both mobile and web
+  const handleScroll = Platform.OS === 'web' 
+    ? undefined // Disable animated scroll on web
+    : Animated.event(
+        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+        {
+          useNativeDriver: false,
+        }
+      );
 
-  // FIX: This new function updates the index state only when the scroll animation ends.
+  // FIX: This function updates the index state when scroll ends (works on both platforms)
   const handleMomentumScrollEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>
   ) => {
@@ -216,47 +255,62 @@ export default function CombinedStoreScreen({
   };
 
   const renderShopCard = (offer: any, index: number) => {
-    const inputRange = [
-      (index - 1) * (CARD_WIDTH + CARD_SPACING),
-      index * (CARD_WIDTH + CARD_SPACING),
-      (index + 1) * (CARD_WIDTH + CARD_SPACING),
-    ];
+    // For web, use simple scaling based on active index instead of scroll-based animation
+    const isActive = index === shopIndex;
+    const scale = Platform.OS === 'web' 
+      ? (isActive ? 1 : SIDE_CARD_SCALE)
+      : shopScrollX.interpolate({
+          inputRange: [
+            (index - 1) * (CARD_WIDTH + CARD_SPACING),
+            index * (CARD_WIDTH + CARD_SPACING),
+            (index + 1) * (CARD_WIDTH + CARD_SPACING),
+          ],
+          outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
+          extrapolate: "clamp",
+        });
 
-    const scale = shopScrollX.interpolate({
-      inputRange,
-      outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
-      extrapolate: "clamp",
-    });
+    const opacity = Platform.OS === 'web'
+      ? (isActive ? 1 : 0.7)
+      : shopScrollX.interpolate({
+          inputRange: [
+            (index - 1) * (CARD_WIDTH + CARD_SPACING),
+            index * (CARD_WIDTH + CARD_SPACING),
+            (index + 1) * (CARD_WIDTH + CARD_SPACING),
+          ],
+          outputRange: [0.5, 1, 0.5],
+          extrapolate: "clamp",
+        });
 
-    const opacity = shopScrollX.interpolate({
-      inputRange,
-      outputRange: [0.5, 1, 0.5],
-      extrapolate: "clamp",
-    });
+    const CardWrapper = Platform.OS === 'web' ? View : Animated.View;
 
     return (
-      <Animated.View
+      <CardWrapper
         key={offer.id}
         style={[
           styles.cardWrapper,
-          {
-            transform: [{ scale }],
-            opacity,
-          },
+          Platform.OS === 'web' 
+            ? { transform: [{ scale }], opacity } 
+            : {
+                transform: [{ scale }],
+                opacity,
+              },
         ]}
       >
-        <ThemedCard variant="glass" padding="lg" style={[styles.offerCard, { backgroundColor: offer.bgColor }]}>
+        <ThemedCard variant="glassStrong" padding="lg" style={[styles.offerCard, { backgroundColor: offer.bgColor }]}>
           {offer.popular && (
-            <View style={styles.popularBadge}>
+            <View style={[styles.popularBadge, styles.enhancedBadge]}>
+              <Star size={12} color={theme.colors.surface} style={styles.badgeIcon} />
               <ThemedText variant="caption" weight="bold" style={styles.popularText}>
-                POPULAR
+                BEST VALUE
               </ThemedText>
             </View>
           )}
 
           <View style={styles.gemsHeader}>
             <View style={styles.gemAmountBadge}>
-              <Text style={styles.gemEmoji}>💎</Text>
+              <View style={styles.gemIconContainer}>
+                <Gift size={20} color={theme.colors.primary} />
+              </View>
               <ThemedText variant="heading3" weight="bold" color="primary" style={styles.gemAmount}>
                 {offer.gems.toLocaleString()}
               </ThemedText>
@@ -271,6 +325,7 @@ export default function CombinedStoreScreen({
           </ThemedText>
 
           <View style={styles.imageContainer}>
+            <View style={styles.imageGlow} />
             <Image
               source={offer.image}
               style={styles.offerImage}
@@ -291,43 +346,56 @@ export default function CombinedStoreScreen({
             </ThemedText>
           </LinearGradient>
         </TouchableOpacity>
-      </Animated.View>
+      </CardWrapper>
     );
   };
 
   const renderSubscriptionCard = (subscription: any, index: number) => {
-    const inputRange = [
-      (index - 1) * (CARD_WIDTH + CARD_SPACING),
-      index * (CARD_WIDTH + CARD_SPACING),
-      (index + 1) * (CARD_WIDTH + CARD_SPACING),
-    ];
+    // For web, use simple scaling based on active index instead of scroll-based animation
+    const isActive = index === subscriptionIndex;
+    const scale = Platform.OS === 'web' 
+      ? (isActive ? 1 : SIDE_CARD_SCALE)
+      : subscriptionScrollX.interpolate({
+          inputRange: [
+            (index - 1) * (CARD_WIDTH + CARD_SPACING),
+            index * (CARD_WIDTH + CARD_SPACING),
+            (index + 1) * (CARD_WIDTH + CARD_SPACING),
+          ],
+          outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
+          extrapolate: "clamp",
+        });
 
-    const scale = subscriptionScrollX.interpolate({
-      inputRange,
-      outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
-      extrapolate: "clamp",
-    });
+    const opacity = Platform.OS === 'web'
+      ? (isActive ? 1 : 0.7)
+      : subscriptionScrollX.interpolate({
+          inputRange: [
+            (index - 1) * (CARD_WIDTH + CARD_SPACING),
+            index * (CARD_WIDTH + CARD_SPACING),
+            (index + 1) * (CARD_WIDTH + CARD_SPACING),
+          ],
+          outputRange: [0.5, 1, 0.5],
+          extrapolate: "clamp",
+        });
 
-    const opacity = subscriptionScrollX.interpolate({
-      inputRange,
-      outputRange: [0.5, 1, 0.5],
-      extrapolate: "clamp",
-    });
+    const CardWrapper = Platform.OS === 'web' ? View : Animated.View;
 
     return (
-      <Animated.View
+      <CardWrapper
         key={subscription.id}
         style={[
           styles.cardWrapper,
-          {
-            transform: [{ scale }],
-            opacity,
-          },
+          Platform.OS === 'web' 
+            ? { transform: [{ scale }], opacity } 
+            : {
+                transform: [{ scale }],
+                opacity,
+              },
         ]}
       >
-        <ThemedCard variant="glass" padding="lg" style={[styles.subscriptionCard, { backgroundColor: subscription.bgColor }]}>
+        <ThemedCard variant="glassStrong" padding="lg" style={[styles.subscriptionCard, { backgroundColor: subscription.bgColor }]}>
           {subscription.popular && (
-            <View style={styles.popularBadge}>
+            <View style={[styles.popularBadge, styles.enhancedBadge]}>
+              <Star size={12} color={theme.colors.surface} style={styles.badgeIcon} />
               <ThemedText variant="caption" weight="bold" style={styles.popularText}>
                 {subscription.badge}
               </ThemedText>
@@ -335,7 +403,7 @@ export default function CombinedStoreScreen({
           )}
 
           {subscription.save && (
-            <View style={styles.saveBadge}>
+            <View style={[styles.saveBadge, styles.enhancedBadge]}>
               <ThemedText variant="caption" weight="bold" style={styles.saveText}>
                 SAVE {subscription.save}
               </ThemedText>
@@ -343,7 +411,9 @@ export default function CombinedStoreScreen({
           )}
 
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>{subscription.icon}</Text>
+            <View style={styles.subscriptionIconContainer}>
+              <Star size={isSmallScreen ? 32 : isMediumScreen ? 40 : 48} color={theme.colors.warning} />
+            </View>
           </View>
 
           <ThemedText variant="body1" weight="bold" align="center" style={styles.subscriptionName}>
@@ -392,7 +462,7 @@ export default function CombinedStoreScreen({
             </ThemedText>
           </LinearGradient>
         </TouchableOpacity>
-      </Animated.View>
+      </CardWrapper>
     );
   };
 
@@ -421,25 +491,25 @@ export default function CombinedStoreScreen({
           />
 
           <View style={styles.currencyContainer}>
-            <ThemedCard variant="glass" padding="sm" style={styles.currencyBadge}>
-              <View style={styles.currencyIcon}>
-                <Text style={styles.currencyEmoji}>💎</Text>
-              </View>
+            <ThemedCard variant="glassStrong" padding="sm" style={styles.currencyBadge}>
+              <Gift size={18} color={theme.colors.primary} />
               <ThemedText variant="body1" weight="bold" color="primary">
-                {loading ? "..." : (progress?.meta.gems ?? 0)}
+                {loading ? "..." : (progress?.meta.gems ?? 0).toLocaleString()}
               </ThemedText>
             </ThemedCard>
             
-            <ThemedCard variant="glass" padding="sm" style={styles.currencyBadge}>
-              <View style={styles.currencyIcon}>
-                <Text style={styles.currencyEmoji}>⚡</Text>
-              </View>
+            <ThemedCard variant="glassStrong" padding="sm" style={styles.currencyBadge}>
+              <Zap 
+                size={18} 
+                color={loading ? theme.colors.text : 
+                       (progress?.meta.energy ?? 0) > 50 ? theme.colors.success : theme.colors.warning} 
+              />
               <ThemedText 
                 variant="body1" 
                 weight="bold" 
                 style={{
                   color: loading ? theme.colors.text : 
-                         (progress?.meta.energy ?? 0) > 50 ? theme.colors.success : theme.colors.error
+                         (progress?.meta.energy ?? 0) > 50 ? theme.colors.success : theme.colors.warning
                 }}
               >
                 {loading ? "..." : `${progress?.meta.energy ?? 0}/100`}
@@ -449,12 +519,15 @@ export default function CombinedStoreScreen({
         </View>
 
         {/* Tab Selector */}
-        <ThemedCard variant="glass" padding="xs" style={styles.tabContainer}>
+        <ThemedCard variant="glassStrong" padding="xs" style={styles.tabContainer}>
           <View style={styles.tabSelector}>
             <ThemedButton
               title="SHOP"
               variant={activeTab === "shop" ? "primary" : "ghost"}
               size="md"
+              leftIcon={<ShoppingBag size={18} color={
+                activeTab === "shop" ? theme.colors.surface : theme.colors.textSecondary
+              } />}
               onPress={() => setActiveTab("shop")}
               style={[styles.tab, activeTab === "shop" && styles.activeTab]}
             />
@@ -462,6 +535,9 @@ export default function CombinedStoreScreen({
               title="PREMIUM"
               variant={activeTab === "subscription" ? "primary" : "ghost"}
               size="md"
+              leftIcon={<Star size={18} color={
+                activeTab === "subscription" ? theme.colors.surface : theme.colors.textSecondary
+              } />}
               onPress={() => setActiveTab("subscription")}
               style={[styles.tab, activeTab === "subscription" && styles.activeTab]}
             />
@@ -470,44 +546,94 @@ export default function CombinedStoreScreen({
 
         {/* Carousel Container */}
         <View style={styles.carouselContainer}>
+          {/* Web Navigation Buttons */}
+          {Platform.OS === 'web' && (
+            <>
+              <TouchableOpacity 
+                style={[styles.navButton, styles.navButtonLeft, {
+                  opacity: currentIndex === 0 ? 0.5 : 1,
+                }]}
+                onPress={navigateLeft}
+                disabled={currentIndex === 0}
+              >
+                <ChevronLeft 
+                  size={24} 
+                  color={currentIndex === 0 ? theme.colors.textTertiary : theme.colors.primary} 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.navButton, styles.navButtonRight, {
+                  opacity: currentIndex === items.length - 1 ? 0.5 : 1,
+                }]}
+                onPress={navigateRight}
+                disabled={currentIndex === items.length - 1}
+              >
+                <ChevronRight 
+                  size={24} 
+                  color={currentIndex === items.length - 1 ? theme.colors.textTertiary : theme.colors.primary} 
+                />
+              </TouchableOpacity>
+            </>
+          )}
+
           {activeTab === "shop" && (
-            <Animated.ScrollView
+            <ScrollView
               ref={shopScrollViewRef}
               horizontal
-              snapToInterval={CARD_WIDTH + CARD_SPACING}
-              decelerationRate="fast"
+              snapToInterval={Platform.OS === 'web' ? undefined : CARD_WIDTH + CARD_SPACING}
+              decelerationRate={Platform.OS === 'web' ? "normal" : "fast"}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carouselScrollContent}
               onScroll={handleScroll}
               onMomentumScrollEnd={handleMomentumScrollEnd}
-              scrollEventThrottle={16}
+              scrollEventThrottle={Platform.OS === 'web' ? undefined : 16}
+              pagingEnabled={Platform.OS === 'web'}
             >
               {shopOffers.map(renderShopCard)}
-            </Animated.ScrollView>
+            </ScrollView>
           )}
 
           {activeTab === "subscription" && (
-            <Animated.ScrollView
+            <ScrollView
               ref={subscriptionScrollViewRef}
               horizontal
-              snapToInterval={CARD_WIDTH + CARD_SPACING}
-              decelerationRate="fast"
+              snapToInterval={Platform.OS === 'web' ? undefined : CARD_WIDTH + CARD_SPACING}
+              decelerationRate={Platform.OS === 'web' ? "normal" : "fast"}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carouselScrollContent}
               onScroll={handleScroll}
               onMomentumScrollEnd={handleMomentumScrollEnd}
-              scrollEventThrottle={16}
+              scrollEventThrottle={Platform.OS === 'web' ? undefined : 16}
+              pagingEnabled={Platform.OS === 'web'}
             >
               {subscriptions.map(renderSubscriptionCard)}
-            </Animated.ScrollView>
+            </ScrollView>
           )}
         </View>
 
         {/* Dots Indicator */}
         <View style={styles.dotsContainer}>
           {items.map((_, index) => (
-            <View
+            <TouchableOpacity
               key={index}
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  if (activeTab === "shop") {
+                    setShopIndex(index);
+                    shopScrollViewRef.current?.scrollTo({
+                      x: index * (CARD_WIDTH + CARD_SPACING),
+                      animated: true,
+                    });
+                  } else {
+                    setSubscriptionIndex(index);
+                    subscriptionScrollViewRef.current?.scrollTo({
+                      x: index * (CARD_WIDTH + CARD_SPACING),
+                      animated: true,
+                    });
+                  }
+                }
+              }}
               style={[
                 styles.dot,
                 currentIndex === index && styles.activeDot,
@@ -553,7 +679,13 @@ const createStyles = (theme: any) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: theme.spacing.xs,
-    minWidth: 70,
+    minWidth: 80,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border + '40',
   },
   currencyIcon: {
     width: 24,
@@ -582,6 +714,30 @@ const createStyles = (theme: any) => ({
   carouselContainer: {
     height: isSmallScreen ? 380 : isMediumScreen ? 420 : 460,
     marginBottom: theme.spacing.md,
+    position: 'relative' as const,
+  },
+  navButton: {
+    position: 'absolute' as const,
+    top: '50%',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surface + 'E6', // 90% opacity
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    zIndex: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  navButtonLeft: {
+    left: theme.spacing.lg,
+  },
+  navButtonRight: {
+    right: theme.spacing.lg,
   },
   carouselScrollContent: {
     paddingHorizontal: (width - CARD_WIDTH) / 2,
@@ -592,21 +748,25 @@ const createStyles = (theme: any) => ({
     marginHorizontal: CARD_SPACING / 2,
   },
   offerCard: {
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     marginBottom: theme.spacing.md,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    elevation: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '20',
   },
   subscriptionCard: {
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     marginBottom: theme.spacing.md,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    elevation: 16,
     minHeight: isSmallScreen ? 300 : isMediumScreen ? 340 : 380,
+    borderWidth: 1,
+    borderColor: theme.colors.warning + '20',
   },
   popularBadge: {
     position: 'absolute' as const,
@@ -617,6 +777,18 @@ const createStyles = (theme: any) => ({
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     zIndex: 10,
+  },
+  enhancedBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  badgeIcon: {
+    marginRight: 2,
   },
   popularText: {
     color: theme.colors.surface,
@@ -637,6 +809,29 @@ const createStyles = (theme: any) => ({
     color: theme.colors.surface,
     fontSize: 11,
     fontWeight: 'bold' as const,
+  },
+  gemIconContainer: {
+    backgroundColor: theme.colors.primary + '20',
+    borderRadius: 16,
+    padding: 4,
+    marginRight: theme.spacing.xs,
+  },
+  imageGlow: {
+    position: 'absolute' as const,
+    width: '120%',
+    height: '120%',
+    borderRadius: 1000,
+    backgroundColor: theme.colors.primary + '10',
+    zIndex: 1,
+  },
+  subscriptionIconContainer: {
+    backgroundColor: theme.colors.warning + '20',
+    borderRadius: 32,
+    padding: theme.spacing.sm,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   gemsHeader: {
     alignItems: 'center' as const,
@@ -723,26 +918,30 @@ const createStyles = (theme: any) => ({
     fontSize: isSmallScreen ? 24 : isMediumScreen ? 28 : 32,
   },
   priceButton: {
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: isSmallScreen ? 12 : 16,
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: isSmallScreen ? 14 : 18,
     alignItems: 'center' as const,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   priceText: {
     color: theme.colors.surface,
     fontSize: isSmallScreen ? 22 : isMediumScreen ? 26 : 28,
   },
   subscribeButton: {
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: isSmallScreen ? 12 : 16,
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: isSmallScreen ? 14 : 18,
     alignItems: 'center' as const,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   subscribeText: {
     color: theme.colors.surface,
@@ -758,14 +957,19 @@ const createStyles = (theme: any) => ({
     gap: theme.spacing.sm,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: theme.colors.primary + '30', // 30% opacity
+    transition: 'all 0.3s ease',
   },
   activeDot: {
-    width: 24,
+    width: 28,
     backgroundColor: theme.colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   bottomSpacing: {
     height: theme.spacing.xl4,
