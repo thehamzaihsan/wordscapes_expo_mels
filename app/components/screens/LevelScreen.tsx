@@ -212,7 +212,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   const handleLevelPress = async (level: LevelData, categoryName: string) => {
     if (!level.isUnlocked || level.isCompleted) return;
 
-    // Check if player has enough energy to play the level
+    // Check if player has enough energy to play the level (but don't deduct yet)
     const energyCost = economy.energy.costPerLevel;
     const currentEnergy = guestMeta?.energy || 0;
     
@@ -223,15 +223,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         current: currentEnergy 
       });
       // For now, just prevent navigation. Could show a modal later.
-      return;
-    }
-
-    // Deduct energy before starting the level
-    const { deductEnergyForLevel } = await import("@/hooks/guest-progress");
-    const energyDeducted = await deductEnergyForLevel();
-    
-    if (!energyDeducted) {
-      console.warn("Failed to deduct energy for level");
       return;
     }
 

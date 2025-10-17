@@ -606,6 +606,19 @@ export async function completeLevelAndPersist(params: {
     progress = buildInitialProgress(params.levelDefs);
   }
   if (!progress) return null;
+  
+  // Deduct energy when level is completed
+  const energyCost = economy.energy.costPerLevel;
+  const currentEnergy = progress.meta.energy || 0;
+  
+  if (currentEnergy >= energyCost) {
+    progress.meta.energy = Math.max(0, progress.meta.energy - energyCost);
+    progress.meta.lastEnergyUpdate = new Date().toISOString();
+    console.log(`[Energy] Deducted ${energyCost} energy on level completion. Remaining: ${progress.meta.energy}`);
+  } else {
+    console.warn(`[Energy] Insufficient energy to deduct on completion. Required: ${energyCost}, Available: ${currentEnergy}`);
+  }
+  
   applyLevelCompletion(
     progress,
     params.category,

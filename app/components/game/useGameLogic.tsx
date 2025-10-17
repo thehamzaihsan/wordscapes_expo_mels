@@ -348,6 +348,40 @@ export function useGameLogic({
     }
   }, [gameComplete, clearTempProgress]);
 
+  // Handle level completion and persistence
+  useEffect(() => {
+    if (gameComplete && levelData && categoryName) {
+      const handleCompletion = async () => {
+        try {
+          const { completeLevelAndPersist } = await import("@/hooks/guest-progress");
+          
+          console.log('[LevelComplete] Persisting level completion:', {
+            category: categoryName,
+            level: levelData.level,
+            score,
+            foundCrosswordWords: foundCrosswordWords.length,
+            foundBonusWords: foundBonusWords.length
+          });
+          
+          await completeLevelAndPersist({
+            category: categoryName,
+            levelNumber: levelData.level,
+            score,
+            bonusWords: foundBonusWords.length,
+            crosswordWords: foundCrosswordWords.length,
+            attempts: 1, // Could track this if needed
+          });
+          
+          console.log('[LevelComplete] Level completion persisted successfully');
+        } catch (error) {
+          console.error('[LevelComplete] Failed to persist level completion:', error);
+        }
+      };
+      
+      handleCompletion();
+    }
+  }, [gameComplete, levelData, categoryName, score, foundCrosswordWords, foundBonusWords]);
+
   // Handle word submission
   const handleWordSubmit = useCallback(
     async (
