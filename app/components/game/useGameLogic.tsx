@@ -87,14 +87,28 @@ export function useGameLogic({
   );
   const [cellSize, setCellSize] = useState(40);
 
-  // Hint state
+  // Hint state - now using global hints from guest progress
   const [hintAnim, setHintAnim] = useState<{
     row: number;
     col: number;
     anim: Animated.Value;
   } | null>(null);
-  const [hintsLeft, setHintsLeft] = useState(1);
+  const [globalHints, setGlobalHints] = useState(0);
   const [hintedWords, setHintedWords] = useState<string[]>([]);
+
+  // Load global hints from guest progress
+  useEffect(() => {
+    const loadHints = async () => {
+      try {
+        const { loadGuestProgress } = await import("@/hooks/guest-progress");
+        const progress = await loadGuestProgress();
+        setGlobalHints(progress?.meta.hints || 0);
+      } catch (error) {
+        console.warn('Failed to load hints:', error);
+      }
+    };
+    loadHints();
+  }, []);
 
   // Refs
   const gameCompleteRef = useRef(false);
@@ -627,39 +641,39 @@ export function useGameLogic({
     }
   }, [tempProgressLoading, loading, tempProgress, hasTempProgress, gameGrid, wordPlacements, crosswordWords, allValidWords]);
 
-  // Handle word hint - returns true if hint was applied (free or paid), false on failure
+  // Handle word hint - returns true if hint was applied, false if no hints available
   const handleWordHint = useCallback(
     async (hintedWord: string): Promise<boolean> => {
-      // First hint is free per game instance
-      if (hintsLeft > 0) {
-        setHintedWords((prev) => [...prev, hintedWord]);
-        setHintsLeft((prev) => prev - 1);
-        return true;
-      }
-      // After free hint, charge 5 gems per hint
-      try {
-        const progress = await loadGuestProgress();
-        if (!progress) throw new Error("No progress loaded");
-        const cost = 5;
-        const gems = progress.meta.gems ?? 0;
-        if (gems < cost) {
-          showToast("Not enough gems for a hint (5 needed)", "warning");
+      // Check if player has global hints available
+      if (globalHints > 0) {
+        try {
+          const { loadGuestProgress, saveGuestProgress } = await import("@/hooks/guest-progress");
+          const progress = await loadGuestProgress();
+          if (!progress || (progress.meta.hints || 0) < 1) {
+            return false;
+          }
+          
+          // Deduct hint from global count
+          progress.meta.hints = (progress.meta.hints || 0) - 1;
+          progress.updatedAt = new Date().toISOString();
+          await saveGuestProgress(progress);
+          
+          // Update local state
+          setGlobalHints(progress.meta.hints);
+          setHintedWords((prev) => [...prev, hintedWord]);
+          
+          console.log(`[Hint] Used hint for word: ${hintedWord}. Remaining hints: ${progress.meta.hints}`);
+          return true;
+        } catch (error) {
+          console.warn('Failed to use hint:', error);
           return false;
         }
-        progress.meta.gems = gems - cost;
-        progress.updatedAt = new Date().toISOString();
-        await saveGuestProgress(progress);
-        await updateGuestSnapshotFromProgress(progress);
-        setHintedWords((prev) => [...prev, hintedWord]);
-        showToast("Hint used (-5 gems)", "success");
-        return true;
-      } catch (e) {
-        console.warn("Failed to purchase hint:", e);
-        showToast("Failed to use hint", "error");
-        return false;
       }
+      
+      // No hints available - return false to trigger modal
+      return false;
     },
-    [hintsLeft]
+    [globalHints]
   );
 
   const handleNextLevel = useCallback(() => {
@@ -686,7 +700,7 @@ export function useGameLogic({
     animatingLetters,
     cellSize,
     hintAnim,
-    hintsLeft,
+    globalHints,
     hintedWords,
 
     // Refs

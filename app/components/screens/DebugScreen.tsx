@@ -7,7 +7,7 @@ import {
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { clampEnergy } from "@/lib/energy";
 import { showToast } from "@/lib/toast";
-import { ChevronLeft, Gem, Zap, Battery, Plus, Minus, Bug } from "lucide-react-native";
+import { ChevronLeft, Gem, Zap, Battery, Plus, Minus, Bug, Lightbulb } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -48,7 +48,7 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onNavigate, fromScreen = "lev
     }
   };
 
-  const updateResource = async (resource: 'gems' | 'energy' | 'xp', amount: number) => {
+  const updateResource = async (resource: 'gems' | 'energy' | 'xp' | 'hints', amount: number) => {
     if (!progress || updating) return;
     
     setUpdating(true);
@@ -61,6 +61,8 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onNavigate, fromScreen = "lev
         updatedProgress.meta.energy = clampEnergy(progress.meta.energy + amount);
       } else if (resource === 'xp') {
         updatedProgress.meta.xp = Math.max(0, progress.meta.xp + amount);
+      } else if (resource === 'hints') {
+        updatedProgress.meta.hints = Math.max(0, (progress.meta.hints || 0) + amount);
       }
       
       updatedProgress.updatedAt = new Date().toISOString();
@@ -162,6 +164,16 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onNavigate, fromScreen = "lev
               </ThemedText>
               <ThemedText variant="body1" color="textSecondary">
                 XP (Level {progress?.meta.playerLevel || 0})
+              </ThemedText>
+            </View>
+            
+            <View style={styles.resourceRow}>
+              <Lightbulb size={20} color={theme.colors.warning} />
+              <ThemedText variant="heading3" weight="bold" color="warning" style={styles.resourceValue}>
+                {progress?.meta.hints || 0}
+              </ThemedText>
+              <ThemedText variant="body1" color="textSecondary">
+                Hints
               </ThemedText>
             </View>
           </View>
@@ -298,6 +310,52 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onNavigate, fromScreen = "lev
               size="sm"
               leftIcon={<Plus size={16} color={theme.colors.textInverse} />}
               onPress={() => updateResource('xp', 1000)}
+              disabled={updating}
+              style={styles.controlButton}
+            />
+          </View>
+        </ThemedCard>
+
+        {/* Hints Controls */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            💡 Hints Control
+          </ThemedText>
+          
+          <View style={styles.controlsRow}>
+            <ThemedButton
+              title="-1"
+              variant="ghost"
+              size="sm"
+              leftIcon={<Minus size={16} color={theme.colors.error} />}
+              onPress={() => updateResource('hints', -1)}
+              disabled={updating}
+              style={styles.controlButton}
+            />
+            <ThemedButton
+              title={`-${economy.hints.quantity}`}
+              variant="ghost"
+              size="sm"
+              leftIcon={<Minus size={16} color={theme.colors.error} />}
+              onPress={() => updateResource('hints', -economy.hints.quantity)}
+              disabled={updating}
+              style={styles.controlButton}
+            />
+            <ThemedButton
+              title={`+${economy.hints.quantity}`}
+              variant="warning"
+              size="sm"
+              leftIcon={<Plus size={16} color={theme.colors.textInverse} />}
+              onPress={() => updateResource('hints', economy.hints.quantity)}
+              disabled={updating}
+              style={styles.controlButton}
+            />
+            <ThemedButton
+              title={`+${economy.hints.quantity * 5}`}
+              variant="warning"
+              size="sm"
+              leftIcon={<Plus size={16} color={theme.colors.textInverse} />}
+              onPress={() => updateResource('hints', economy.hints.quantity * 5)}
               disabled={updating}
               style={styles.controlButton}
             />

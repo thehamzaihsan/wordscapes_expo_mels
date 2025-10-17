@@ -16,6 +16,10 @@ import {
   View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
+
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 interface LetterWheelProps {
   letters?: string[];
   onWordComplete?: (word: string) => void;
@@ -25,6 +29,7 @@ interface LetterWheelProps {
   onHint?: (word: string) => Promise<boolean> | boolean; // returns true if hint applied, false if failed
   hintsLeft?: number;
   canUsePaidHints?: boolean; // If true, allow pressing hint even when hintsLeft is 0 (paid hint flows)
+  onNavigate?: (screen: string) => void; // Navigation function
 }
 
 interface LetterPosition {
@@ -57,6 +62,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   onHint,
   hintsLeft = 1,
   canUsePaidHints = true,
+  onNavigate,
 }) => {
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [selectedLetters, setSelectedLetters] = useState<string[]>([]);
@@ -67,6 +73,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [isShuffling, setIsShuffling] = useState(false);
   const [hintModalVisible, setHintModalVisible] = useState(false);
   const [hintMessage, setHintMessage] = useState("");
+  const [purchaseHintModal, setPurchaseHintModal] = useState(false);
   const letterPositions = useRef<LetterPosition[]>([]);
 
   // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
@@ -289,10 +296,11 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   }, [letters, animatedLetters, resetSelection, isShuffling]);
 
   const handleHint = useCallback(async (): Promise<void> => {
-    const noFreeHints = hintsLeft <= 0;
-    if (noFreeHints && !canUsePaidHints) {
-      setHintMessage("You have used all your hints for this game.");
-      setHintModalVisible(true);
+    const noHints = hintsLeft <= 0;
+    
+    // If no hints available, show purchase modal
+    if (noHints) {
+      setPurchaseHintModal(true);
       return;
     }
 
@@ -320,23 +328,21 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       return;
     }
 
-    // Ask parent to apply the hint (may deduct gems). If succeeds, show the hint word in the modal.
+    // Ask parent to apply the hint (deduct from global hints)
     try {
       const ok = await onHint(hintWord);
       if (ok === false) {
-        setHintMessage("Couldn't use a hint right now.");
-        setHintModalVisible(true);
+        setPurchaseHintModal(true);
         return;
       }
+      
+      setHintMessage(`Try the word: ${hintWord.toUpperCase()}`);
+      setHintModalVisible(true);
     } catch {
       setHintMessage("Couldn't use a hint right now.");
       setHintModalVisible(true);
-      return;
     }
-
-    setHintMessage(`Try the word: ${hintWord.toUpperCase()}`);
-    setHintModalVisible(true);
-  }, [hintsLeft, validWords, foundWords, onHint, canUsePaidHints]);
+  }, [hintsLeft, validWords, foundWords, onHint]);
 
   // const isValidWord =
   //   currentWord.length > 2 && validWords.includes(currentWord.toLowerCase());
@@ -473,13 +479,15 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             styles.centerButton,
             styles.hintButton,
             styles.rightHintButton,
-            hintsLeft <= 0 && !canUsePaidHints && styles.disabledCenterButton,
           ]}
           onPress={handleHint}
-          disabled={hintsLeft <= 0 && !canUsePaidHints}
         >
           <Lightbulb size={isSmallScreen ? 20 : 24} color="#ffffff" />
-          <Text style={styles.hintCountText}>{hintsLeft}</Text>
+          {hintsLeft > 0 && (
+            <View style={styles.hintDot}>
+              <Text style={styles.hintDotText}>{hintsLeft}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -549,6 +557,56 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Purchase Hint Modal */}
+      <Modal
+        visible={purchaseHintModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPurchaseHintModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPurchaseHintModal(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <ThemedCard style={styles.hintModalCard}>
+              <ThemedText style={styles.hintModalTitle}>
+                No Hints Available
+              </ThemedText>
+              <ThemedText style={styles.hintModalText}>
+                You're out of hints! Purchase hint packs from the XP Shop to continue getting help with difficult words.
+              </ThemedText>
+              <View style={styles.hintModalButtons}>
+                <ThemedButton
+                  variant="outline"
+                  title="Cancel"
+                  style={styles.hintModalButton}
+                  onPress={() => setPurchaseHintModal(false)}
+                />
+                <ThemedButton
+                  variant="primary"
+                  title="Go to Shop"
+                  style={styles.hintModalButton}
+                  onPress={() => {
+                    setPurchaseHintModal(false);
+                    // Add slight delay to ensure modal closes before navigation
+                    setTimeout(() => {
+                      if (onNavigate) {
+                        onNavigate('xpshop');
+                      }
+                    }, 100);
+                  }}
+                />
+              </View>
+            </ThemedCard>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -587,6 +645,32 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 4,
     fontSize: isSmallScreen ? 14 : 16,
+  },
+  hintDot: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#ef4444",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#ffffff",
+  },
+  hintDotText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  hintModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+  },
+  hintModalButton: {
+    flex: 1,
   },
   currentWord: {
     fontSize: isSmallScreen ? 22 : isMediumScreen ? 23 : 24,

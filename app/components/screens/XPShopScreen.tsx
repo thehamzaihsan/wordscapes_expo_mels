@@ -9,7 +9,7 @@ import {
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { clampEnergy } from "@/lib/energy";
 import { showToast } from "@/lib/toast";
-import { Battery, ChevronLeft, Gem, Zap } from "lucide-react-native";
+import { Battery, ChevronLeft, Gem, Lightbulb, Zap } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -190,6 +190,86 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     }
   };
 
+  const handlePurchaseHints = (hintsAmount: number, gemsCost: number) => {
+    if (!progress) return;
+    
+    if (progress.meta.gems < gemsCost) {
+      showPurchaseModal({
+        type: 'error',
+        title: 'Insufficient Gems',
+        message: `You need ${gemsCost} gems to purchase ${hintsAmount} hints. You currently have ${progress.meta.gems} gems.`,
+      });
+      return;
+    }
+
+    showPurchaseModal({
+      type: 'xp',
+      title: 'Purchase Hints',
+      message: `Purchase ${hintsAmount} hints for ${gemsCost} gems?`,
+      amount: hintsAmount,
+      cost: gemsCost,
+      onConfirm: () => confirmPurchaseHints(hintsAmount, gemsCost),
+    });
+  };
+
+  const confirmPurchaseHints = async (hintsAmount: number, gemsCost: number) => {
+    if (!progress) return;
+    
+    setPurchasing(true);
+    hideModal();
+    
+    try {
+      const updatedProgress = {
+        ...progress,
+        meta: {
+          ...progress.meta,
+          gems: progress.meta.gems - gemsCost,
+          hints: (progress.meta.hints || 0) + hintsAmount,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+
+      await saveGuestProgress(updatedProgress);
+      setProgress(updatedProgress);
+      
+      showToast(`Purchased ${hintsAmount} hints!`, "success");
+    } catch (error) {
+      console.error("Purchase failed:", error);
+      showToast("Purchase failed", "error");
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const getHintPackages = () => {
+    const baseHintCost = economy.hints.cost;
+    const baseHintQuantity = economy.hints.quantity;
+    
+    return [
+      {
+        id: 1,
+        hints: baseHintQuantity,
+        gems: baseHintCost,
+        popular: false,
+        badge: null,
+      },
+      {
+        id: 2,
+        hints: baseHintQuantity * 5,
+        gems: Math.floor(baseHintCost * 4.2), // ~16% discount
+        popular: true,
+        badge: "POPULAR",
+      },
+      {
+        id: 3,
+        hints: baseHintQuantity * 10,
+        gems: Math.floor(baseHintCost * 7.5), // ~25% discount
+        popular: false,
+        badge: "BEST VALUE",
+      },
+    ];
+  };
+
   const getXPPackages = () => {
     const baseXP = economy.xp.buyRate.xp;
     const baseGems = economy.xp.buyRate.gems;
@@ -249,6 +329,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   const xpPackages = getXPPackages();
   const energyPackages = getEnergyPackages();
+  const hintPackages = getHintPackages();
 
   return (
     <View style={styles.container}>
@@ -301,6 +382,15 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
               </ThemedText>
               <ThemedText variant="caption" color="textSecondary">
                 / {economy.energy.refillMax} energy
+              </ThemedText>
+            </View>
+            <View style={styles.hintsDisplay}>
+              <Lightbulb size={20} color={theme.colors.warning} />
+              <ThemedText variant="heading3" weight="bold" color="warning" style={styles.hintsText}>
+                {progress?.meta.hints || 0}
+              </ThemedText>
+              <ThemedText variant="caption" color="textSecondary">
+                hints
               </ThemedText>
             </View>
           </View>
@@ -425,6 +515,70 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
                   fullWidth
                   disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems || (progress?.meta.energy || 0) >= economy.energy.refillMax}
                   onPress={() => handlePurchaseEnergy(pkg.energy, pkg.gems)}
+                  style={styles.purchaseButton}
+                />
+              </View>
+            ))}
+          </View>
+        </ThemedCard>
+
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
+            Hint Packages
+          </ThemedText>
+          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.sectionSubtitle}>
+            Get help when you're stuck on difficult words!
+          </ThemedText>
+          
+          <View style={styles.packagesGrid}>
+            {hintPackages.map((pkg) => (
+              <View
+                key={pkg.id}
+                style={[
+                  styles.packageCard,
+                  { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border },
+                  pkg.popular && { borderColor: theme.colors.warning, backgroundColor: `${theme.colors.warning}10` }
+                ]}
+              >
+                {pkg.badge && (
+                  <View style={[
+                    styles.packageBadge,
+                    { backgroundColor: pkg.popular ? theme.colors.warning : theme.colors.primary }
+                  ]}>
+                    <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
+                      {pkg.badge}
+                    </ThemedText>
+                  </View>
+                )}
+                
+                <ThemedText variant="heading2" weight="bold" style={styles.packageXP}>
+                  +{pkg.hints}
+                </ThemedText>
+                <ThemedText variant="body2" color="textSecondary" weight="semibold" style={styles.packageXPLabel}>
+                  HINTS
+                </ThemedText>
+                
+                <View style={styles.packageCost}>
+                  <ThemedText variant="heading4" weight="bold" color="warning" style={styles.packageGems}>
+                    {pkg.gems}
+                  </ThemedText>
+                  <Gem size={16} color={theme.colors.warning} />
+                  <ThemedText variant="caption" color="textSecondary" style={styles.packageGemsLabel}>
+                    gems
+                  </ThemedText>
+                </View>
+                
+                <ThemedButton
+                  title={
+                    (progress?.meta.gems || 0) < pkg.gems 
+                      ? "Not enough gems" 
+                      : "Purchase"
+                  }
+                  variant={(progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"}
+                  size="sm"
+                  fullWidth
+                  disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems}
+                  onPress={() => handlePurchaseHints(pkg.hints, pkg.gems)}
                   style={styles.purchaseButton}
                 />
               </View>
@@ -568,10 +722,19 @@ const createStyles = (theme: any) => ({
     justifyContent: 'center' as const,
     gap: theme.spacing.xs,
   },
+  hintsDisplay: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: theme.spacing.xs,
+  },
   gemsText: {
     fontSize: 18,
   },
   energyText: {
+    fontSize: 18,
+  },
+  hintsText: {
     fontSize: 18,
   },
   card: {

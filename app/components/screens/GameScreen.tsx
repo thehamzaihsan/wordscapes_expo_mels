@@ -64,7 +64,7 @@ export default function GameScreen({
     score,
     gameComplete,
     cellSize,
-    hintsLeft,
+    globalHints,
 
     // refs
     // gameCompleteRef,
@@ -461,8 +461,9 @@ export default function GameScreen({
                 validWords={allValidWords}
                 foundWords={[...foundCrosswordWords, ...foundBonusWords]}
                 onHint={handleWordHint}
-                hintsLeft={hintsLeft}
-                canUsePaidHints={true}
+                hintsLeft={globalHints}
+                canUsePaidHints={false}
+                onNavigate={onNavigate}
               />
             ) : (
               <Text style={styles.infoText}>No letters</Text>
