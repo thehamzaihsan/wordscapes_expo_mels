@@ -400,18 +400,20 @@ export async function saveGuestProgress(
 }
 
 /**
- * Initialize progress structure from level definitions (first 3 unlocked rule for first category only).
+ * Initialize progress structure from level definitions.
  */
 export function buildInitialProgress(
   levelDefs: {
     [category: string]: any[];
   },
-  playerName?: string
+  playerName?: string,
+  playerLevel?: number
 ): GuestProgressPayload {
   const categories: GuestCategoryProgress = {};
   
-  // Only initialize categories that should be unlocked for a new player (level 0)
-  const unlockedCategories = getUnlockedCategories(0); // Player level 0
+  // Initialize categories that should be unlocked for the given player level (default to 0)
+  const currentPlayerLevel = playerLevel ?? 0;
+  const unlockedCategories = getUnlockedCategories(currentPlayerLevel);
   
   unlockedCategories.forEach((category) => {
     if (levelDefs[category]) {
@@ -419,20 +421,40 @@ export function buildInitialProgress(
         level: lvl.level ?? idx + 1,
         baseWord: lvl.baseWord,
         difficulty: lvl.difficulty,
-        // Unlock first 3 levels for the first category only
-        isUnlocked: idx < 3,
+        // Unlock first 3 levels for the first category only, first level for others
+        isUnlocked: category === unlockedCategories[0] ? idx < 3 : idx === 0,
         isCompleted: false,
         bestScore: 0,
         attempts: 0,
       }));
     }
   });
+  
+  // Calculate proper XP and player level for meta
+  const totalXp = playerLevel ? calculateTotalXpForLevel(playerLevel) : 0;
+  
   return {
     categories,
-    meta: { ...defaultMeta, playerName: playerName || defaultMeta.playerName },
+    meta: { 
+      ...defaultMeta, 
+      playerName: playerName || defaultMeta.playerName,
+      playerLevel: currentPlayerLevel,
+      xp: totalXp
+    },
     updatedAt: new Date().toISOString(),
     version: CURRENT_VERSION,
   };
+}
+
+/**
+ * Calculate total XP needed to reach a specific player level
+ */
+function calculateTotalXpForLevel(targetLevel: number): number {
+  let totalXp = 0;
+  for (let level = 0; level < targetLevel; level++) {
+    totalXp += xpNeededForLevel(level);
+  }
+  return totalXp;
 }
 
 /**
@@ -517,7 +539,39 @@ export function applyLevelCompletion(
   return progress;
 }
 
-/** Deduct energy when starting a level */
+/** Ensure all categories that should be unlocked exist in progress */
+export async function ensureCategoriesUnlocked(progress: GuestProgressPayload): Promise<GuestProgressPayload> {
+  const unlockedCategories = getUnlockedCategories(progress.meta.playerLevel);
+  const levelDefinitions = levelsData as Record<string, any[]>;
+  let modified = false;
+
+  unlockedCategories.forEach((categoryName) => {
+    if (!progress.categories[categoryName] && levelDefinitions[categoryName]) {
+      progress.categories[categoryName] = levelDefinitions[categoryName].map(
+        (lvl: any, idx: number) => ({
+          level: lvl.level ?? idx + 1,
+          baseWord: lvl.baseWord,
+          difficulty: lvl.difficulty,
+          isUnlocked: idx === 0, // unlock only first level of new category
+          isCompleted: false,
+          bestScore: 0,
+          attempts: 0,
+        })
+      );
+      modified = true;
+      console.log(
+        `[Category Unlock] Added missing category: ${categoryName} for player level ${progress.meta.playerLevel}`
+      );
+    }
+  });
+
+  if (modified) {
+    progress.updatedAt = new Date().toISOString();
+    await saveGuestProgress(progress);
+  }
+
+  return progress;
+}
 export async function deductEnergyForLevel(): Promise<boolean> {
   const progress = await loadGuestProgress();
   if (!progress) return false;

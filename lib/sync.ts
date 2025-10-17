@@ -80,7 +80,16 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
     const existing = await loadGuestProgress();
     const preferredName =
       snapshot.profile.username || existing?.meta.playerName;
-    const progress = buildInitialProgress(levelsData as any, preferredName);
+    
+    // Start with existing progress or build initial if none exists
+    let progress: GuestProgressPayload;
+    if (existing && existing.categories && Object.keys(existing.categories).length > 0) {
+      // Use existing progress as base to preserve category progress
+      progress = { ...existing };
+    } else {
+      // Only build initial progress if we have no existing data
+      progress = buildInitialProgress(levelsData as any, preferredName);
+    }
 
     // Carry over meta from snapshot stats/profile
     const remoteXp =
@@ -169,11 +178,35 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
         localUpdatedAt: new Date(localUpdatedAt).toISOString(),
         remoteTimestamp: new Date(remoteTimestamp).toISOString(),
       });
+      
+      // First, preserve all existing category progress
       Object.keys(existing.categories).forEach((categoryName) => {
-        if (progress.categories[categoryName] && existing.categories[categoryName]) {
+        if (existing.categories[categoryName]) {
           progress.categories[categoryName] = existing.categories[categoryName].map(localLevel => ({
             ...localLevel
           }));
+        }
+      });
+      
+      // Then ensure newly unlocked categories are still available
+      // (these were added in lines 141-158 but might not exist in existing.categories)
+      unlockedCategories.forEach((categoryName) => {
+        if (!existing.categories[categoryName] && levelDefinitions[categoryName]) {
+          // This category was just unlocked, make sure it stays in progress
+          progress.categories[categoryName] = levelDefinitions[categoryName].map(
+            (lvl: any, idx: number) => ({
+              level: lvl.level ?? idx + 1,
+              baseWord: lvl.baseWord,
+              difficulty: lvl.difficulty,
+              isUnlocked: idx === 0, // unlock only first level of new category
+              isCompleted: false,
+              bestScore: 0,
+              attempts: 0,
+            })
+          );
+          console.log(
+            `[Category Unlock] Preserving newly unlocked category during sync: ${categoryName}`
+          );
         }
       });
     } else {

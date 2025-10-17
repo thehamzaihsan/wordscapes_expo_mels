@@ -124,42 +124,25 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             );
             const preferredName =
               authDisplayName || snapshot?.profile?.username || undefined;
+            
+            // Calculate player level from snapshot if available
+            let playerLevel = 0;
+            if (snapshot?.stats?.xp) {
+              const { derivePlayerLevel } = await import("@/hooks/guest-progress");
+              const derived = derivePlayerLevel(snapshot.stats.xp);
+              playerLevel = derived.level;
+            }
+            
             progressToUse = buildInitialProgress(
               levelsData as any,
-              preferredName
+              preferredName,
+              playerLevel
             );
             
-            // If we have a snapshot with XP, ensure categories are properly unlocked
+            // If we have a snapshot with XP, ensure the meta is properly set
             if (snapshot?.stats?.xp) {
-              const { derivePlayerLevel, getUnlockedCategories } = await import(
-                "@/hooks/guest-progress"
-              );
-              const derived = derivePlayerLevel(snapshot.stats.xp);
               progressToUse.meta.xp = snapshot.stats.xp;
-              progressToUse.meta.playerLevel = derived.level;
-              
-              // Add any newly unlocked categories based on XP
-              const unlockedCategories = getUnlockedCategories(progressToUse.meta.playerLevel);
-              const levelDefinitions = levelsData as Record<string, any[]>;
-              
-              unlockedCategories.forEach((categoryName) => {
-                if (!progressToUse!.categories[categoryName] && levelDefinitions[categoryName]) {
-                  progressToUse!.categories[categoryName] = levelDefinitions[categoryName].map(
-                    (lvl: any, idx: number) => ({
-                      level: lvl.level ?? idx + 1,
-                      baseWord: lvl.baseWord,
-                      difficulty: lvl.difficulty,
-                      isUnlocked: idx === 0, // unlock only first level of new category
-                      isCompleted: false,
-                      bestScore: 0,
-                      attempts: 0,
-                    })
-                  );
-                  console.log(
-                    `[Category Unlock] Rebuilding progress - unlocked category: ${categoryName}`
-                  );
-                }
-              });
+              progressToUse.meta.playerLevel = playerLevel;
             }
             
             await saveGuestProgress(progressToUse);
@@ -176,6 +159,11 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             }
           }
           if (!isMounted) return;
+          
+          // Ensure all categories that should be unlocked are present
+          const { ensureCategoriesUnlocked } = await import("@/hooks/guest-progress");
+          progressToUse = await ensureCategoriesUnlocked(progressToUse);
+          
           const mapped: { [key: string]: LevelData[] } = {};
           Object.keys(progressToUse.categories).forEach((cat) => {
             mapped[cat] = progressToUse!.categories[cat].map((l) => ({
