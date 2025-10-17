@@ -1,5 +1,6 @@
 import { initializeGameManager } from "@/hooks/game-manager";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
+import { cleanupOldTempProgress } from "@/hooks/useLevelProgress";
 import { useEnergyRegen } from "@/hooks/useEnergyRegen";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
@@ -33,6 +34,23 @@ function LayoutWithInsets() {
   useEffect(() => {
     updateGlobalSettings(settings);
   }, [settings]);
+
+  // Initialize app and cleanup old temporary progress
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Initialize game manager
+        initializeGameManager();
+        
+        // Cleanup old temporary progress data
+        await cleanupOldTempProgress();
+      } catch (error) {
+        console.warn('Failed to initialize app:', error);
+      }
+    };
+    
+    initializeApp();
+  }, []);
 
   return (
     <View style={styles.container}>
