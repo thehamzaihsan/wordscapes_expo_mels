@@ -11,7 +11,7 @@ export default function BackgroundImage() {
           left: 0,
           width: '100%',
           height: '100%',
-          zIndex: 0,
+          zIndex: -1,
           // @ts-ignore - web-specific styles
           backgroundImage: 'url(/images/default_background.jpg)',
           backgroundSize: 'cover',
@@ -32,7 +32,7 @@ export default function BackgroundImage() {
         position: 'absolute', 
         top: 0, 
         left: 0, 
-        zIndex: 0
+        zIndex: -1
       }}
       resizeMode="cover"
     />
