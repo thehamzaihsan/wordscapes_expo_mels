@@ -187,7 +187,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   };
 
   const handleLevelPress = (level: LevelData, categoryName: string) => {
-    if (!level.isUnlocked) return;
+    if (!level.isUnlocked || level.isCompleted) return;
 
     // Retrieve full level definition (letters + crossword words) from static levels.json
     const categoryDefs: any[] = (levelsData as any)[categoryName] || [];

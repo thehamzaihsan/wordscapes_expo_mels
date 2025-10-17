@@ -56,7 +56,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
   return (
     <TouchableOpacity
       onPress={() => onPress(level, categoryName)}
-      disabled={!level.isUnlocked}
+      disabled={!level.isUnlocked || level.isCompleted}
       activeOpacity={0.8}
     >
       <ThemedCard

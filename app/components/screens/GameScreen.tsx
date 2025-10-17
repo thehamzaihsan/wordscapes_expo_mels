@@ -19,8 +19,8 @@ import {
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
-import { syncUser } from "@/lib/sync";
 import { supabase } from "@/lib/supabase";
+import { syncUser } from "@/lib/sync";
 import LetterWheel from "../game/inputWheel";
 import { useGameLogic } from "../game/useGameLogic";
 import ThemedButton from "../ui/ThemedButton";
@@ -345,7 +345,7 @@ export default function GameScreen({
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          <Text style={styles.score}>Score: {score}</Text>
+          {/* <Text style={styles.score}>Score: {score}</Text> */}
           <TouchableOpacity onPress={toggleSound} style={styles.soundToggle}>
             {soundEnabled ? (
               <Volume2 size={18} color="#111827" />
