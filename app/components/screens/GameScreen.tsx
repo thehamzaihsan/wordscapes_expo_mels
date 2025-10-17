@@ -19,6 +19,8 @@ import {
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
+import { syncUser } from "@/lib/sync";
+import { supabase } from "@/lib/supabase";
 import LetterWheel from "../game/inputWheel";
 import { useGameLogic } from "../game/useGameLogic";
 import ThemedButton from "../ui/ThemedButton";
@@ -309,6 +311,17 @@ export default function GameScreen({
         });
         try {
           await updateGuestSnapshotFromProgress(updated);
+          
+          // Trigger sync for logged-in users to push the completion to remote immediately
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session?.user?.id) {
+            console.info("[COMPLETE] Syncing level completion to remote for logged-in user");
+            await syncUser(session.user.id).catch((syncErr) => {
+              console.warn("[COMPLETE] Sync failed but continuing", syncErr);
+            });
+          }
         } catch {}
       }
     })();
