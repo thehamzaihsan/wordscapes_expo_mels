@@ -1,8 +1,10 @@
 import React from "react";
 import { useRouter } from "expo-router";
-import LoadingScreen from "./components/common/LoadingScreen";
-import { signOutSupabase } from "@/lib/auth";
+import { View } from "react-native";
 import { showToast } from "@/lib/toast";
+import { signOutSupabase } from "@/lib/auth";
+import BackgroundImage from "./components/common/BackgroundImage";
+import LoadingScreen from "./components/common/LoadingScreen";
 import PlayerProfileScreen from "./components/screens/PlayerProfileScreen";
 
 export default function ProfileRoute() {
@@ -28,9 +30,10 @@ export default function ProfileRoute() {
     setTimeout(() => setIsLoading(false), 600);
   };
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
       {isLoading && <LoadingScreen progress={0.7} />}
       <PlayerProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} />
-    </>
+    </View>
   );
 }

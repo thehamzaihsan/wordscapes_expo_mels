@@ -1,7 +1,8 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback } from "react";
-import { BackHandler, Platform } from "react-native";
+import { BackHandler, Platform, View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 import LoadingScreen from "./components/common/LoadingScreen";
 import StoreScreen from "./components/screens/StoreScreen";
 
@@ -51,9 +52,10 @@ export default function ShopRoute() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
       {isLoading && <LoadingScreen />}
       <StoreScreen onNavigate={handleNavigate} />
-    </>
+    </View>
   );
 }

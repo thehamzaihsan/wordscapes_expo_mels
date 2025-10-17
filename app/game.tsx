@@ -1,7 +1,8 @@
 import { Difficulty } from "@/constants/difficulty";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback } from "react";
-import { BackHandler, Platform } from "react-native";
+import { BackHandler, Platform, View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 import GameScreen from "./components/screens/GameScreen";
 
 export default function GameRoute() {
@@ -53,17 +54,20 @@ export default function GameRoute() {
   };
 
   return (
-    <GameScreen
-      onNavigate={handleNavigate}
-      difficulty={difficulty}
-      baseWord={baseWord}
-      levelTitle={levelTitle}
-      categoryName={categoryName}
-      levelData={
-        levelData
-          ? { ...levelData, level: levelNumber || levelData.level }
-          : undefined
-      }
-    />
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      <GameScreen
+        onNavigate={handleNavigate}
+        difficulty={difficulty}
+        baseWord={baseWord}
+        levelTitle={levelTitle}
+        categoryName={categoryName}
+        levelData={
+          levelData
+            ? { ...levelData, level: levelNumber || levelData.level }
+            : undefined
+        }
+      />
+    </View>
   );
 }

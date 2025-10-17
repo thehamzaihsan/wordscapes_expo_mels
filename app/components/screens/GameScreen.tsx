@@ -353,7 +353,13 @@ export default function GameScreen({
         <>
           {/* Floating letters overlay */}
           {animatingLetters.length > 0 && (
-            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <View 
+              style={[
+                StyleSheet.absoluteFill, 
+                { zIndex: 1000, elevation: 1000 }
+              ]} 
+              pointerEvents="none"
+            >
               {animatingLetters.map((it) => (
                 <Animated.View
                   key={it.id}
@@ -364,6 +370,8 @@ export default function GameScreen({
                       position: "absolute",
                       width: cellSize,
                       height: cellSize,
+                      zIndex: 1001,
+                      elevation: 1001,
                       transform: it.position.getTranslateTransform(),
                     },
                   ]}

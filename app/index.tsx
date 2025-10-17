@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import BackgroundImage from "./components/common/BackgroundImage";
 import Logo from "./components/common/Logo";
 import ThemedButton from "./components/ui/ThemedButton";
 import ThemedText from "./components/ui/ThemedText";
@@ -28,6 +29,7 @@ export default function Index() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
+        <BackgroundImage />
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <ActivityIndicator color={theme.colors.primary} size="large" />
         <ThemedText variant="body1" color="textSecondary" style={{ marginTop: theme.spacing.base }}>
@@ -39,6 +41,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
+      <BackgroundImage />
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       <View style={[styles.safeArea, {

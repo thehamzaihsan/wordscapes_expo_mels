@@ -1,4 +1,4 @@
-import { Animated, Dimensions, View } from 'react-native';
+import { Animated, View } from 'react-native';
 
 interface AnimatingLetter {
   id: string;
@@ -25,6 +25,7 @@ export default function LetterAnimations({ animatingLetters }: LetterAnimationsP
             justifyContent: 'center',
             alignItems: 'center',
             transform: animLetter.position.getTranslateTransform(),
+            zIndex: -1,
           }}
         >
           <Animated.Text
@@ -32,6 +33,8 @@ export default function LetterAnimations({ animatingLetters }: LetterAnimationsP
               color: '#fff',
               fontSize: 20,
               fontWeight: 'bold',
+            zIndex: -1,
+
             }}
           >
             {animLetter.letter}

@@ -1,4 +1,6 @@
 import { useRouter } from "expo-router";
+import { View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 import GlassmorphismDemo from "./components/screens/GlassmorphismDemo";
 
 export default function GlassmorphismDemoRoute() {
@@ -10,5 +12,10 @@ export default function GlassmorphismDemoRoute() {
     }
   };
 
-  return <GlassmorphismDemo />;
+  return (
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      <GlassmorphismDemo />
+    </View>
+  );
 }

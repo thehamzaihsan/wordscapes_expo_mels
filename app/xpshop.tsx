@@ -1,5 +1,7 @@
 import React from "react";
 import { useRouter } from "expo-router";
+import { View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 import LoadingScreen from "./components/common/LoadingScreen";
 import XPShopScreen from "./components/screens/XPShopScreen";
 
@@ -20,9 +22,10 @@ export default function XPShopRoute() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
       {isLoading && <LoadingScreen progress={0.7} />}
       <XPShopScreen onNavigate={handleNavigate} />
-    </>
+    </View>
   );
 }

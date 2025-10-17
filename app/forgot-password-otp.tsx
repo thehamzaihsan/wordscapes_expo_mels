@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 
 export default function ForgotPasswordOtp() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function ForgotPasswordOtp() {
 
   return (
     <View style={styles.container}>
+      <BackgroundImage />
       <Text style={styles.title}>Enter the code</Text>
       <Text style={styles.subtitle}>We sent a 6-digit code to {email}</Text>
       <TextInput

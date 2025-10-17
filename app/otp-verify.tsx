@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 
 export default function OtpVerify() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function OtpVerify() {
 
   return (
     <View style={styles.container}>
+      <BackgroundImage />
       <Text style={styles.title}>Verify your email</Text>
       <Text style={styles.subtitle}>We sent a 6-digit code to {email}</Text>
       <TextInput

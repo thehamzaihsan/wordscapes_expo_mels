@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { remapGuestSnapshotToUser } from "@/lib/guestSnapshot";
 import { syncUser } from "@/lib/sync";
+import BackgroundImage from "./components/common/BackgroundImage";
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function AuthCallbackScreen() {
         padding: 24,
       }}
     >
+      <BackgroundImage />
       <ActivityIndicator size="large" color="#8B5CF6" />
       <Text
         style={{

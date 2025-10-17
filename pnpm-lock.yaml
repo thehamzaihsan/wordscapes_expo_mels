@@ -101,6 +101,9 @@ importers:
       lucide-react-native:
         specifier: ^0.544.0
         version: 0.544.0(react-native-svg@15.13.0(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      pnpm:
+        specifier: ^10.18.3
+        version: 10.18.3
       popular-english-words:
         specifier: ^1.0.2
         version: 1.0.2
@@ -3674,6 +3677,11 @@ packages:
   pngjs@3.4.0:
     resolution: {integrity: sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w==}
     engines: {node: '>=4.0.0'}
+
+  pnpm@10.18.3:
+    resolution: {integrity: sha512-u9FubXKG/X4B9rPAs8kyzaKWXAapCDKPdGY/EKmupR8RKe6mFRNL+ZKDGwCeq+Fn7LcAi1l/QP+bx1lGqt+wjQ==}
+    engines: {node: '>=18.12'}
+    hasBin: true
 
   popular-english-words@1.0.2:
     resolution: {integrity: sha512-vQiCBURYdNZP8yIvNQ76fOP5PKUs3tbv1LbQz5hbOVtK6deE8WBkJSYhn1asOqXIiT/iwrQvrwEfNsVrFuk7mw==}
@@ -9007,6 +9015,8 @@ snapshots:
       xmlbuilder: 15.1.1
 
   pngjs@3.4.0: {}
+
+  pnpm@10.18.3: {}
 
   popular-english-words@1.0.2: {}
 

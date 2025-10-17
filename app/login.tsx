@@ -1,8 +1,10 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import LoginScreen from "./components/screens/Login";
+import { View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 import LoadingScreen from "./components/common/LoadingScreen";
+import LoginScreen from "./components/screens/Login";
 
 export default function LoginRoute() {
   const router = useRouter();
@@ -45,8 +47,18 @@ export default function LoginRoute() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <View style={{ flex: 1 }}>
+        <BackgroundImage />
+        <LoadingScreen />
+      </View>
+    );
   }
 
-  return <LoginScreen onNavigate={handleNavigate} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      <LoginScreen onNavigate={handleNavigate} />
+    </View>
+  );
 }

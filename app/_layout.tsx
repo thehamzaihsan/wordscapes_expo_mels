@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   BackHandler,
   Platform,
+  StyleSheet,
   Text,
   View,
-  StyleSheet,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
@@ -20,8 +20,6 @@ import {
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
-import BackgroundImage from "./components/common/BackgroundImage";
-
 function LayoutWithInsets() {
   useAutoSync();
   const insets = useSafeAreaInsets();
@@ -32,12 +30,11 @@ function LayoutWithInsets() {
   useEffect(() => {
     updateGlobalSettings(settings);
   }, [settings]);
-  
+
   return (
     <View style={styles.container}>
-      {/* Centralized Background Image */}
-      <BackgroundImage blurRadius={0} />
-      
+      {/* Background: for web this sets document.body background; for native uses Image */}
+
       {/* App content always on top */}
       <View
         style={[
@@ -47,7 +44,7 @@ function LayoutWithInsets() {
             paddingBottom: insets.bottom,
             paddingLeft: insets.left,
             paddingRight: insets.right,
-          }
+          },
         ]}
       >
         {!isSupabaseEnabled() && (
@@ -72,23 +69,38 @@ function LayoutWithInsets() {
             headerShown: false,
             gestureEnabled: false,
             animation: "none",
-            contentStyle: { 
-              backgroundColor: "transparent", 
+            contentStyle: {
+              backgroundColor: "transparent",
             },
           }}
         >
-          <Stack.Screen name="index" options={{ headerShown: false, animation: "none" }} />
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false, animation: "none" }}
+          />
           <Stack.Screen
             name="login"
-            options={{ headerShown: false, gestureEnabled: false, animation: "none" }}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: "none",
+            }}
           />
           <Stack.Screen
             name="levels"
-            options={{ headerShown: false, gestureEnabled: false, animation: "none" }}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: "none",
+            }}
           />
           <Stack.Screen
             name="game"
-            options={{ headerShown: false, gestureEnabled: false, animation: "none" }}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: "none",
+            }}
           />
 
           <Stack.Screen
@@ -152,37 +164,31 @@ function LayoutWithInsets() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
   },
   contentContainer: {
     flex: 1,
     backgroundColor: "transparent",
-    zIndex: 10, // Above overlay and background
-    position: 'relative',
+    position: "relative",
   },
 });
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    KnightWarrior: require("../assets/fonts/KnightWarrior.otf"),
     Helvetica: require("../assets/fonts/Helvetica.ttf"),
   });
 
   // Initialize components when fonts are loaded
   React.useEffect(() => {
     if (fontsLoaded) {
-      // Fonts are loaded and ready to use
-      console.log('Fonts loaded successfully');
+      console.log("Fonts loaded successfully");
     }
   }, [fontsLoaded]);
 
   useEffect(() => {
-    // Initialize game manager for optimal performance across the app
     initializeGameManager();
     if (Platform.OS === "android") {
       const backAction = () => {
-        // Let Expo Router handle the back navigation
-        return false; // Return false to let the default behavior handle it
+        return false;
       };
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
@@ -196,8 +202,6 @@ export default function RootLayout() {
     return (
       <ThemeProvider defaultTheme="game">
         <View style={styles.container}>
-          {/* Background Image for Loading Screen */}
-          <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
           <View
             style={{
               flex: 1,
@@ -216,7 +220,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider defaultTheme="game">
+        <ThemeProvider defaultTheme="light">
           <LayoutWithInsets />
           <ToastHost />
         </ThemeProvider>
