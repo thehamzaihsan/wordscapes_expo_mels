@@ -27,22 +27,21 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      "@react-native-google-signin/google-signin"
-    ],
+   "plugins": [
+  "expo-router",
+  [
+    "expo-splash-screen",
+    {
+      "image": "assets/images/WorldSprings_logo_1.png", // <-- Use your new image
+      "resizeMode": "cover",                       // <-- Change to "cover"
+      "backgroundColor": "#6757f7",                 // <-- A dark fallback color from your image
+      "dark": {
+        "backgroundColor": "#6757f7"               // <-- Same dark fallback color
+      }
+    }
+  ],
+  "@react-native-google-signin/google-signin"
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

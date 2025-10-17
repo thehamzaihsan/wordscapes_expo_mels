@@ -4,12 +4,13 @@ import { useRouter } from "expo-router";
 import { Play, Settings } from "lucide-react-native";
 import {
   ActivityIndicator,
+  Image,
   StatusBar,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import WordSpringsText from '../app/components/common/WordSpringsText';
 import BackgroundImage from "./components/common/BackgroundImage";
-import Logo from "./components/common/Logo";
 import ThemedButton from "./components/ui/ThemedButton";
 import ThemedText from "./components/ui/ThemedText";
 
@@ -54,10 +55,16 @@ export default function Index() {
        
 
         {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoWrapper}>
-            <Logo />
-          </View>
+        <View style={styles.compactLogoContainer}>
+          {/* REPLACE <Logo /> with the Image component */}
+          <Image
+            source={require("../assets/images/WorldSprings_logo_1.png")} 
+            style={styles.logoImage} 
+            resizeMode="contain" 
+          />
+          <WordSpringsText style={{ fontSize: 48, paddingTop: 20 }}> 
+            WORDSPRINGS
+          </WordSpringsText>
         </View>
 
         {/* Main Action Buttons */}
@@ -109,6 +116,9 @@ const createStyles = (theme: any) => ({
   safeArea: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
+    justifyContent: 'space-between', // <-- ADD THIS LINE
+    alignItems: 'center', // <-- ADD THIS LINE
+
   },
   headerSection: {
     marginTop: theme.spacing.xl4,
@@ -127,7 +137,7 @@ const createStyles = (theme: any) => ({
   actionButtonsContainer: {
     width: '100%',
     maxWidth: 320,
-    alignSelf: 'center' as const,
+    marginBottom: theme.spacing.xl4,
     gap: theme.spacing.base,
   },
   primaryButton: {
@@ -146,5 +156,14 @@ const createStyles = (theme: any) => ({
   },
   footerText: {
     opacity: 0.8,
+  },
+   compactLogoContainer: {
+    alignItems: 'center' as const,
+   // marginBottom: theme.spacing.xl2,
+    marginTop: theme.spacing.xl9,
+  },
+  logoImage: {  
+    width: 200,   
+    height: 200,  
   },
 });

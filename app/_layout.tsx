@@ -2,24 +2,25 @@ import { initializeGameManager } from "@/hooks/game-manager";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
-import { useFonts } from "expo-font";
+import * as Font from 'expo-font';
 import { Stack } from "expo-router";
-import React, { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  BackHandler,
-  Platform,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import AnimatedSplashScreen from '../app/components/screens/SplashScreen';
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
+
+// SplashScreen.preventAutoHideAsync();
+
 function LayoutWithInsets() {
   useAutoSync();
   const insets = useSafeAreaInsets();
@@ -172,53 +173,44 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    Helvetica: require("../assets/fonts/Helvetica.ttf"),
-  });
+// --- New Code for RootLayout ---
 
-  // Initialize components when fonts are loaded
-  React.useEffect(() => {
-    if (fontsLoaded) {
-      console.log("Fonts loaded successfully");
-    }
-  }, [fontsLoaded]);
+export default function RootLayout() {
+  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
-    initializeGameManager();
-    if (Platform.OS === "android") {
-      const backAction = () => {
-        return false;
-      };
-      const backHandler = BackHandler.addEventListener(
-        "hardwareBackPress",
-        backAction
-      );
-      return () => backHandler.remove();
+    async function prepare() {
+      try {
+        await Font.loadAsync({
+          Helvetica: require("../assets/fonts/Helvetica.ttf"),
+          'Cormorant-Garamond': require('../assets/fonts/Cormorant-Garamond.ttf'),
+        });
+        initializeGameManager();
+        // ... other setup
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
     }
+    prepare();
   }, []);
 
-  if (!fontsLoaded) {
-    return (
-      <ThemeProvider defaultTheme="game">
-        <View style={styles.container}>
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 10,
-            }}
-          >
-            <ActivityIndicator size="large" color="#8B5CF6" />
-          </View>
-        </View>
-      </ThemeProvider>
-    );
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      // Hide the native (color-only) splash screen
+      // await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  // While app is not ready, show your JS Splash Screen
+  if (!appIsReady) {
+    return <AnimatedSplashScreen />; 
   }
 
+  // App is ready, render the app
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
           <LayoutWithInsets />
@@ -228,3 +220,4 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+

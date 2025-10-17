@@ -2,10 +2,10 @@ import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { signInEmailPassword } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
 import { ChevronLeft, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Logo from "../common/Logo";
+import LoadingScreen from "../common/LoadingScreen";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
 import ThemedInput from "../ui/ThemedInput";
@@ -23,13 +23,22 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isScreenLoading, setIsScreenLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+      // Simulate a short delay for a smoother transition
+      const timer = setTimeout(() => setIsScreenLoading(false), 300); 
+      return () => clearTimeout(timer);
+  }, []);
 
   const handleBackClick = (): void => {
-    onNavigate("/");
+    onNavigate("back");
     setEmail("");
     setPassword("");
     setShowPassword(false);
   };
+
+  
 
   const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
@@ -56,6 +65,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const handleForgotPassword = () => onNavigate("forgot-password");
   const handleCreateAccount = (): void => onNavigate("create-account");
 
+    if (isScreenLoading) {
+    return <LoadingScreen />;
+  }
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -80,10 +92,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
           style={styles.backButton}
         />
 
-        {/* Compact Logo */}
-        <View style={styles.compactLogoContainer}>
-          <Logo />
-        </View>
+        {/* /* Compact Logo */}
+         {/* <View style={styles.compactLogoContainer}> */}
+          {/* REPLACE <Logo /> with the Image component */}
+          {/* <Image
+            source={require("../../../assets/images/WorldSprings_logo_1.png")} 
+            style={styles.logoImage} 
+            resizeMode="contain" 
+          /> */}
+          {/* <WordSpringsText style={{ fontSize: 32 }}> 
+            WORDSPRINGS
+          </WordSpringsText> */}
+        {/* </View>  */}
 
         {/* Login Form Card */}
         <ThemedCard variant="glassStrong" padding="xl" style={styles.loginCard}>
@@ -153,11 +173,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
           {/* Divider */}
           <View style={styles.dividerContainer}>
-            <View style={[styles.divider, { backgroundColor: theme.colors.primary }]} />
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
             <ThemedText variant="caption" color="textSecondary" style={styles.dividerText}>
               or
             </ThemedText>
-            <View style={[styles.divider, { backgroundColor: theme.colors.primary }]} />
+            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
           </View>
 
           {/* Alternative Actions */}
@@ -172,7 +192,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
           <ThemedButton
             title="Continue as Guest"
-            variant="primary"
+            variant="secondary"
             size="md"
             fullWidth
             onPress={handleGuestLogin}
@@ -200,7 +220,7 @@ const createStyles = (theme: any) => ({
   backButton: {
     alignSelf: 'flex-start' as const,
     marginBottom: theme.spacing.lg,
-    // paddingHorizontal: 0,
+    paddingHorizontal: 0,
   },
   compactLogoContainer: {
     alignItems: 'center' as const,
@@ -237,13 +257,13 @@ const createStyles = (theme: any) => ({
     elevation: 8,
   },
   forgotButton: {
-    // marginBottom: theme.spacing.base,
+    marginBottom: theme.spacing.xl,
     alignSelf: 'center' as const,
   },
   dividerContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    marginVertical: theme.spacing.lg,
+    marginVertical: theme.spacing.xl,
   },
   divider: {
     flex: 1,
@@ -261,6 +281,11 @@ const createStyles = (theme: any) => ({
   bottomSpacing: {
     height: theme.spacing.xl4,
   },
+    logoImage: {  
+    width: 150,   
+    height: 150,  
+  },
+
 });
 
 export default LoginScreen;
