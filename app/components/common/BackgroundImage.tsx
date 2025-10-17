@@ -16,7 +16,7 @@ interface BackgroundImageProps {
 }
 
 const BackgroundImage: React.FC<BackgroundImageProps> = ({ 
-  blurRadius = 8,
+  blurRadius = 0,
   overlayOpacity 
 }) => {
   const { theme } = useTheme();
@@ -39,9 +39,9 @@ const BackgroundImage: React.FC<BackgroundImageProps> = ({
 
   return (
     <>
-      {/* Background Image with Blur - Using gem31.jpg as temporary background */}
+      {/* Background Image with Blur */}
       <Image
-        source={require("../../../assets/images/gem31.jpg")}
+        source={require("../../../images/default_background.jpg")}
         style={styles.backgroundImage}
         contentFit="cover"
         blurRadius={blurRadius}

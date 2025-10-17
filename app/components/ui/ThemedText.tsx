@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, TextStyle } from 'react-native';
+import { Text as RNText, TextProps as RNTextProps, TextStyle, StyleSheet } from 'react-native';
 import { useTheme, Theme } from '@/hooks/useTheme';
 
 type TextVariant = 
@@ -192,7 +192,7 @@ const Text: React.FC<TextProps> = ({
         ? theme.typography.fontFamilies.medium
         : theme.typography.fontFamilies.regular,
     }),
-    ...style,
+    ...(Array.isArray(style) ? StyleSheet.flatten(style) : style || {}),
   };
 
   return (

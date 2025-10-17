@@ -1,4 +1,3 @@
-// hooks/crossword-gen.ts
 export type Cell = string | null;
 export type Grid = Cell[][];
 type Dir = "across" | "down";
@@ -66,12 +65,8 @@ export function generateCrossword(words: string[]): Grid | null {
     }
   }
 
-  // Check if a proposed placement is valid according to crossword adjacency rules:
-  // - letters must match existing letters where they overlap.
-  // - cannot touch other letters orthogonally except at overlap cells.
-  // - start-1 and end+1 in same direction must be empty (prevents chained words).
+  // Check if a proposed placement is valid according to crossword adjacency rules
   function canPlace(word: string, startX: number, startY: number, dir: Dir): boolean {
-    // bounds check for whole word
     const endX = startX + (dir === "across" ? word.length - 1 : 0);
     const endY = startY + (dir === "down" ? word.length - 1 : 0);
     if (!inBounds(startX, startY) || !inBounds(endX, endY)) return false;
@@ -83,18 +78,15 @@ export function generateCrossword(words: string[]): Grid | null {
       const existing = getLetter(x, y);
       if (existing !== undefined && existing !== word[i]) return false;
 
-      // If there's no existing letter at this cell, ensure there are no adjacent letters
-      // orthogonally (they would touch illegally).
       if (existing === undefined) {
-        // orthogonal neighbors must be empty
-        const neighbors = dir === "across"
-          ? [getLetter(x, y - 1), getLetter(x, y + 1)]
-          : [getLetter(x - 1, y), getLetter(x + 1, y)];
+        const neighbors =
+          dir === "across"
+            ? [getLetter(x, y - 1), getLetter(x, y + 1)]
+            : [getLetter(x - 1, y), getLetter(x + 1, y)];
         if (neighbors.some(n => n !== undefined)) return false;
       }
     }
 
-    // cells immediately before and after the word must be empty (prevents joining words)
     const beforeX = startX + (dir === "across" ? -1 : 0);
     const beforeY = startY + (dir === "down" ? -1 : 0);
     const afterX = endX + (dir === "across" ? 1 : 0);
@@ -112,34 +104,25 @@ export function generateCrossword(words: string[]): Grid | null {
 
     const word = list[index];
 
-    // special-case: place first word centered at (0,0) horizontally to create base
     if (index === 0) {
       const startX = Math.max(-MAX_COORD, Math.min(MAX_COORD - word.length + 1, 0));
       const startY = 0;
       const p: Placement = { word, x: startX, y: startY, dir: "across" };
-      if (!canPlace(word, p.x, p.y, p.dir)) {
-        return false;
-      }
+      if (!canPlace(word, p.x, p.y, p.dir)) return false;
       placePlacement(p);
       if (backtrack(index + 1)) return true;
       removePlacement(word);
       return false;
     }
 
-    // Try to place word by crossing each already-placed word (perpendicular only)
     for (const placed of placements) {
       for (let i = 0; i < placed.word.length; i++) {
         for (let j = 0; j < word.length; j++) {
-          if (placed.word[i] !== word[j]) continue; // must match at crossing letter
+          if (placed.word[i] !== word[j]) continue;
 
-          // compute crossing coordinates
           const crossX = placed.x + (placed.dir === "across" ? i : 0);
           const crossY = placed.y + (placed.dir === "down" ? i : 0);
-
-          // perpendicular direction
           const dir: Dir = placed.dir === "across" ? "down" : "across";
-
-          // compute candidate start so that word[j] lands at crossX,crossY
           const startX = dir === "across" ? crossX - j : crossX;
           const startY = dir === "down" ? crossY - j : crossY;
 
@@ -150,26 +133,20 @@ export function generateCrossword(words: string[]): Grid | null {
 
           if (!canPlace(word, startX, startY, dir)) continue;
 
-          // place and recurse
           placePlacement({ word, x: startX, y: startY, dir });
           if (backtrack(index + 1)) return true;
-          // backtrack removal
           removePlacement(word);
 
           if (attemptCount > MAX_ATTEMPTS) return false;
-        } // j
-      } // i
-    } // placed
+        }
+      }
+    }
 
-    // As a fallback, allow a limited number of tries to place the word anywhere (non-crossing)
-    // This keeps isolated words possible but limits explosion.
     const RANDOM_PLACEMENT_TRIES = 300;
     let fallbackTries = 0;
     while (fallbackTries++ < RANDOM_PLACEMENT_TRIES && attemptCount <= MAX_ATTEMPTS) {
       const dir: Dir = Math.random() < 0.5 ? "across" : "down";
-      // pick a start within the current placements bounding box ±5
       const bounds = computeBounds();
-      // choose random start near bounds (helps cluster words)
       const rangeXStart = Math.max(-MAX_COORD, bounds.minX - 5);
       const rangeXEnd = Math.min(MAX_COORD, bounds.maxX + 5);
       const rangeYStart = Math.max(-MAX_COORD, bounds.minY - 5);
@@ -178,12 +155,16 @@ export function generateCrossword(words: string[]): Grid | null {
       const rx = randInt(rangeXStart, rangeXEnd);
       const ry = randInt(rangeYStart, rangeYEnd);
 
-      const startX = dir === "across" ? Math.max(-MAX_COORD, Math.min(rx, MAX_COORD - word.length + 1)) : rx;
-      const startY = dir === "down" ? Math.max(-MAX_COORD, Math.min(ry, MAX_COORD - word.length + 1)) : ry;
+      const startX =
+        dir === "across"
+          ? Math.max(-MAX_COORD, Math.min(rx, MAX_COORD - word.length + 1))
+          : rx;
+      const startY =
+        dir === "down"
+          ? Math.max(-MAX_COORD, Math.min(ry, MAX_COORD - word.length + 1))
+          : ry;
 
-      if (!canPlace(word, startX, startY, dir)) {
-        continue;
-      }
+      if (!canPlace(word, startX, startY, dir)) continue;
       placePlacement({ word, x: startX, y: startY, dir });
       if (backtrack(index + 1)) return true;
       removePlacement(word);
@@ -192,12 +173,14 @@ export function generateCrossword(words: string[]): Grid | null {
     return false;
   }
 
-  // Utility: compute bounding box of current placed letters (or zero box if none)
   function computeBounds() {
     if (gridMap.size === 0) {
       return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
     }
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     for (const k of gridMap.keys()) {
       const [xStr, yStr] = k.split(",");
       const x = parseInt(xStr, 10);
@@ -216,49 +199,56 @@ export function generateCrossword(words: string[]): Grid | null {
     return lo + Math.floor(Math.random() * (hi - lo + 1));
   }
 
-  // Start backtracking
   const ok = backtrack(0);
   if (!ok) return null;
-
-  // Build 2D grid from gridMap with minimum padding
   if (gridMap.size === 0) return null;
 
   return buildGridWithPadding(gridMap);
 }
 
-// Helper function to build grid with minimal padding
+// Helper function to build grid with at least 1 empty row/column padding
 function buildGridWithPadding(gridMap: Map<string, string>): Grid {
   if (gridMap.size === 0) return [];
 
-  // Find the actual bounds of placed letters
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const k of gridMap.keys()) {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  const points: { x: number; y: number; ch: string }[] = [];
+
+  for (const [k, ch] of gridMap.entries()) {
     const [xStr, yStr] = k.split(",");
     const x = parseInt(xStr, 10);
     const y = parseInt(yStr, 10);
+    points.push({ x, y, ch });
     if (x < minX) minX = x;
     if (y < minY) minY = y;
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
   }
 
-  // Use the exact bounds without extra padding since the placement logic
-  // already ensures proper spacing between words
-  const width = maxX - minX + 1;
-  const height = maxY - minY + 1;
+  // Add padding of at least 1 empty row/column on each side
+  const paddingSize = 1;
+  const paddedMinX = minX - paddingSize;
+  const paddedMaxX = maxX + paddingSize;
+  const paddedMinY = minY - paddingSize;
+  const paddedMaxY = maxY + paddingSize;
+
+  const width = paddedMaxX - paddedMinX + 1;
+  const height = paddedMaxY - paddedMinY + 1;
   
   // Create grid filled with null values
   const out: Grid = Array.from({ length: height }, () => 
     Array.from({ length: width }, () => null)
   );
 
-  // Place the letters in the grid
+  // Place the letters in the padded grid
   for (const [k, ch] of gridMap.entries()) {
     const [xStr, yStr] = k.split(",");
     const x = parseInt(xStr, 10);
     const y = parseInt(yStr, 10);
-    const gridX = x - minX;
-    const gridY = y - minY;
+    const gridX = x - paddedMinX;
+    const gridY = y - paddedMinY;
     out[gridY][gridX] = ch;
   }
 

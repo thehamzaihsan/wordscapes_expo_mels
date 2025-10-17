@@ -3,18 +3,18 @@
  * Dynamic input component with theme support
  */
 
+import { Theme, useTheme } from '@/hooks/useTheme';
 import React, { useState } from 'react';
 import {
-  TextInput,
-  View,
-  Text,
   StyleSheet,
+  Text,
+  TextInput,
   TextInputProps,
-  ViewStyle,
   TextStyle,
   TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { useTheme, Theme } from '@/hooks/useTheme';
 
 type InputVariant = 'default' | 'outlined' | 'filled' | 'underlined';
 type InputSize = 'sm' | 'md' | 'lg';
@@ -203,14 +203,15 @@ const Input: React.FC<InputProps> = ({
     ...styles.input,
     ...sizeStyles.input,
     color: theme.colors.text,
-    ...inputStyle,
+    paddingRight: rightIcon ? 40 : 0, // Add padding when right icon is present
+    ...(Array.isArray(inputStyle) ? StyleSheet.flatten(inputStyle) : inputStyle || {}),
   };
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, Array.isArray(containerStyle) ? StyleSheet.flatten(containerStyle) : containerStyle]}>
       {label && (
         <View style={styles.labelContainer}>
-          <Text style={[styles.label, labelStyle]}>
+          <Text style={[styles.label, Array.isArray(labelStyle) ? StyleSheet.flatten(labelStyle) : labelStyle]}>
             {label}
             {required && showRequiredIndicator && (
               <Text style={styles.required}> *</Text>
@@ -281,6 +282,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: theme.borderRadius.md,
+    position: 'relative', // Enable absolute positioning for right icon
   },
   input: {
     flex: 1,
@@ -291,8 +293,14 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     marginRight: theme.spacing.sm,
   },
   rightIcon: {
-    marginLeft: theme.spacing.sm,
+    position: 'absolute',
+    right: theme.spacing.md,
+    top: 0,
+    bottom: 0,
     padding: theme.spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
   helperContainer: {
     marginTop: theme.spacing.xs,

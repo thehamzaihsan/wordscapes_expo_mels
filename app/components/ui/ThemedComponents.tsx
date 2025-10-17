@@ -10,7 +10,8 @@ import {
   TouchableOpacity, 
   ActivityIndicator,
   ViewStyle, 
-  TextStyle 
+  TextStyle,
+  StyleSheet
 } from 'react-native';
 import { useTheme, useThemedStyles } from '@/hooks/useTheme';
 
@@ -49,59 +50,59 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
     switch (variant) {
       case 'primary':
         return {
-          container: [
+          container: StyleSheet.flatten([
             styles.baseContainer,
             styles.primaryContainer,
             disabled && styles.disabledContainer,
-          ],
-          text: [
+          ]),
+          text: StyleSheet.flatten([
             styles.baseText,
             styles.primaryText,
             disabled && styles.disabledText,
-          ],
+          ]),
         };
       case 'secondary':
         return {
-          container: [
+          container: StyleSheet.flatten([
             styles.baseContainer,
             styles.secondaryContainer,
             disabled && styles.disabledContainer,
-          ],
-          text: [
+          ]),
+          text: StyleSheet.flatten([
             styles.baseText,
             styles.secondaryText,
             disabled && styles.disabledText,
-          ],
+          ]),
         };
       case 'ghost':
         return {
-          container: [
+          container: StyleSheet.flatten([
             styles.baseContainer,
             styles.ghostContainer,
-          ],
-          text: [
+          ]),
+          text: StyleSheet.flatten([
             styles.baseText,
             styles.ghostText,
             disabled && styles.disabledText,
-          ],
+          ]),
         };
       case 'outline':
         return {
-          container: [
+          container: StyleSheet.flatten([
             styles.baseContainer,
             styles.outlineContainer,
             disabled && styles.disabledContainer,
-          ],
-          text: [
+          ]),
+          text: StyleSheet.flatten([
             styles.baseText,
             styles.outlineText,
             disabled && styles.disabledText,
-          ],
+          ]),
         };
       default:
         return {
-          container: [styles.baseContainer, styles.primaryContainer],
-          text: [styles.baseText, styles.primaryText],
+          container: StyleSheet.flatten([styles.baseContainer, styles.primaryContainer]),
+          text: StyleSheet.flatten([styles.baseText, styles.primaryText]),
         };
     }
   };
@@ -137,7 +138,7 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
   return (
     <TouchableOpacity
       style={[
-        ...variantStyles.container,
+        variantStyles.container,
         sizeStyles.container,
         fullWidth && styles.fullWidth,
         style,
@@ -155,7 +156,7 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
         ) : (
           <>
             {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
-            <Text style={[...variantStyles.text, sizeStyles.text, textStyle]}>
+            <Text style={[variantStyles.text, sizeStyles.text, textStyle]}>
               {title}
             </Text>
             {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
@@ -330,7 +331,6 @@ const createButtonStyles = (theme: any) => ({
   secondaryContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderColor: 'rgba(255, 255, 255, 0.3)',
-    backdropFilter: 'blur(10px)' as any,
     shadowOpacity: 0.2,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -388,7 +388,7 @@ const createButtonStyles = (theme: any) => ({
   // Text styles
   baseText: {
     fontFamily: theme.typography.fontFamilies.medium,
-    fontWeight: theme.typography.fontWeights.semibold as any,
+    fontWeight: theme.typography.fontWeights.semibold,
     textAlign: 'center' as const,
   },
   primaryText: {
@@ -468,43 +468,43 @@ const createTextStyles = (theme: any) => ({
   heading1: {
     fontSize: theme.typography.fontSizes.xl5,
     lineHeight: theme.typography.lineHeights.xl5,
-    fontWeight: theme.typography.fontWeights.bold as any,
+    fontWeight: theme.typography.fontWeights.bold,
     fontFamily: theme.typography.fontFamilies.bold,
   },
   heading2: {
     fontSize: theme.typography.fontSizes.xl4,
     lineHeight: theme.typography.lineHeights.xl4,
-    fontWeight: theme.typography.fontWeights.semibold as any,
+    fontWeight: theme.typography.fontWeights.semibold,
     fontFamily: theme.typography.fontFamilies.bold,
   },
   heading3: {
     fontSize: theme.typography.fontSizes.xl3,
     lineHeight: theme.typography.lineHeights.xl3,
-    fontWeight: theme.typography.fontWeights.semibold as any,
+    fontWeight: theme.typography.fontWeights.semibold,
     fontFamily: theme.typography.fontFamilies.medium,
   },
   heading4: {
     fontSize: theme.typography.fontSizes.xl2,
     lineHeight: theme.typography.lineHeights.xl2,
-    fontWeight: theme.typography.fontWeights.semibold as any,
+    fontWeight: theme.typography.fontWeights.semibold,
     fontFamily: theme.typography.fontFamilies.medium,
   },
   body1: {
     fontSize: theme.typography.fontSizes.base,
     lineHeight: theme.typography.lineHeights.base,
-    fontWeight: theme.typography.fontWeights.normal as any,
+    fontWeight: theme.typography.fontWeights.normal,
     fontFamily: theme.typography.fontFamilies.regular,
   },
   body2: {
     fontSize: theme.typography.fontSizes.sm,
     lineHeight: theme.typography.lineHeights.sm,
-    fontWeight: theme.typography.fontWeights.normal as any,
+    fontWeight: theme.typography.fontWeights.normal,
     fontFamily: theme.typography.fontFamilies.regular,
   },
   caption: {
     fontSize: theme.typography.fontSizes.xs,
     lineHeight: theme.typography.lineHeights.xs,
-    fontWeight: theme.typography.fontWeights.normal as any,
+    fontWeight: theme.typography.fontWeights.normal,
     fontFamily: theme.typography.fontFamilies.regular,
   },
 });

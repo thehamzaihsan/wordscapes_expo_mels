@@ -1,8 +1,11 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
-import { BlurView } from "expo-blur";
+import { View, ScrollView } from "react-native";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import { Lock, TrendingUp, Zap } from "lucide-react-native";
 import LevelCard from "./LevelCard";
 import { Difficulty } from "@/constants/difficulty";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedText from "../ui/ThemedText";
 
 interface LevelData {
   level: number;
@@ -27,6 +30,8 @@ const LevelGrid: React.FC<LevelGridProps> = ({
   guestMeta,
   onLevelPress,
 }) => {
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { getUnlockedCategories } = require('@/hooks/guest-progress');
   
   const currentLevels = levelCategories[selectedCategory] || [];
@@ -37,10 +42,19 @@ const LevelGrid: React.FC<LevelGridProps> = ({
   if (currentLevels.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No levels available</Text>
-        <Text style={styles.emptySubtext}>
-          Check back later for new content!
-        </Text>
+        <ThemedCard variant="glassStrong" padding="xl" style={styles.emptyCard}>
+          <View style={styles.emptyContent}>
+            <ThemedText variant="heading1" style={styles.emptyIcon}>
+              🎯
+            </ThemedText>
+            <ThemedText variant="heading3" weight="bold" align="center" style={styles.emptyTitle}>
+              No levels available
+            </ThemedText>
+            <ThemedText variant="body2" align="center" color="textSecondary" style={styles.emptySubtext}>
+              Check back later for new content!
+            </ThemedText>
+          </View>
+        </ThemedCard>
       </View>
     );
   }
@@ -48,54 +62,76 @@ const LevelGrid: React.FC<LevelGridProps> = ({
   return (
     <View style={styles.container}>
       {!isCategoryUnlocked && (
-        <BlurView intensity={10} style={styles.blurOverlay}>
-          <View style={styles.lockOverlay}>
-            <Text style={styles.lockIcon}>🔒</Text>
-            <Text style={styles.lockTitle}>Category Locked</Text>
-            <Text style={styles.lockSubtitle}>
-              Play more levels to unlock {selectedCategory}!
-            </Text>
-            
-            {(() => {
-              const { getCategoryOrder, xpNeededToUnlockCategory, derivePlayerLevel } = require('@/hooks/guest-progress');
-              const categoryOrder = getCategoryOrder();
-              const categoryIndex = categoryOrder.indexOf(selectedCategory);
-              const requiredXP = xpNeededToUnlockCategory(categoryIndex);
-              const requiredLevel = requiredXP > 0 ? derivePlayerLevel(requiredXP).level : 0;
-              const currentXP = guestMeta?.xp || 0;
-              const xpRemaining = Math.max(0, requiredXP - currentXP);
-              const progressPercent = requiredXP > 0 ? Math.min(100, (currentXP / requiredXP) * 100) : 100;
+        <View style={styles.lockOverlayContainer}>
+          <ThemedCard variant="glassStrong" padding="xl" style={styles.lockCard}>
+            <View style={styles.lockContent}>
+              <Lock size={48} color={theme.colors.primary} style={styles.lockIcon} />
               
-              return (
-                <View style={styles.progressInfo}>
-                  <Text style={styles.lockRequirement}>
-                    Required: Player Level {requiredLevel}
-                  </Text>
-                  <Text style={styles.currentLevel}>
-                    Current Level: {guestMeta?.playerLevel || 0}
-                  </Text>
-                  
-                  <View style={styles.xpSection}>
-                    <Text style={styles.xpNeedText}>
-                      {xpRemaining} XP needed
-                    </Text>
-                    <Text style={styles.xpCurrentText}>
-                      {currentXP} / {requiredXP} XP
-                    </Text>
+              <ThemedText variant="heading3" weight="bold" align="center" style={styles.lockTitle}>
+                Category Locked
+              </ThemedText>
+              
+              <ThemedText variant="body2" align="center" color="textSecondary" style={styles.lockSubtitle}>
+                Play more levels to unlock {selectedCategory}!
+              </ThemedText>
+              
+              {(() => {
+                const { getCategoryOrder, xpNeededToUnlockCategory, derivePlayerLevel } = require('@/hooks/guest-progress');
+                const categoryOrder = getCategoryOrder();
+                const categoryIndex = categoryOrder.indexOf(selectedCategory);
+                const requiredXP = xpNeededToUnlockCategory(categoryIndex);
+                const requiredLevel = requiredXP > 0 ? derivePlayerLevel(requiredXP).level : 0;
+                const currentXP = guestMeta?.xp || 0;
+                const xpRemaining = Math.max(0, requiredXP - currentXP);
+                const progressPercent = requiredXP > 0 ? Math.min(100, (currentXP / requiredXP) * 100) : 100;
+                
+                return (
+                  <View style={styles.progressInfo}>
+                    <View style={styles.levelRequirement}>
+                      <TrendingUp size={20} color={theme.colors.primary} />
+                      <ThemedText variant="body1" weight="semibold" color="primary" style={styles.lockRequirementText}>
+                        Required: Player Level {requiredLevel}
+                      </ThemedText>
+                    </View>
                     
-                    {/* XP Progress Bar */}
-                    <View style={styles.xpProgressContainer}>
-                      <View style={styles.xpProgressBackground}>
-                        <View style={[styles.xpProgressBar, { width: `${progressPercent}%` }]} />
+                    <ThemedText variant="body2" color="textSecondary" style={styles.currentLevelText}>
+                      Current Level: {guestMeta?.playerLevel || 0}
+                    </ThemedText>
+                    
+                    <View style={styles.xpSection}>
+                      <View style={styles.xpHeader}>
+                        <Zap size={16} color={theme.colors.warning} />
+                        <ThemedText variant="body2" weight="bold" color="warning">
+                          {xpRemaining} XP needed
+                        </ThemedText>
                       </View>
-                      <Text style={styles.xpProgressText}>{Math.round(progressPercent)}%</Text>
+                      
+                      <ThemedText variant="caption" color="textTertiary" style={styles.xpCurrentText}>
+                        {currentXP} / {requiredXP} XP
+                      </ThemedText>
+                      
+                      {/* XP Progress Bar */}
+                      <View style={styles.xpProgressContainer}>
+                        <View style={[styles.xpProgressBackground, { backgroundColor: theme.colors.backgroundSecondary }]}>
+                          <View style={[
+                            styles.xpProgressBar, 
+                            { 
+                              width: `${progressPercent}%`,
+                              backgroundColor: theme.colors.primary 
+                            }
+                          ]} />
+                        </View>
+                        <ThemedText variant="caption" color="primary" weight="medium" style={styles.xpProgressText}>
+                          {Math.round(progressPercent)}%
+                        </ThemedText>
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            })()}
-          </View>
-        </BlurView>
+                );
+              })()}
+            </View>
+          </ThemedCard>
+        </View>
       )}
       
       <ScrollView
@@ -117,138 +153,132 @@ const LevelGrid: React.FC<LevelGridProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: "relative",
+    position: 'relative' as const,
   },
-  blurOverlay: {
-    position: "absolute",
+  lockOverlayContainer: {
+    position: 'absolute' as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     zIndex: 10,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: theme.spacing.lg,
   },
-  lockOverlay: {
-    backgroundColor: "rgba(0,0,0,0.85)",
-    padding: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    marginHorizontal: 20,
-    borderWidth: 2,
-    borderColor: "rgba(139,92,246,0.3)",
+  lockCard: {
+    maxWidth: 400,
+    width: '100%',
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 16,
+  },
+  lockContent: {
+    alignItems: 'center' as const,
   },
   lockIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
   lockTitle: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 8,
-    textAlign: "center",
+    marginBottom: theme.spacing.sm,
   },
   lockSubtitle: {
-    color: "#D1D5DB",
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 20,
+    marginBottom: theme.spacing.xl2,
+    lineHeight: 22,
   },
   progressInfo: {
-    alignItems: "center",
-    width: "100%",
+    alignItems: 'center' as const,
+    width: '100%',
+    gap: theme.spacing.md,
   },
-  lockRequirement: {
-    color: "#8B5CF6",
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-    textAlign: "center",
+  levelRequirement: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
   },
-  currentLevel: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 16,
+  lockRequirementText: {
+    // No additional styles needed
+  },
+  currentLevelText: {
+    // No additional styles needed
   },
   xpSection: {
-    width: "100%",
-    alignItems: "center",
-    gap: 8,
+    width: '100%',
+    alignItems: 'center' as const,
+    gap: theme.spacing.sm,
   },
-  xpNeedText: {
-    color: "#F59E0B",
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
+  xpHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.xs,
   },
   xpCurrentText: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    textAlign: "center",
+    // No additional styles needed
   },
   xpProgressContainer: {
-    width: "100%",
-    alignItems: "center",
-    gap: 4,
+    width: '100%',
+    alignItems: 'center' as const,
+    gap: theme.spacing.xs,
   },
   xpProgressBackground: {
-    width: "100%",
+    width: '100%',
     height: 12,
-    backgroundColor: "rgba(55,65,81,0.7)",
-    borderRadius: 6,
-    overflow: "hidden",
+    borderRadius: theme.borderRadius.md,
+    overflow: 'hidden' as const,
     borderWidth: 1,
-    borderColor: "rgba(75,85,99,0.5)",
+    borderColor: theme.colors.border,
   },
   xpProgressBar: {
-    height: "100%",
-    backgroundColor: "rgba(139,92,246,0.8)",
-    borderRadius: 5,
-    shadowColor: "#8B5CF6",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    height: '100%',
+    borderRadius: theme.borderRadius.md,
     shadowOpacity: 0.3,
-    shadowRadius: 2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   xpProgressText: {
-    color: "#8B5CF6",
-    fontSize: 12,
-    fontWeight: "600",
+    // No additional styles needed
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    gap: 16,
+    padding: theme.spacing.lg,
+    gap: theme.spacing.base,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl4,
   },
-  emptyText: {
-    color: "#9CA3AF",
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
+  emptyCard: {
+    maxWidth: 320,
+    width: '100%',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  emptyContent: {
+    alignItems: 'center' as const,
+  },
+  emptyIcon: {
+    marginBottom: theme.spacing.lg,
+  },
+  emptyTitle: {
+    marginBottom: theme.spacing.sm,
   },
   emptySubtext: {
-    color: "#6B7280",
-    fontSize: 14,
-    textAlign: "center",
+    lineHeight: 20,
   },
   bottomSpacing: {
-    height: 40,
+    height: theme.spacing.xl2,
   },
 });
 

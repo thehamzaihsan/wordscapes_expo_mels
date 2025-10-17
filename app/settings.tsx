@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { BackHandler, Platform } from 'react-native';
+import { BackHandler, Platform, View } from 'react-native';
+import BackgroundImage from "./components/common/BackgroundImage";
 import SettingsScreen from './components/screens/SettingsScreen';
 
 export default function SettingsRoute() {
@@ -27,5 +28,10 @@ export default function SettingsRoute() {
     }
   };
 
-  return <SettingsScreen onNavigate={handleNavigate} />;
+  return (
+    <>
+      {isLoading && <LoadingScreen progress={0.7} />}
+      <SettingsScreen onNavigate={handleNavigate} />
+    </>
+  );
 }

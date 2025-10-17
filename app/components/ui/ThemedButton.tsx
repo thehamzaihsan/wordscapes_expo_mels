@@ -3,19 +3,18 @@
  * Dynamic button component with theme support
  */
 
+import { Theme, useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  View,
-  StyleSheet,
   ActivityIndicator,
-  TouchableOpacityProps,
-  ViewStyle,
+  StyleSheet,
+  Text,
   TextStyle,
+  TouchableOpacity,
+  TouchableOpacityProps,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, Theme } from '@/hooks/useTheme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'ghost' | 'outline' | 'glass' | 'glassStrong' | 'glassPremium';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -188,7 +187,7 @@ const Button: React.FC<ButtonProps> = ({
           },
           text: { 
             color: disabled ? theme.colors.textTertiary : theme.colors.primary,
-            fontWeight: '600' as any,
+            fontWeight: '600',
           },
         };
       default:
@@ -276,14 +275,14 @@ const Button: React.FC<ButtonProps> = ({
     ...sizeStyles.container,
     ...(fullWidth && styles.fullWidth),
     ...(rounded && { borderRadius: theme.borderRadius.full }),
-    ...style,
+    ...(Array.isArray(style) ? StyleSheet.flatten(style) : style || {}),
   };
 
   const textStyleCombined: TextStyle = {
     ...styles.text,
     ...variantStyles.text,
     ...sizeStyles.text,
-    ...textStyle,
+    ...(Array.isArray(textStyle) ? StyleSheet.flatten(textStyle) : textStyle || {}),
   };
 
   return (

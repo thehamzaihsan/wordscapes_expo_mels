@@ -88,23 +88,23 @@ export const Typography = {
     regular: Platform.OS === 'web' 
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios' 
-        ? 'HelveticaNeue' 
-        : 'Roboto',
+        ? 'Helvetica' 
+        : 'Helvetica',
     medium: Platform.OS === 'web'
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios'
-        ? 'HelveticaNeue-Medium'
-        : 'Roboto_medium',
+        ? 'Helvetica'
+        : 'Helvetica',
     bold: Platform.OS === 'web'
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios'
-        ? 'HelveticaNeue-Bold'
-        : 'Roboto_bold',
+        ? 'Helvetica'
+        : 'Helvetica',
     rounded: Platform.OS === 'web'
       ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
       : Platform.OS === 'ios'
-        ? 'HelveticaNeue'
-        : 'Roboto',
+        ? 'Helvetica'
+        : 'Helvetica',
   },
   fontSizes: {
     xs: 12,
@@ -162,9 +162,9 @@ export const Spacing = {
 // Border radius system
 export const BorderRadius = {
   none: 0,
-  sm: 4,
-  base: 8,
-  md: 12,
+  sm: 20,
+  base: 24,
+  md: 32,
   lg: 16,
   xl: 20,
   xl2: 24,
@@ -253,9 +253,9 @@ export const LightTheme = {
     textInverse: '#ffffff',
     
     // Border colors
-    border: BaseColors.gray[300],
-    borderSecondary: BaseColors.gray[200],
-    borderTertiary: BaseColors.gray[100],
+    border: BaseColors.gray[400],
+    borderSecondary: BaseColors.gray[300],
+    borderTertiary: BaseColors.gray[200],
     
     // Game specific
     gameBackground: BaseColors.purple[50],
@@ -273,10 +273,10 @@ export const LightTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.2)',
     
     // Glassmorphism colors (theme-aware) - Fixed for light mode visibility
-    glassmorphismBackground: 'rgba(0, 0, 0, 0.08)',
-    glassmorphismBorder: 'rgba(0, 0, 0, 0.12)',
-    glassmorphismBackgroundStrong: 'rgba(0, 0, 0, 0.15)',
-    glassmorphismBorderStrong: 'rgba(0, 0, 0, 0.2)',
+    glassmorphismBackground: 'rgba(255, 255, 255, 0.75)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 1)',
+    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.75)',
+    glassmorphismBorderStrong: 'rgba(255, 255, 255, 1)',
     
     // Status bar
     statusBar: BaseColors.gray[900],
@@ -343,9 +343,9 @@ export const DarkTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.3)',
     
     // Glassmorphism colors (theme-aware)
-    glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
+    glassmorphismBackground: 'rgba(0, 0, 0, 0.97)',
     glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
-    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBackgroundStrong: 'rgba(0, 0, 0, 1)',
     glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
     
     // Status bar
@@ -416,7 +416,7 @@ export const GameTheme = {
     // Glassmorphism colors (theme-aware)
     glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
     glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
-    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBackgroundStrong: 'rgba(49, 53, 70, 0.6)',
     glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
     
     // Status bar

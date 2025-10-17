@@ -1,6 +1,7 @@
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { signInEmailPassword } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
-import { ChevronLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
+import { ChevronLeft, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,7 +10,6 @@ import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
 import ThemedInput from "../ui/ThemedInput";
 import ThemedText from "../ui/ThemedText";
-import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 
 interface LoginScreenProps {
   onNavigate: (screen: string) => void;
@@ -25,7 +25,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const handleBackClick = (): void => {
-    onNavigate("back");
+    onNavigate("/");
     setEmail("");
     setPassword("");
     setShowPassword(false);
@@ -153,11 +153,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
           {/* Divider */}
           <View style={styles.dividerContainer}>
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <View style={[styles.divider, { backgroundColor: theme.colors.primary }]} />
             <ThemedText variant="caption" color="textSecondary" style={styles.dividerText}>
               or
             </ThemedText>
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <View style={[styles.divider, { backgroundColor: theme.colors.primary }]} />
           </View>
 
           {/* Alternative Actions */}
@@ -172,7 +172,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
           <ThemedButton
             title="Continue as Guest"
-            variant="secondary"
+            variant="primary"
             size="md"
             fullWidth
             onPress={handleGuestLogin}
@@ -200,7 +200,7 @@ const createStyles = (theme: any) => ({
   backButton: {
     alignSelf: 'flex-start' as const,
     marginBottom: theme.spacing.lg,
-    paddingHorizontal: 0,
+    // paddingHorizontal: 0,
   },
   compactLogoContainer: {
     alignItems: 'center' as const,
@@ -237,13 +237,13 @@ const createStyles = (theme: any) => ({
     elevation: 8,
   },
   forgotButton: {
-    marginBottom: theme.spacing.xl,
+    // marginBottom: theme.spacing.base,
     alignSelf: 'center' as const,
   },
   dividerContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    marginVertical: theme.spacing.xl,
+    marginVertical: theme.spacing.lg,
   },
   divider: {
     flex: 1,

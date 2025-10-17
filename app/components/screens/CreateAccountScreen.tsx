@@ -1,20 +1,20 @@
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { sendSignupOtp } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
+import { ChevronLeft, Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  // Image,
   Keyboard,
-  Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedInput from "../ui/ThemedInput";
+import ThemedText from "../ui/ThemedText";
 
 interface CreateAccountScreenProps {
   onNavigate: (screen: string, params?: { email?: string }) => void;
@@ -45,6 +45,9 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   initialEmail,
   googlePrefill,
 }) => {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   // Single-step flow (Google flow disabled)
   const [name, setName] = useState("");
   const [email, setEmail] = useState(initialEmail || "");
@@ -52,10 +55,11 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   // Google flow disabled for now
-  const nameRef = useRef<TextInput | null>(null);
-  const emailRef = useRef<TextInput | null>(null);
-  const passRef = useRef<TextInput | null>(null);
+  const nameRef = useRef<any>(null);
+  const emailRef = useRef<any>(null);
+  const passRef = useRef<any>(null);
 
   const validateCommon = useCallback((n: string) => {
     if (!n.trim()) return "Name required";
@@ -107,232 +111,236 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
   // Google completion removed
 
-  const AvatarPicker = (
-    <View>
-      <Text style={styles.sectionLabel}>Choose Avatar</Text>
-      <View style={styles.avatarGrid}>
-        {AVATARS.map((a, i) => {
-          const active = avatar === a;
-          return (
-            <TouchableOpacity
-              key={a + i}
-              style={[styles.avatarItem, active && styles.avatarItemActive]}
-              onPress={() => setAvatar(a)}
-            >
-              <Text style={styles.avatarText}>{a}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        barStyle={Platform.OS === "android" ? "light-content" : "light-content"}
-        backgroundColor="#121213"
-      />
-      <ScrollView
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <ScrollView 
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
+        showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity onPress={onCancel} style={styles.backButton}>
-          <Text style={styles.backButtonText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Create Account</Text>
-        {!googlePrefill && (
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Your Info</Text>
-            <TextInput
-              ref={nameRef}
-              style={styles.input}
-              placeholder="Name"
-              placeholderTextColor="#6B7280"
-              value={name}
-              onChangeText={(t) => {
-                setName(t);
-                if (error) setError(null);
-              }}
-              returnKeyType="next"
-              onSubmitEditing={() => emailRef.current?.focus()}
-              autoCapitalize="words"
-              selectionColor="#8B5CF6"
-            />
-            <TextInput
-              ref={emailRef}
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#6B7280"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={(t) => {
-                setEmail(t);
-                if (error) setError(null);
-              }}
-              returnKeyType="next"
-              onSubmitEditing={() => passRef.current?.focus()}
-              selectionColor="#8B5CF6"
-            />
-            <TextInput
-              ref={passRef}
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#6B7280"
-              secureTextEntry
-              value={password}
-              onChangeText={(t) => {
-                setPassword(t);
-                if (error) setError(null);
-              }}
-              returnKeyType="done"
-              onSubmitEditing={() => {
-                Keyboard.dismiss();
-                handleLocalCreate();
-              }}
-              selectionColor="#8B5CF6"
-            />
-            {AvatarPicker}
-            {error && <Text style={styles.errorText}>{error}</Text>}
-            <TouchableOpacity
-              disabled={loading}
-              style={[
-                styles.primaryButton,
-                loading && styles.primaryButtonDisabled,
-              ]}
-              onPress={handleLocalCreate}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>CREATE ACCOUNT</Text>
+        
+        {/* Back Button */}
+        <ThemedButton
+          title="Back"
+          variant="glass"
+          size="sm"
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
+          onPress={onCancel}
+          style={styles.backButton}
+        />
+
+        {/* Create Account Card */}
+        <ThemedCard variant="glassStrong" padding="xl" style={styles.accountCard}>
+          <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+            Create Account
+          </ThemedText>
+          
+          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+            Join the word journey and save your progress
+          </ThemedText>
+
+          {!googlePrefill && (
+            <>
+              {/* Name Input */}
+              <View style={styles.inputContainer}>
+                <ThemedInput
+                  ref={nameRef}
+                  label="Your Name"
+                  value={name}
+                  onChangeText={(t) => {
+                    setName(t);
+                    if (error) setError(null);
+                  }}
+                  placeholder="Enter your name"
+                  variant="outlined"
+                  leftIcon={<User size={20} color={theme.colors.textSecondary} />}
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailRef.current?.focus()}
+                  autoCapitalize="words"
+                  style={styles.input}
+                />
+              </View>
+
+              {/* Email Input */}
+              <View style={styles.inputContainer}>
+                <ThemedInput
+                  ref={emailRef}
+                  label="Email Address"
+                  value={email}
+                  onChangeText={(t) => {
+                    setEmail(t);
+                    if (error) setError(null);
+                  }}
+                  placeholder="Enter your email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  variant="outlined"
+                  leftIcon={<Mail size={20} color={theme.colors.textSecondary} />}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passRef.current?.focus()}
+                  style={styles.input}
+                />
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.inputContainer}>
+                <ThemedInput
+                  ref={passRef}
+                  label="Password"
+                  value={password}
+                  onChangeText={(t) => {
+                    setPassword(t);
+                    if (error) setError(null);
+                  }}
+                  placeholder="Enter your password"
+                  secureTextEntry={!showPassword}
+                  variant="outlined"
+                  leftIcon={<Lock size={20} color={theme.colors.textSecondary} />}
+                  rightIcon={
+                    showPassword ? 
+                      <EyeOff size={20} color={theme.colors.textSecondary} /> : 
+                      <Eye size={20} color={theme.colors.textSecondary} />
+                  }
+                  onRightIconPress={() => setShowPassword(!showPassword)}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    Keyboard.dismiss();
+                    handleLocalCreate();
+                  }}
+                  style={styles.input}
+                />
+              </View>
+
+              {/* Avatar Selection */}
+              <ThemedText variant="body1" weight="semibold" style={styles.avatarLabel}>
+                Choose Avatar
+              </ThemedText>
+              <View style={styles.avatarGrid}>
+                {AVATARS.map((a, i) => {
+                  const active = avatar === a;
+                  return (
+                    <TouchableOpacity
+                      key={a + i}
+                      style={[
+                        styles.avatarItem,
+                        { borderColor: active ? theme.colors.primary : theme.colors.border },
+                        { backgroundColor: active ? `${theme.colors.primary}20` : theme.colors.surfaceSecondary }
+                      ]}
+                      onPress={() => setAvatar(a)}
+                    >
+                      <ThemedText style={styles.avatarText}>{a}</ThemedText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Error Display */}
+              {error && (
+                <ThemedText variant="body2" color="error" style={styles.errorText}>
+                  {error}
+                </ThemedText>
               )}
-            </TouchableOpacity>
-            {/* Google sign-in hidden for now */}
-          </View>
-        )}
-        {/* Google prefill flow hidden for now */}
+
+              {/* Create Account Button */}
+              <ThemedButton
+                title={loading ? "CREATING..." : "CREATE ACCOUNT"}
+                variant="primary"
+                size="lg"
+                fullWidth
+                isLoading={loading}
+                disabled={loading}
+                onPress={handleLocalCreate}
+                style={styles.createButton}
+              />
+            </>
+          )}
+        </ThemedCard>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#121213" },
-  scroll: { padding: 20, paddingBottom: 40 },
+const createStyles = (theme: any) => ({
+  container: {
+    flex: 1,
+    position: 'relative' as const,
+    backgroundColor: 'transparent',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-start' as const,
+  },
   backButton: {
-    alignSelf: "flex-start",
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    backgroundColor: "#1F2937",
-    borderRadius: 8,
-    marginBottom: 12,
+    alignSelf: 'flex-start' as const,
+    marginBottom: theme.spacing.lg,
   },
-  backButtonText: { color: "#9CA3AF", fontSize: 14 },
+  accountCard: {
+    maxWidth: 400,
+    alignSelf: 'center' as const,
+    width: '100%',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
   title: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 16,
-    letterSpacing: 1,
+    marginBottom: theme.spacing.sm,
   },
-  sectionLabel: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 12,
+  subtitle: {
+    marginBottom: theme.spacing.xl2,
+    lineHeight: 22,
   },
-  card: {
-    backgroundColor: "#1F2937",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: "#374151",
-    marginBottom: 24,
+  inputContainer: {
+    marginBottom: theme.spacing.lg,
   },
   input: {
-    backgroundColor: "#374151",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#FFFFFF",
-    fontSize: 16,
-    borderWidth: 2,
-    borderColor: "#4B5563",
-    marginBottom: 12,
+    borderRadius: theme.borderRadius.md,
   },
-  primaryButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#7C3AED",
-    marginTop: 8,
+  avatarLabel: {
+    marginBottom: theme.spacing.base,
+    marginTop: theme.spacing.base,
   },
-  primaryButtonDisabled: { opacity: 0.6 },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  // Google styles removed
-  secondaryButton: {
-    backgroundColor: "#374151",
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#4B5563",
-    marginTop: 12,
-  },
-  secondaryButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
   avatarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 4,
-    marginBottom: 12,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+    justifyContent: 'space-between' as const,
   },
   avatarItem: {
     width: 56,
     height: 56,
-    backgroundColor: "#111827",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     borderWidth: 2,
-    borderColor: "#1f2937",
   },
-  avatarItemActive: { borderColor: "#8B5CF6", backgroundColor: "#1e1b4b" },
-  avatarText: { fontSize: 26 },
+  avatarText: { 
+    fontSize: 24
+  },
   errorText: {
-    color: "#EF4444",
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 4,
+    marginBottom: theme.spacing.base,
+    textAlign: 'center' as const,
   },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginVertical: 18,
+  createButton: {
+    marginTop: theme.spacing.sm,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
-  hr: { flex: 1, height: 1, backgroundColor: "#374151" },
-  orText: {
-    color: "#6B7280",
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 1,
-  },
-  subtitleCenter: {
-    color: "#9CA3AF",
-    fontSize: 13,
-    textAlign: "center",
-    marginBottom: 8,
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
 });
 

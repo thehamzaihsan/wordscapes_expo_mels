@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
 
 export default function ForgotPasswordNew() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function ForgotPasswordNew() {
 
   return (
     <View style={styles.container}>
+      <BackgroundImage />
       <Text style={styles.title}>Set a new password</Text>
       <TextInput
         style={styles.input}

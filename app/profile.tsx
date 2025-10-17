@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
+import LoadingScreen from "./components/common/LoadingScreen";
 import { signOutSupabase } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
-import React from "react";
 import PlayerProfileScreen from "./components/screens/PlayerProfileScreen";
 
 export default function ProfileRoute() {
@@ -20,6 +20,9 @@ export default function ProfileRoute() {
     router.replace("/login");
   };
   return (
-    <PlayerProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} />
+    <>
+      {isLoading && <LoadingScreen progress={0.7} />}
+      <PlayerProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} />
+    </>
   );
 }

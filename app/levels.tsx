@@ -2,8 +2,11 @@ import { Difficulty } from "@/constants/difficulty";
 import { useFocusEffect, useRouter } from "expo-router";
 // Guest progress handled inside LevelScreen; this wrapper only passes params.
 import { useCallback } from "react";
-import { BackHandler, Platform } from "react-native";
+import { BackHandler, Platform, View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
+import LoadingScreen from "./components/common/LoadingScreen";
 import LevelScreen from "./components/screens/LevelScreen";
+import React, { useState } from "react";
 
 interface LevelData {
   baseWord: string;
@@ -74,5 +77,11 @@ export default function LevelsRoute() {
     }
   };
 
-  return <LevelScreen onNavigate={handleNavigate} />;
+  return (
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      {isLoading && <LoadingScreen />}
+      <LevelScreen onNavigate={handleNavigate} />
+    </View>
+  );
 }

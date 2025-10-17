@@ -1,7 +1,8 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import LoginScreen from "./components/screens/Login";
+import LoadingScreen from "./components/common/LoadingScreen";
 
 export default function LoginRoute() {
   const router = useRouter();
@@ -36,5 +37,14 @@ export default function LoginRoute() {
     }
   };
 
-  return <LoginScreen onNavigate={handleNavigate} />;
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      <LoginScreen onNavigate={handleNavigate} />
+    </View>
+  );
 }

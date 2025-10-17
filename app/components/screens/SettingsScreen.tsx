@@ -1,5 +1,5 @@
 import { useSettings } from '@/hooks/useSettings';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme, useThemedStyles } from '@/hooks/useTheme';
 import { showToast } from '@/lib/toast';
 import { ChevronLeft, Settings as SettingsIcon } from 'lucide-react-native';
 import React from 'react';
@@ -9,17 +9,18 @@ import {
   Switch,
   View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
 import ThemedCard from '../ui/ThemedCard';
 import ThemedText from '../ui/ThemedText';
 import ThemedButton from '../ui/ThemedButton';
-import { useThemedStyles } from '@/hooks/useTheme';
 
 interface SettingsScreenProps {
   onNavigate: (screen: string) => void;
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
+  const insets = useSafeAreaInsets();
   const { settings, updateSetting, resetSettings, loading } = useSettings();
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -40,7 +41,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <View style={styles.loadingContainer}>
           <ThemedText variant="body1" color="primary" weight="semibold">
             Loading settings...
@@ -52,43 +53,50 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.statusBar} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header */}
-      <View style={styles.header}>
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
+        showsVerticalScrollIndicator={false}
+      >
+        
+        {/* Back Button */}
         <ThemedButton
           title="Back"
-          variant="ghost"
+          variant="glass"
           size="sm"
-          leftIcon={<ChevronLeft size={16} color={theme.colors.text} />}
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
           onPress={() => onNavigate('back')}
           style={styles.backButton}
-          textStyle={{ color: theme.colors.text }}
         />
-        
-        <View style={styles.headerTitle}>
-          <SettingsIcon size={24} color={theme.colors.primary} />
-          <ThemedText variant="heading3" weight="semibold" style={{ marginLeft: theme.spacing.sm }}>
-            Settings
-          </ThemedText>
-        </View>
-        
-        {/* Spacer for centering */}
-        <View style={styles.headerSpacer} />
-      </View>
 
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
+        {/* Header Card */}
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
+          <View style={styles.headerTitle}>
+            <SettingsIcon size={24} color={theme.colors.primary} />
+            <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+              Settings
+            </ThemedText>
+          </View>
+          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+            Configure your game experience
+          </ThemedText>
+        </ThemedCard>
         {/* Theme Settings */}
-        <View style={styles.sectionContainer}>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemeSwitcher />
-        </View>
+        </ThemedCard>
 
         {/* Animation Settings */}
-        <View style={styles.sectionContainer}>
-          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
-            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
-              🎨 Animations
-            </ThemedText>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            🎨 Animations
+          </ThemedText>
           
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
@@ -124,14 +132,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
               />
             </View>
           </ThemedCard>
-        </View>
 
         {/* Audio Settings */}
-        <View style={styles.sectionContainer}>
-          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
-            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
-              🔊 Audio
-            </ThemedText>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            🔊 Audio
+          </ThemedText>
           
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
@@ -150,14 +156,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
               />
             </View>
           </ThemedCard>
-        </View>
 
         {/* Feedback Settings */}
-        <View style={styles.sectionContainer}>
-          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
-            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
-              📳 Feedback
-            </ThemedText>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            📳 Feedback
+          </ThemedText>
           
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
@@ -176,28 +180,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
               />
             </View>
           </ThemedCard>
-        </View>
 
         {/* Reset Section */}
-        <View style={styles.sectionContainer}>
-          <ThemedCard variant="elevated" padding="lg" style={styles.card}>
-            <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
-              🔄 Reset
-            </ThemedText>
-            
-            <ThemedButton
-              title="Reset to Default Settings"
-              variant="error"
-              size="md"
-              fullWidth
-              onPress={handleReset}
-            />
-          </ThemedCard>
-        </View>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            🔄 Reset
+          </ThemedText>
+          
+          <ThemedButton
+            title="Reset to Default Settings"
+            variant="error"
+            size="md"
+            fullWidth
+            onPress={handleReset}
+          />
+        </ThemedCard>
 
         {/* App Info */}
-        <ThemedCard variant="elevated" padding="lg" style={styles.card}>
-          <ThemedText variant="heading4" weight="semibold" style={styles.sectionTitle}>
+        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
             ℹ️ About
           </ThemedText>
           <View style={styles.infoContainer}>
@@ -212,6 +213,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
             </ThemedText>
           </View>
         </ThemedCard>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
   );
@@ -220,49 +224,47 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    position: 'relative' as const,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  header: {
-    backgroundColor: theme.colors.backgroundSecondary,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-start' as const,
   },
   backButton: {
     alignSelf: 'flex-start' as const,
+    marginBottom: theme.spacing.lg,
+  },
+  headerCard: {
+    marginBottom: theme.spacing.lg,
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
   headerTitle: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    flex: 1,
     justifyContent: 'center' as const,
+    marginBottom: theme.spacing.xs,
   },
-  headerSpacer: {
-    width: 80, // Same width as back button for proper centering
+  title: {
+    marginLeft: theme.spacing.sm,
   },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: theme.spacing.lg,
-  },
-  sectionContainer: {
-    marginBottom: theme.spacing.base,
+  subtitle: {
+    lineHeight: 18,
   },
   card: {
+    marginBottom: theme.spacing.lg,
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   sectionTitle: {
     marginBottom: theme.spacing.base,
@@ -285,6 +287,9 @@ const createStyles = (theme: any) => ({
   },
   infoContainer: {
     alignItems: 'center' as const,
+  },
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
 });
 

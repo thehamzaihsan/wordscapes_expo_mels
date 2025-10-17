@@ -20,8 +20,6 @@ import {
 } from "react-native-safe-area-context";
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
-import BackgroundImage from "./components/common/BackgroundImage";
-
 function LayoutWithInsets() {
   useAutoSync();
   const insets = useSafeAreaInsets();
@@ -32,13 +30,9 @@ function LayoutWithInsets() {
   useEffect(() => {
     updateGlobalSettings(settings);
   }, [settings]);
-  
+
   return (
     <View style={styles.container}>
-      {/* Centralized Background Image with Blur */}
-      <BackgroundImage blurRadius={8} />
-      
-      {/* App content always on top */}
       <View
         style={[
           styles.contentContainer,
@@ -47,7 +41,7 @@ function LayoutWithInsets() {
             paddingBottom: insets.bottom,
             paddingLeft: insets.left,
             paddingRight: insets.right,
-          }
+          },
         ]}
       >
         {!isSupabaseEnabled() && (
@@ -70,24 +64,40 @@ function LayoutWithInsets() {
         <Stack
           screenOptions={{
             headerShown: false,
-            gestureEnabled: true,
-            contentStyle: { 
-              backgroundColor: "transparent", 
+            gestureEnabled: false,
+            animation: "none",
+            contentStyle: {
+              backgroundColor: "transparent",
             },
           }}
         >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false, animation: "none" }}
+          />
           <Stack.Screen
             name="login"
-            options={{ headerShown: false, gestureEnabled: false }}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: "none",
+            }}
           />
           <Stack.Screen
             name="levels"
-            options={{ headerShown: false, gestureEnabled: true }}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: "none",
+            }}
           />
           <Stack.Screen
             name="game"
-            options={{ headerShown: false, gestureEnabled: true }}
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+              animation: "none",
+            }}
           />
 
           <Stack.Screen
@@ -151,47 +161,31 @@ function LayoutWithInsets() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
   },
   contentContainer: {
     flex: 1,
     backgroundColor: "transparent",
-    zIndex: 10, // Above overlay and background
-    position: 'relative',
+    position: "relative",
   },
 });
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    KnightWarrior: require("../assets/fonts/KnightWarrior.otf"),
     Helvetica: require("../assets/fonts/Helvetica.ttf"),
   });
 
-  // Set Helvetica as the default font for all Text components
+  // Initialize components when fonts are loaded
   React.useEffect(() => {
     if (fontsLoaded) {
-      // @ts-ignore
-      Text.defaultProps = Text.defaultProps || {};
-      // Only set if not already set (prevents infinite loop in Fast Refresh)
-      // @ts-ignore - defaultProps is not typed but still works for global font override
-      if (Text.defaultProps.style?.fontFamily !== "Helvetica") {
-        // @ts-ignore
-        Text.defaultProps.style = [
-          // @ts-ignore
-          Text.defaultProps.style || {},
-          { fontFamily: "Helvetica" },
-        ];
-      }
+      console.log("Fonts loaded successfully");
     }
   }, [fontsLoaded]);
 
   useEffect(() => {
-    // Initialize game manager for optimal performance across the app
     initializeGameManager();
     if (Platform.OS === "android") {
       const backAction = () => {
-        // Let Expo Router handle the back navigation
-        return false; // Return false to let the default behavior handle it
+        return false;
       };
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
@@ -203,33 +197,27 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <ThemeProvider defaultTheme="game">
-            <View style={styles.container}>
-              {/* Background Image for Loading Screen */}
-              <BackgroundImage blurRadius={10} overlayOpacity={0.8} />
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: 10,
-                }}
-              >
-                <ActivityIndicator size="large" color="#8B5CF6" />
-              </View>
-            </View>
-          </ThemeProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <ThemeProvider defaultTheme="game">
+        <View style={styles.container}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 10,
+            }}
+          >
+            <ActivityIndicator size="large" color="#8B5CF6" />
+          </View>
+        </View>
+      </ThemeProvider>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider defaultTheme="game">
+        <ThemeProvider defaultTheme="light">
           <LayoutWithInsets />
           <ToastHost />
         </ThemeProvider>

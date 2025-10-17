@@ -1,6 +1,9 @@
 import { loadGuestProgress } from "@/hooks/guest-progress";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
+import LoadingScreen from "./components/common/LoadingScreen";
 import GuestNameScreen from "./components/screens/GuestNameScreen";
 
 export default function GuestNameRoute() {
@@ -39,8 +42,18 @@ export default function GuestNameRoute() {
     router.back();
   };
 
-  if (checking) return null; // Could show a splash/loader if desired
+  if (checking) return (
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      <LoadingScreen />
+    </View>
+  );
+
   return (
-    <GuestNameScreen onNavigate={handleNavigate} onCancel={handleCancel} />
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      {/* {isLoading && <LoadingScreen />} */}
+      <GuestNameScreen onNavigate={handleNavigate} onCancel={handleCancel} />
+    </View>
   );
 }

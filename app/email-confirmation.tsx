@@ -1,7 +1,9 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import EmailConfirmationScreen from "./components/screens/EmailConfirmationScreen";
+import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import BackgroundImage from "./components/common/BackgroundImage";
+import EmailConfirmationScreen from "./components/screens/EmailConfirmationScreen";
 
 export default function EmailConfirmationRoute() {
   const router = useRouter();
@@ -16,9 +18,12 @@ export default function EmailConfirmationRoute() {
   };
 
   return (
-    <EmailConfirmationScreen
-      onNavigate={handleNavigate}
-      email={params.email}
-    />
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      <EmailConfirmationScreen
+        onNavigate={handleNavigate}
+        email={params.email}
+      />
+    </View>
   );
 }

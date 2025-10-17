@@ -1,4 +1,10 @@
 import { useRouter } from "expo-router";
+<<<<<<< HEAD
+=======
+import { View } from "react-native";
+import BackgroundImage from "./components/common/BackgroundImage";
+import LoadingScreen from "./components/common/LoadingScreen";
+>>>>>>> ui-overhall
 import XPShopScreen from "./components/screens/XPShopScreen";
 
 export default function XPShopRoute() {
@@ -14,5 +20,15 @@ export default function XPShopRoute() {
     }
   };
 
+<<<<<<< HEAD
   return <XPShopScreen onNavigate={handleNavigate} />;
+=======
+  return (
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
+      {isLoading && <LoadingScreen progress={0.7} />}
+      <XPShopScreen onNavigate={handleNavigate} />
+    </View>
+  );
+>>>>>>> ui-overhall
 }

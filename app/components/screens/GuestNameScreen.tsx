@@ -1,21 +1,23 @@
 import levelsData from "@/constants/levels.json";
 import {
-    createNewGuestProfile,
-    updateGuestAvatar,
+  createNewGuestProfile,
+  updateGuestAvatar,
 } from "@/hooks/guest-progress";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import { ChevronLeft, Dices } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-    Keyboard,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Keyboard,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedCard from "../ui/ThemedCard";
+import ThemedInput from "../ui/ThemedInput";
+import ThemedText from "../ui/ThemedText";
 
 interface GuestNameScreenProps {
   onNavigate: (screen: string) => void;
@@ -40,11 +42,14 @@ const GuestNameScreen: React.FC<GuestNameScreenProps> = ({
   onNavigate,
   onCancel,
 }) => {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<string>(AVATARS[0]);
-  const inputRef = useRef<TextInput | null>(null);
+  const inputRef = useRef<any>(null);
 
   const adjectives = useMemo(
     () => [
@@ -124,179 +129,182 @@ const GuestNameScreen: React.FC<GuestNameScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        barStyle={Platform.OS === "android" ? "light-content" : "light-content"}
-        backgroundColor="#121213"
-      />
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={onCancel} style={styles.backButton}>
-          <Text style={styles.backButtonText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.screenTitle}>Create Guest Profile</Text>
-        <View style={{ width: 60 }} />
-      </View>
-      <ScrollView
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <ScrollView 
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: insets.top + theme.spacing.lg,
+          paddingBottom: insets.bottom + theme.spacing.lg,
+          paddingLeft: insets.left + theme.spacing.lg,
+          paddingRight: insets.right + theme.spacing.lg,
+        }]}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Choose a Name</Text>
-        <Text style={styles.subtitle}>
-          You can change this later in your profile.
-        </Text>
-        <View style={styles.inputRow}>
-          <TextInput
-            ref={inputRef}
-            style={styles.input}
-            placeholder="Enter player name"
-            placeholderTextColor="#6B7280"
-            value={name}
-            maxLength={16}
-            onChangeText={(t) => {
-              setName(t);
-              if (inputError) setInputError(null);
-            }}
-            returnKeyType="done"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoFocus
-            blurOnSubmit={false}
-            onSubmitEditing={() => {
-              Keyboard.dismiss();
-              handleContinue();
-            }}
-            selectionColor="#8B5CF6"
+        
+        {/* Back Button */}
+        <ThemedButton
+          title="Back"
+          variant="glass"
+          size="sm"
+
+          leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
+          onPress={onCancel}
+          style={styles.backButton}
+        />
+
+        {/* Create Profile Card */}
+        <ThemedCard variant="glassStrong" padding="xl" style={styles.profileCard}>
+          <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+            Create Guest Profile
+          </ThemedText>
+          
+          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+            You can change this later in your profile.
+          </ThemedText>
+
+          {/* Name Input with Random Button */}
+          <View style={styles.inputContainer}>
+            <ThemedInput
+              ref={inputRef}
+              label="Choose a Name"
+              value={name}
+              onChangeText={(t) => {
+                setName(t);
+                if (inputError) setInputError(null);
+              }}
+              placeholder="Enter player name"
+              variant="outlined"
+              maxLength={16}
+              returnKeyType="done"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+              rightIcon={<Dices size={20} color={theme.colors.textSecondary} />}
+              onRightIconPress={generateRandomName}
+              error={inputError}
+              onSubmitEditing={() => {
+                Keyboard.dismiss();
+                handleContinue();
+              }}
+              style={styles.input}
+            />
+          </View>
+
+          {/* Avatar Selection */}
+          <ThemedText variant="body1" weight="semibold" style={styles.avatarLabel}>
+            Select an Avatar
+          </ThemedText>
+          <View style={styles.avatarGrid}>
+            {AVATARS.map((a, idx) => {
+              const active = avatar === a;
+              return (
+                <TouchableOpacity
+                  key={a + "-" + idx}
+                  style={[
+                    styles.avatarItem,
+                    { borderColor: active ? theme.colors.primary : theme.colors.border },
+                    { backgroundColor: active ? `${theme.colors.primary}20` : theme.colors.surfaceSecondary }
+                  ]}
+                  onPress={() => setAvatar(a)}
+                  accessibilityLabel={`Avatar ${a}`}
+                >
+                  <ThemedText style={styles.avatarText}>{a}</ThemedText>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Continue Button */}
+          <ThemedButton
+            title={saving ? "CREATING..." : "CONTINUE"}
+            variant="primary"
+            size="lg"
+            fullWidth
+            isLoading={saving}
+            disabled={!name.trim() || saving}
+            onPress={handleContinue}
+            style={styles.continueButton}
           />
-          <TouchableOpacity
-            style={styles.randomButton}
-            onPress={generateRandomName}
-          >
-            <Text style={styles.randomButtonText}>🎲</Text>
-          </TouchableOpacity>
-        </View>
-        {inputError && <Text style={styles.errorText}>{inputError}</Text>}
-        <Text style={styles.avatarLabel}>Select an Avatar</Text>
-        <View style={styles.avatarGrid}>
-          {AVATARS.map((a, idx) => {
-            const active = avatar === a;
-            return (
-              <TouchableOpacity
-                key={a + "-" + idx}
-                style={[styles.avatarItem, active && styles.avatarItemActive]}
-                onPress={() => setAvatar(a)}
-                accessibilityLabel={`Avatar ${a}`}
-              >
-                <Text style={styles.avatarText}>{a}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            (!name.trim() || saving) && styles.primaryButtonDisabled,
-          ]}
-          disabled={!name.trim() || saving}
-          onPress={handleContinue}
-        >
-          <Text style={styles.primaryButtonText}>
-            {saving ? "CREATING..." : "CONTINUE"}
-          </Text>
-        </TouchableOpacity>
+        </ThemedCard>
+
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "transparent" },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+const createStyles = (theme: any) => ({
+  container: {
+    flex: 1,
+    position: 'relative' as const,
+    backgroundColor: 'transparent',
   },
-  backButton: { paddingVertical: 6, paddingHorizontal: 6 },
-  backButtonText: { color: "#9CA3AF", fontSize: 14 },
-  screenTitle: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  title: { color: "#FFFFFF", fontSize: 20, fontWeight: "700", marginBottom: 8 },
-  subtitle: { color: "#9CA3AF", fontSize: 13, marginBottom: 20 },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 14,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-start' as const,
+  },
+  backButton: {
+    alignSelf: 'flex-start' as const,
+    marginBottom: theme.spacing.lg,
+    marginLeft: theme.spacing.base - 3,
+  },
+  profileCard: {
+    maxWidth: 400,
+    alignSelf: 'center' as const,
+    width: '100%',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  title: {
+    marginBottom: theme.spacing.sm,
+  },
+  subtitle: {
+    marginBottom: theme.spacing.xl2,
+    lineHeight: 22,
+  },
+  inputContainer: {
+    marginBottom: theme.spacing.lg,
   },
   input: {
-    flex: 1,
-  backgroundColor: "rgba(31,41,55,0.85)",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#374151",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-  randomButton: {
-  backgroundColor: "rgba(55,65,81,0.85)",
-    borderWidth: 2,
-    borderColor: "#4B5563",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  randomButtonText: { fontSize: 20 },
-  errorText: {
-    color: "#EF4444",
-    marginBottom: 10,
-    fontSize: 13,
-    fontWeight: "600",
+    borderRadius: theme.borderRadius.md,
   },
   avatarLabel: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 10,
-    marginTop: 10,
+    marginBottom: theme.spacing.base,
+    marginTop: theme.spacing.base,
   },
   avatarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 30,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xl2,
+    justifyContent: 'space-between' as const,
   },
   avatarItem: {
     width: 60,
     height: 60,
-  backgroundColor: "rgba(17,24,39,0.85)",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     borderWidth: 2,
-    borderColor: "#1f2937",
   },
-  avatarItemActive: { borderColor: "#8B5CF6", backgroundColor: "rgba(30,27,75,0.7)" },
-  avatarText: { fontSize: 28 },
-  primaryButton: {
-    backgroundColor: "#8B5CF6",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#7C3AED",
+  avatarText: { 
+    fontSize: 25
   },
-  primaryButtonDisabled: { backgroundColor: "#4B5563", borderColor: "#6B7280" },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 1,
+  continueButton: {
+    marginTop: theme.spacing.sm,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    backgroundColor: theme.colors.primary,
+  },
+  bottomSpacing: {
+    height: theme.spacing.xl4,
   },
 });
 

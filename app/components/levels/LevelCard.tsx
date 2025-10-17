@@ -1,8 +1,8 @@
-import React from "react";
-import { View, TouchableOpacity } from "react-native";
-import { Difficulty, getDifficultyConfig } from "@/constants/difficulty";
+import { Difficulty } from "@/constants/difficulty";
 import economy from "@/constants/economy.json";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import React from "react";
+import { TouchableOpacity, View } from "react-native";
 import ThemedCard from "../ui/ThemedCard";
 import ThemedText from "../ui/ThemedText";
 
@@ -42,7 +42,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
 
   if (!level.isUnlocked) {
     return (
-      <ThemedCard variant="elevated" padding="lg" style={styles.lockedCard}>
+      <ThemedCard variant="glassStrong" padding="lg" style={styles.lockedCard}>
         <View style={styles.lockOverlay}>
           <ThemedText variant="heading1" color="textInverse">🔒</ThemedText>
           <ThemedText variant="body2" color="textSecondary">
@@ -60,7 +60,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, categoryName, onPress }) =
       activeOpacity={0.8}
     >
       <ThemedCard
-        variant="elevated"
+        variant="glassStrong"
         padding="lg"
         style={[
           styles.levelCard,

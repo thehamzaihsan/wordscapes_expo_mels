@@ -20,42 +20,43 @@ export interface DifficultyConfig {
 /**
  * Mapping of difficulty levels to their configurations
  */
+// Relaxed Difficulty Configuration
 export const difficultyMap: Record<Difficulty, DifficultyConfig> = {
-  easy: { 
-    min: 4, 
-    max: 6, 
-    minWords: 4, 
-    popularityRange: 2000,
+  easy: {
+    min: 3,
+    max: 4,
+    minWords: 3,
+    popularityRange: 1000,
     label: 'Easy',
     description: 'Perfect for beginners',
     color: '#4CAF50',
     icon: '🌱'
   },
-  medium: { 
-    min: 5, 
-    max: 7, 
-    minWords: 6, 
-    popularityRange: 3000,
+  medium: {
+    min: 4,
+    max: 5,
+    minWords: 5,
+    popularityRange: 2000,
     label: 'Medium',
     description: 'A balanced challenge',
     color: '#FF9800',
     icon: '⚡'
   },
-  hard: { 
-    min: 6, 
-    max: 8, 
-    minWords: 8, 
-    popularityRange: 4000,
+  hard: {
+    min: 5,
+    max: 6,
+    minWords: 6,
+    popularityRange: 3000,
     label: 'Hard',
     description: 'For experienced players',
     color: '#F44336',
     icon: '🔥'
   },
-  expert: { 
-    min: 7, 
-    max: 10, 
-    minWords: 10, 
-    popularityRange: 5000,
+  expert: {
+    min: 6,
+    max: 7,
+    minWords: 8,
+    popularityRange: 4000,
     label: 'Expert',
     description: 'Ultimate challenge',
     color: '#9C27B0',
