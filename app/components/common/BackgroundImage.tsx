@@ -3,10 +3,10 @@
  * Provides a centralized blurred background image for all screens
  */
 
-import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
-import { Image } from 'expo-image';
 import { useTheme } from '@/hooks/useTheme';
+import { Image } from 'expo-image';
+import React from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
