@@ -49,7 +49,7 @@ export default function PayPalModal({
 
     const value = amount.toFixed(2);
     return `<!doctype html><html><head><meta http-equiv=\"Content-Security-Policy\" content=\"default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><style>html,body{height:100%}body{margin:0;display:flex;align-items:center;justify-content:center;background:#fff;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}#container{width:90vw;max-width:420px}#paypal-button-container>div{width:100%!important}</style></head><body><div id=\"container\"><div id=\"paypal-button-container\"></div></div><script>(function(){})(); var load=function(){var s=document.createElement('script');
-      s.src='https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&intent=capture&commit=true&components=buttons&debug=true';
+      s.src='https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&intent=capture&commit=true&components=buttons&debug=true&disable-funding=paylater,card';
       s.async=true; s.onload=function(){
         if(!window.paypal){window.ReactNativeWebView.postMessage(JSON.stringify({type:'error',message:'paypal-sdk-missing'}));return;}
         window.paypal.Buttons({
@@ -105,8 +105,7 @@ export default function PayPalModal({
         ) : (
           <WebView
             originWhitelist={["*"]}
-            // Provide a secure origin so PayPal can open its secure browser flow
-            source={{ html, baseUrl: "https://www.paypal.com" }}
+            source={{ html }}
             onMessage={(e) => handleMessageData(e.nativeEvent.data)}
             javaScriptEnabled
             domStorageEnabled
@@ -118,7 +117,6 @@ export default function PayPalModal({
             onOpenWindow={(e) => {
               const url = e.nativeEvent?.targetUrl;
               if (url) {
-                // Force navigation into the same webview
                 const escaped = url.replace(/'/g, "\\'");
                 webviewRef.current?.injectJavaScript(
                   `window.location.href='${escaped}'; true;`
