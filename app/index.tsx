@@ -63,7 +63,7 @@ export default function Index() {
             resizeMode="contain" 
           />
           <WordSpringsText style={{ fontSize: 48, paddingTop: 20 }}> 
-            WORDSPRINGS
+            WORD SPRINGS
           </WordSpringsText>
         </View>
 

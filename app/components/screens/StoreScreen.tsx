@@ -2,8 +2,8 @@ import economy from "@/constants/economy.json";
 import { loadGuestProgress, triggerEnergyRegenCheck, type GuestProgressPayload } from "@/hooks/guest-progress";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect } from "expo-router";
-import { ChevronLeft, ChevronRight, Star, Zap, ShoppingBag, Gift } from "lucide-react-native";
+import { useFocusEffect, useRouter } from "expo-router"; // 1. IMPORT useRouter
+import { ChevronLeft, ChevronRight, Gift, ShoppingBag, Star, Zap } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -13,10 +13,8 @@ import {
   NativeSyntheticEvent,
   Platform,
   ScrollView,
-  StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { startPurchase } from "../hooks/PaypalCheckout";
@@ -33,13 +31,9 @@ const SIDE_CARD_SCALE = 0.92;
 const isSmallScreen = height < 700;
 const isMediumScreen = height >= 700 && height < 900;
 
-interface CombinedStoreScreenProps {
-  onNavigate: (screen: string) => void;
-}
-
-export default function CombinedStoreScreen({
-  onNavigate,
-}: CombinedStoreScreenProps) {
+// 2. REMOVED the onNavigate prop and interface
+export default function CombinedStoreScreen() {
+  const router = useRouter(); // 3. INITIALIZE useRouter
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -486,7 +480,7 @@ export default function CombinedStoreScreen({
             variant="glass"
             size="sm"
             leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
-            onPress={() => onNavigate("levels")}
+            onPress={() => router.back()} // 4. UPDATED to use router.back()
             style={styles.backButton}
           />
 

@@ -21,6 +21,9 @@ import AnimatedSplashScreen from '../app/components/screens/SplashScreen';
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
 import BackgroundImage from "./components/common/BackgroundImage";
+
+// SplashScreen.preventAutoHideAsync();
+
 function LayoutWithInsets() {
   useAutoSync();
   useEnergyRegen(); // Add energy regeneration hook

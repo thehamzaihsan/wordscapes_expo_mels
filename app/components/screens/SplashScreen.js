@@ -9,6 +9,9 @@ export default function AnimatedSplashScreen() {
         source={require('../../../assets/images/WorldSprings_logo_1.png')}
         resizeMode="contain"
       />
+      <WordSpringsText style={{ fontSize: 48, paddingTop: 20 }}> 
+        WORD SPRINGS
+      </WordSpringsText>
     </View>
   );
 }
