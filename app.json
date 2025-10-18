@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "wordscapes-expo",
-    "slug": "wordscapes-expo",
+    "name": "WordSprings",
+    "slug": "wordsprings",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "com.hexadevs.word",

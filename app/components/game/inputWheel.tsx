@@ -138,6 +138,13 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     return path;
   };
 
+  const resetSelection = useCallback((): void => {
+    setSelectedLetters([]);
+    setSelectedIndices([]);
+    setConnectionPath("");
+    setCurrentWord("");
+  }, []);
+
   useEffect(() => {
     setShuffledLetters([...letters]);
     // Initialize animated letters
@@ -234,14 +241,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     },
     [selectedIndices, onLetterSelect, updateConnectionPath, shuffledLetters]
   );
-
-  const resetSelection = useCallback((): void => {
-    setSelectedLetters([]);
-    setSelectedIndices([]);
-    setConnectionPath("");
-    setCurrentWord("");
-  }, []);
-
 
   const shuffleLetters = useCallback((): void => {
     if (isShuffling) return;
