@@ -48,21 +48,16 @@ export default function PayPalModal({
     }
 
     const value = amount.toFixed(2);
-    return `<!doctype html><html><head><meta http-equiv=\"Content-Security-Policy\" content=\"default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><style>html,body{height:100%}body{margin:0;display:flex;align-items:center;justify-content:center;background:#fff;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}#container{width:90vw;max-width:420px}#paypal-button-container>div{width:100%!important}</style></head><body><div id=\"container\"><div id=\"paypal-button-container\"></div></div><script>(function(){
-      // Force single-window behavior for links/popups
-      try{window.open=function(u){window.location.href=u;return null;}}catch(e){}
-      document.addEventListener('click',function(ev){
-        var a=ev.target && ev.target.closest ? ev.target.closest('a[target=_blank]') : null;
-        if(a && a.href){ ev.preventDefault(); window.location.href=a.href; }
-      },true);
-    })();
-    var load=function(){var s=document.createElement('script');
-      s.src='https://www.sandbox.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&intent=capture&commit=true&components=buttons&disable-funding=paylater,card,credit&debug=true';
+    return `<!doctype html><html><head><meta http-equiv=\"Content-Security-Policy\" content=\"default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><style>html,body{height:100%}body{margin:0;display:flex;align-items:center;justify-content:center;background:#fff;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}#container{width:90vw;max-width:420px}#paypal-button-container>div{width:100%!important}</style></head><body><div id=\"container\"><div id=\"paypal-button-container\"></div></div><script>(function(){})(); var load=function(){var s=document.createElement('script');
+      s.src='https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&intent=capture&commit=true&components=buttons&debug=true';
       s.async=true; s.onload=function(){
         if(!window.paypal){window.ReactNativeWebView.postMessage(JSON.stringify({type:'error',message:'paypal-sdk-missing'}));return;}
         window.paypal.Buttons({
           onClick:function(){try{window.ReactNativeWebView.postMessage(JSON.stringify({type:'log',message:'clicked'}));}catch(e){}},
-          createOrder:function(data,actions){return actions.order.create({purchase_units:[{amount:{value:'${value}',currency_code:'${currency}'}}]});},
+          createOrder:function(data,actions){return actions.order.create({
+            purchase_units:[{amount:{value:'${value}',currency_code:'${currency}'}}],
+            application_context:{user_action:'PAY_NOW',shipping_preference:'NO_SHIPPING'}
+          });},
           onApprove:function(data,actions){return actions.order.capture().then(function(details){window.ReactNativeWebView.postMessage(JSON.stringify({type:'success',details:details}));});},
           onCancel:function(){window.ReactNativeWebView.postMessage(JSON.stringify({type:'cancel'}));},
           onError:function(err){window.ReactNativeWebView.postMessage(JSON.stringify({type:'error',message:String(err)}));}
@@ -78,6 +73,11 @@ export default function PayPalModal({
         onSuccess(data.details as PayPalSuccess);
       } else if (data.type === "cancel") {
         onCancel && onCancel();
+      } else if (data.type === "log") {
+        // Surface SDK logs to help diagnose click issues
+        console.log("PayPal WebView log:", data.message ?? data);
+      } else if (data.type === "error") {
+        console.warn("PayPal WebView error:", data.message ?? data);
       }
     } catch {
       // ignore
@@ -105,7 +105,8 @@ export default function PayPalModal({
         ) : (
           <WebView
             originWhitelist={["*"]}
-            source={{ html, baseUrl: "https://www.sandbox.paypal.com" }}
+            // Provide a secure origin so PayPal can open its secure browser flow
+            source={{ html, baseUrl: "https://www.paypal.com" }}
             onMessage={(e) => handleMessageData(e.nativeEvent.data)}
             javaScriptEnabled
             domStorageEnabled
@@ -124,9 +125,7 @@ export default function PayPalModal({
                 );
               }
             }}
-            injectedJavaScriptBeforeContentLoaded={
-              "(function(){try{window.open=function(u){window.location.href=u;}}catch(e){}})();"
-            }
+            injectedJavaScriptBeforeContentLoaded={undefined}
             startInLoadingState
             userAgent="Mozilla/5.0 (Linux; Android 11; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36"
             mixedContentMode="always"
