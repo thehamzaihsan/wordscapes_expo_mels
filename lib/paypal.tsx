@@ -1,3 +1,4 @@
+import PurchaseSuccessModal from "@/app/components/ui/PurchaseSuccessModal";
 import PayPalModal from "@/app/lib/PayPalModal";
 import { loadGuestProgress, saveGuestProgress } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
@@ -13,6 +14,10 @@ export function usePayPalPurchase() {
   const [pendingOption, setPendingOption] = useState<PurchaseOption | null>(
     null
   );
+  const [showSuccess, setShowSuccess] = useState<{
+    visible: boolean;
+    gems: number;
+  } | null>(null);
 
   const open = useCallback((opt: PurchaseOption) => {
     setPendingOption(opt);
@@ -65,10 +70,7 @@ export function usePayPalPurchase() {
           console.warn("PayPal: sync attempt failed", e);
         }
 
-        Alert.alert(
-          "Purchase successful",
-          `Added ${opt.gems} gems to your account.`
-        );
+        setShowSuccess({ visible: true, gems: opt.gems });
       } catch (err) {
         console.warn("PayPal onSuccess handler error", err);
         Alert.alert(
@@ -96,7 +98,16 @@ export function usePayPalPurchase() {
 
   return {
     open,
-    Modal,
+    Modal: (
+      <>
+        {Modal}
+        <PurchaseSuccessModal
+          visible={!!showSuccess?.visible}
+          gems={showSuccess?.gems || 0}
+          onClose={() => setShowSuccess(null)}
+        />
+      </>
+    ),
   };
 }
 
