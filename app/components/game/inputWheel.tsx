@@ -1,4 +1,4 @@
-import { Check, Eraser, Lightbulb, Shuffle, X } from "lucide-react-native";
+import { Lightbulb, Shuffle, X } from "lucide-react-native";
 import React, {
   useCallback,
   useEffect,
@@ -26,6 +26,7 @@ interface LetterWheelProps {
   onLetterSelect?: (letter: string, index: number) => void;
   validWords?: string[];
   foundWords?: string[]; // Words already found
+  crosswordWords?: string[];
   onHint?: (word: string) => Promise<boolean> | boolean; // returns true if hint applied, false if failed
   hintsLeft?: number;
   canUsePaidHints?: boolean; // If true, allow pressing hint even when hintsLeft is 0 (paid hint flows)
@@ -59,6 +60,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   onLetterSelect,
   validWords = [],
   foundWords = [],
+  crosswordWords = [], 
   onHint,
   hintsLeft = 1,
   canUsePaidHints = true,
@@ -152,7 +154,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     if (shuffledLetters.length === 0) {
       return;
     }
-
     // Calculate letter positions in a circle
     letterPositions.current = shuffledLetters.map((letter, index) => {
       const angle =
@@ -162,6 +163,31 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       return { x, y, letter, index };
     });
   }, [shuffledLetters, wheelSize, radius, wheelCenter]);
+
+  useEffect(() => {
+    if (currentWord.length < 2) {
+      return;
+    }
+
+    const lowerWord = currentWord.toLowerCase();
+    const upperCrosswordWords = crosswordWords.map((w) => w.toUpperCase());
+    const isCrosswordWord = upperCrosswordWords.includes(currentWord.toUpperCase());
+
+    // Check if the word is a valid, un-found crossword word
+    if (isCrosswordWord && onWordComplete) {
+      const isAlreadyFound = foundWords.some(
+        (found) => found.toLowerCase() === lowerWord
+      );
+
+      if (!isAlreadyFound) {
+        // Automatically submit the word
+        onWordComplete(lowerWord);
+        // Reset selection after a short delay to allow visual feedback
+        setTimeout(() => resetSelection(), 100);
+      }
+    }
+  }, [currentWord, crosswordWords, foundWords, onWordComplete, resetSelection]);
+
 
   const updateConnectionPath = useCallback((indices: number[]): void => {
     if (indices.length === 0) {
@@ -181,21 +207,32 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     setConnectionPath(path);
   }, []);
 
-  const addLetter = useCallback(
+  const handleLetterPress = useCallback(
     (letter: string, index: number): void => {
-      if (selectedIndices.includes(index)) {
-        return;
+      const isAlreadySelected = selectedIndices.includes(index);
+
+      let newIndices: number[];
+      if (isAlreadySelected) {
+        // Unselect the letter by filtering it out
+        newIndices = selectedIndices.filter((i) => i !== index);
+      } else {
+        // Add the new letter to the end
+        newIndices = [...selectedIndices, index];
       }
-      const newIndices = [...selectedIndices, index];
-      const newLetters = [...selectedLetters, letter];
+
+      // Rebuild the word from the new indices to maintain correct order
+      const newLetters = newIndices.map((i) => shuffledLetters[i]);
 
       setSelectedIndices(newIndices);
       setSelectedLetters(newLetters);
       setCurrentWord(newLetters.join(""));
       updateConnectionPath(newIndices);
-      onLetterSelect?.(letter, index);
+      
+      if (!isAlreadySelected) {
+        onLetterSelect?.(letter, index);
+      }
     },
-    [selectedIndices, selectedLetters, onLetterSelect, updateConnectionPath]
+    [selectedIndices, onLetterSelect, updateConnectionPath, shuffledLetters]
   );
 
   const resetSelection = useCallback((): void => {
@@ -205,25 +242,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     setCurrentWord("");
   }, []);
 
-  const submitWord = useCallback((): void => {
-    if (selectedLetters.length > 0) {
-      const word = selectedLetters.join("").toLowerCase();
-      onWordComplete?.(word);
-    }
-    resetSelection();
-  }, [selectedLetters, onWordComplete, resetSelection]);
-
-  const removeLetter = useCallback((): void => {
-    if (selectedLetters.length > 0) {
-      const newLetters = selectedLetters.slice(0, -1);
-      const newIndices = selectedIndices.slice(0, -1);
-
-      setSelectedLetters(newLetters);
-      setSelectedIndices(newIndices);
-      setCurrentWord(newLetters.join(""));
-      updateConnectionPath(newIndices);
-    }
-  }, [selectedLetters, selectedIndices, updateConnectionPath]);
 
   const shuffleLetters = useCallback((): void => {
     if (isShuffling) return;
@@ -449,7 +467,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                     justifyContent: "center",
                     alignItems: "center",
                   }}
-                  onPress={() => addLetter(letter, index)}
+                  onPress={() => handleLetterPress(letter, index)}
                   activeOpacity={1}
                   disabled={isShuffling}
                 >
@@ -493,29 +511,9 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
       {/* Control Buttons outside the wheel */}
       <View style={styles.centerControlsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.centerButton,
-            styles.removeButton,
-            selectedLetters.length === 0 && styles.disabledCenterButton,
-          ]}
-          onPress={removeLetter}
-          disabled={selectedLetters.length === 0}
-        >
-          <Eraser size={isSmallScreen ? 20 : 24} color="#ffffff" />
-        </TouchableOpacity>
+        
 
-        <TouchableOpacity
-          style={[
-            styles.centerButton,
-            styles.submitCenterButton,
-            currentWord.length < 2 && styles.disabledCenterButton,
-          ]}
-          onPress={submitWord}
-          disabled={currentWord.length < 2}
-        >
-          <Check size={isSmallScreen ? 20 : 24} color="#ffffff" />
-        </TouchableOpacity>
+        
 
         <TouchableOpacity
           style={[

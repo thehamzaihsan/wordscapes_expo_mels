@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import LottieView from "lottie-react-native";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
@@ -460,6 +459,7 @@ export default function GameScreen({
                 }}
                 validWords={allValidWords}
                 foundWords={[...foundCrosswordWords, ...foundBonusWords]}
+                crosswordWords={crosswordWords} 
                 onHint={handleWordHint}
                 hintsLeft={globalHints}
                 canUsePaidHints={false}

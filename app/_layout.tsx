@@ -6,6 +6,7 @@ import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
 import * as Font from 'expo-font';
 import { Stack } from "expo-router";
+import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -211,15 +212,27 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        await Font.loadAsync({
+        // --- THIS IS THE KEY CHANGE ---
+        // We create two "tasks" that will run at the same time:
+        // 1. Loading your fonts and assets.
+        const assetLoadingPromise = Font.loadAsync({
           Helvetica: require("../assets/fonts/Helvetica.ttf"),
           'Cormorant-Garamond': require('../assets/fonts/Cormorant-Garamond.ttf'),
         });
+
+        // 2. A simple timer that waits for 3 seconds.
+        const minimumDisplayTimePromise = new Promise(resolve => setTimeout(resolve, 3000));
+
+        // `Promise.all` waits for BOTH tasks to finish.
+        // If assets load in 1 second, it will wait 2 more seconds for the timer.
+        // If assets take 5 seconds to load, the timer will be done, and it will proceed immediately.
+        await Promise.all([assetLoadingPromise, minimumDisplayTimePromise]);
+        
         initializeGameManager();
-        // ... other setup
       } catch (e) {
         console.warn(e);
       } finally {
+        // Now we are certain at least 3 seconds have passed and assets are loaded.
         setAppIsReady(true);
       }
     }
@@ -228,17 +241,18 @@ export default function RootLayout() {
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
-      // Hide the native (color-only) splash screen
-      // await SplashScreen.hideAsync();
+      // Hide the native splash screen once the app is ready and laid out.
+      await SplashScreen.hideAsync();
     }
   }, [appIsReady]);
 
-  // While app is not ready, show your JS Splash Screen
+  // While the app is not ready, we show your custom splash screen.
+  // This will now be visible for a minimum of 3 seconds.
   if (!appIsReady) {
-    return <AnimatedSplashScreen />; 
+    return <AnimatedSplashScreen />;
   }
 
-  // App is ready, render the app
+  // When ready, render the main app and attach the callback to hide the native splash.
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
@@ -250,4 +264,3 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
-
