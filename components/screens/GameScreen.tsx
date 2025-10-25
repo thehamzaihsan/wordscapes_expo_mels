@@ -347,6 +347,9 @@ export default function GameScreen({
           <ChevronLeft size={16} color="#22C55E" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
+
+        <Text style={styles.levelTitle}>{levelTitle}</Text>
+
         <View style={styles.headerRight}>
           {/* <Text style={styles.score}>Score: {score}</Text> */}
           <TouchableOpacity onPress={toggleSound} style={styles.soundToggle}>
@@ -633,4 +636,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   nextButtonText: { color: "#fff", fontWeight: "bold" },
+   levelTitle: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    color: "#f9f9f9ff",
+    fontSize: 26,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    zIndex: -1, // Ensures the title is behind the buttons and doesn't block presses
+  },
 });
