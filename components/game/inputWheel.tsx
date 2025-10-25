@@ -1,4 +1,4 @@
-import { Lightbulb, Shuffle, X } from "lucide-react-native";
+import { Lightbulb, Shuffle } from "lucide-react-native";
 import React, {
   useCallback,
   useEffect,
@@ -77,6 +77,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [hintMessage, setHintMessage] = useState("");
   const [purchaseHintModal, setPurchaseHintModal] = useState(false);
   const letterPositions = useRef<LetterPosition[]>([]);
+  const [submissionTimer, setSubmissionTimer] = useState<NodeJS.Timeout | null>(null);
 
   // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
   const hexagonSize = isSmallScreen ? 28 : isMediumScreen ? 32 : 35;
@@ -172,28 +173,33 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   }, [shuffledLetters, wheelSize, radius, wheelCenter]);
 
   useEffect(() => {
-    if (currentWord.length < 2) {
-      return;
-    }
+  // Clear any existing timer when a new letter is selected
+  if (submissionTimer) {
+    clearTimeout(submissionTimer);
+  }
 
-    const lowerWord = currentWord.toLowerCase();
-    const upperCrosswordWords = crosswordWords.map((w) => w.toUpperCase());
-    const isCrosswordWord = upperCrosswordWords.includes(currentWord.toUpperCase());
-
-    // Check if the word is a valid, un-found crossword word
-    if (isCrosswordWord && onWordComplete) {
-      const isAlreadyFound = foundWords.some(
-        (found) => found.toLowerCase() === lowerWord
-      );
-
-      if (!isAlreadyFound) {
-        // Automatically submit the word
-        onWordComplete(lowerWord);
-        // Reset selection after a short delay to allow visual feedback
-        setTimeout(() => resetSelection(), 100);
+  // Only set a new timer if there's a word of at least 2 letters
+  if (currentWord.length >= 2) {
+    const newTimer = setTimeout(() => {
+      // When the timer runs out, submit the word regardless of correctness
+      if (onWordComplete) {
+        onWordComplete(currentWord.toLowerCase());
       }
+      // Reset the wheel for the next word
+      // A small delay gives visual feedback before clearing
+      setTimeout(() => resetSelection(), 100);
+    }, 600); // 1-second delay before submission. You can adjust this value.
+
+    setSubmissionTimer(newTimer);
+  }
+
+  // Cleanup function to clear the timer if the component unmounts
+  return () => {
+    if (submissionTimer) {
+      clearTimeout(submissionTimer);
     }
-  }, [currentWord, crosswordWords, foundWords, onWordComplete, resetSelection]);
+  };
+}, [currentWord, onWordComplete, resetSelection]);
 
 
   const updateConnectionPath = useCallback((indices: number[]): void => {
@@ -505,25 +511,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
               <Text style={styles.hintDotText}>{hintsLeft}</Text>
             </View>
           )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Control Buttons outside the wheel */}
-      <View style={styles.centerControlsContainer}>
-        
-
-        
-
-        <TouchableOpacity
-          style={[
-            styles.centerButton,
-            styles.clearButton,
-            selectedLetters.length === 0 && styles.disabledCenterButton,
-          ]}
-          onPress={resetSelection}
-          disabled={selectedLetters.length === 0}
-        >
-          <X size={isSmallScreen ? 20 : 24} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
