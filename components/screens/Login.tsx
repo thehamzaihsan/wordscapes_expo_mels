@@ -248,6 +248,7 @@ const createStyles = (theme: any) => ({
   },
   input: {
     borderRadius: theme.borderRadius.md,
+    color: theme.colors.text,
   },
   loginButton: {
     marginTop: theme.spacing.sm,

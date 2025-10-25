@@ -37,7 +37,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 24,
-    color: '#fff' !,
   },
   progressContainer: {
     width: 220,

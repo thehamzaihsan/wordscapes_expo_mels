@@ -1,9 +1,51 @@
 import { useTheme } from "@/hooks/useTheme";
+import { useCurrentCategory, CategoryType } from "@/hooks/useCurrentCategory";
 import { ImageBackground, Platform, View } from "react-native";
+import { useState, useEffect } from "react";
+
+// Map category names to their corresponding image files
+const getCategoryImage = (category: CategoryType) => {
+  switch (category) {
+    case 'Mountain':
+      return require("../../images/mountain.jpg");
+    case 'Ocean':
+      return require("../../images/ocean.jpg");
+    case 'Forest':
+      return require("../../images/forest.png");
+    default:
+      return require("../../images/default_background.jpg");
+  }
+};
+
+// Map category names to their corresponding web image paths
+const getCategoryWebImagePath = (category: CategoryType) => {
+  switch (category) {
+    case 'Mountain':
+      return "/images/mountain.jpg";
+    case 'Ocean':
+      return "/images/ocean.jpg";
+    case 'Forest':
+      return "/images/forest.png";
+    default:
+      return "/images/default_background.jpg";
+  }
+};
 
 export default function BackgroundImage() {
   const { themeName } = useTheme();
+  const { currentCategory, isLoading } = useCurrentCategory();
+  const [displayCategory, setDisplayCategory] = useState<CategoryType>('Mountain');
   const isDark = themeName === "dark" || themeName === "game";
+
+  // Update display category with a smooth transition
+  useEffect(() => {
+    if (!isLoading) {
+      if (currentCategory !== displayCategory) {
+        console.log(`[BackgroundImage] Switching from ${displayCategory} to ${currentCategory}`);
+      }
+      setDisplayCategory(currentCategory);
+    }
+  }, [currentCategory, isLoading, displayCategory]);
 
   const overlay = isDark ? (
     <View
@@ -26,10 +68,11 @@ export default function BackgroundImage() {
           height: "100%",
           zIndex: -1,
           // @ts-ignore - web-specific styles
-          backgroundImage: "url(/images/default_background.jpg)",
+          backgroundImage: `url(${getCategoryWebImagePath(displayCategory)})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
+          transition: "background-image 0.5s ease-in-out", // Smooth transition for web
         }}
       >
         {overlay}
@@ -40,7 +83,7 @@ export default function BackgroundImage() {
   // Use ImageBackground component for mobile platforms to support overlay
   return (
     <ImageBackground
-      source={require("../../images/default_background.jpg")}
+      source={getCategoryImage(displayCategory)}
       style={{
         width: "100%",
         height: "100%",
