@@ -11,11 +11,7 @@ import { clampEnergy } from "@/lib/energy";
 import { showToast } from "@/lib/toast";
 import { Battery, ChevronLeft, Gem, Lightbulb, Zap } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import {
-  ScrollView,
-  StatusBar,
-  View,
-} from "react-native";
+import { Platform, ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
@@ -28,7 +24,7 @@ interface XPShopScreenProps {
 }
 
 interface PurchaseModalData {
-  type: 'xp' | 'energy' | 'error';
+  type: "xp" | "energy" | "error";
   title: string;
   message: string;
   amount?: number;
@@ -36,7 +32,10 @@ interface PurchaseModalData {
   onConfirm?: () => void;
 }
 
-const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "levels" }) => {
+const XPShopScreen: React.FC<XPShopScreenProps> = ({
+  onNavigate,
+  fromScreen = "levels",
+}) => {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -52,7 +51,8 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   const loadProgressData = async () => {
     try {
-      const gp = await triggerEnergyRegenCheck() || await loadGuestProgress();
+      const gp =
+        (await triggerEnergyRegenCheck()) || (await loadGuestProgress());
       setProgress(gp);
     } catch (error) {
       console.error("Failed to load progress:", error);
@@ -74,19 +74,19 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   const handlePurchaseXP = async (xpAmount: number, gemsCost: number) => {
     if (!progress) return;
-    
+
     if (progress.meta.gems < gemsCost) {
       showPurchaseModal({
-        type: 'error',
-        title: 'Insufficient Gems',
+        type: "error",
+        title: "Insufficient Gems",
         message: `You need ${gemsCost} gems to purchase ${xpAmount} XP. You currently have ${progress.meta.gems} gems.`,
       });
       return;
     }
 
     showPurchaseModal({
-      type: 'xp',
-      title: 'Purchase XP',
+      type: "xp",
+      title: "Purchase XP",
       message: `Purchase ${xpAmount} XP for ${gemsCost} gems?`,
       amount: xpAmount,
       cost: gemsCost,
@@ -96,10 +96,10 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   const confirmPurchaseXP = async (xpAmount: number, gemsCost: number) => {
     if (!progress) return;
-    
+
     setPurchasing(true);
     hideModal();
-    
+
     try {
       const updatedProgress = {
         ...progress,
@@ -116,7 +116,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
       await saveGuestProgress(updatedProgress);
       setProgress(updatedProgress);
-      
+
       showToast(`Purchased ${xpAmount} XP!`, "success");
     } catch (error) {
       console.error("Purchase failed:", error);
@@ -126,13 +126,16 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     }
   };
 
-  const handlePurchaseEnergy = async (energyAmount: number, gemsCost: number) => {
+  const handlePurchaseEnergy = async (
+    energyAmount: number,
+    gemsCost: number
+  ) => {
     if (!progress) return;
-    
+
     if (progress.meta.gems < gemsCost) {
       showPurchaseModal({
-        type: 'error',
-        title: 'Insufficient Gems',
+        type: "error",
+        title: "Insufficient Gems",
         message: `You need ${gemsCost} gems to purchase ${energyAmount} energy. You currently have ${progress.meta.gems} gems.`,
       });
       return;
@@ -140,19 +143,19 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
     const currentEnergy = progress.meta.energy;
     const maxEnergy = economy.energy.refillMax;
-    
+
     if (currentEnergy >= maxEnergy) {
       showPurchaseModal({
-        type: 'error',
-        title: 'Energy Full',
+        type: "error",
+        title: "Energy Full",
         message: `Your energy is already at maximum (${maxEnergy}/${maxEnergy}).`,
       });
       return;
     }
 
     showPurchaseModal({
-      type: 'energy',
-      title: 'Purchase Energy',
+      type: "energy",
+      title: "Purchase Energy",
       message: `Purchase ${energyAmount} energy for ${gemsCost} gems?`,
       amount: energyAmount,
       cost: gemsCost,
@@ -160,12 +163,15 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     });
   };
 
-  const confirmPurchaseEnergy = async (energyAmount: number, gemsCost: number) => {
+  const confirmPurchaseEnergy = async (
+    energyAmount: number,
+    gemsCost: number
+  ) => {
     if (!progress) return;
-    
+
     setPurchasing(true);
     hideModal();
-    
+
     try {
       const updatedProgress = {
         ...progress,
@@ -180,7 +186,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
       await saveGuestProgress(updatedProgress);
       setProgress(updatedProgress);
-      
+
       showToast(`Purchased ${energyAmount} energy!`, "success");
     } catch (error) {
       console.error("Purchase failed:", error);
@@ -192,19 +198,19 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   const handlePurchaseHints = (hintsAmount: number, gemsCost: number) => {
     if (!progress) return;
-    
+
     if (progress.meta.gems < gemsCost) {
       showPurchaseModal({
-        type: 'error',
-        title: 'Insufficient Gems',
+        type: "error",
+        title: "Insufficient Gems",
         message: `You need ${gemsCost} gems to purchase ${hintsAmount} hints. You currently have ${progress.meta.gems} gems.`,
       });
       return;
     }
 
     showPurchaseModal({
-      type: 'xp',
-      title: 'Purchase Hints',
+      type: "xp",
+      title: "Purchase Hints",
       message: `Purchase ${hintsAmount} hints for ${gemsCost} gems?`,
       amount: hintsAmount,
       cost: gemsCost,
@@ -212,12 +218,15 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
     });
   };
 
-  const confirmPurchaseHints = async (hintsAmount: number, gemsCost: number) => {
+  const confirmPurchaseHints = async (
+    hintsAmount: number,
+    gemsCost: number
+  ) => {
     if (!progress) return;
-    
+
     setPurchasing(true);
     hideModal();
-    
+
     try {
       const updatedProgress = {
         ...progress,
@@ -231,7 +240,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
       await saveGuestProgress(updatedProgress);
       setProgress(updatedProgress);
-      
+
       showToast(`Purchased ${hintsAmount} hints!`, "success");
     } catch (error) {
       console.error("Purchase failed:", error);
@@ -244,7 +253,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
   const getHintPackages = () => {
     const baseHintCost = economy.hints.cost;
     const baseHintQuantity = economy.hints.quantity;
-    
+
     return [
       {
         id: 1,
@@ -273,7 +282,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
   const getXPPackages = () => {
     const baseXP = economy.xp.buyRate.xp;
     const baseGems = economy.xp.buyRate.gems;
-    
+
     return [
       {
         id: 1,
@@ -295,7 +304,7 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
   const getEnergyPackages = () => {
     const refillCost = economy.gems.usedFor.energyRefill;
     const refillAmount = economy.energy.refillMax;
-    
+
     return [
       {
         id: 1,
@@ -317,7 +326,11 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
   if (loading) {
     return (
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor="transparent"
+          translucent
+        />
         <View style={styles.loadingContainer}>
           <ThemedText variant="body1" color="primary" weight="semibold">
             Loading Shop...
@@ -333,18 +346,24 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      <ScrollView 
-        contentContainerStyle={[styles.scrollContent, {
-          paddingTop: insets.top + theme.spacing.lg,
-          paddingBottom: insets.bottom + theme.spacing.lg,
-          paddingLeft: insets.left + theme.spacing.lg,
-          paddingRight: insets.right + theme.spacing.lg,
-        }]}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        
         <ThemedButton
           title="Back"
           variant="glass"
@@ -354,21 +373,40 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
           style={styles.backButton}
         />
 
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="lg"
+          style={styles.headerCard}
+        >
           <View style={styles.headerTitle}>
             <Zap size={24} color={theme.colors.primary} />
-            <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+            <ThemedText
+              variant="heading2"
+              weight="bold"
+              align="center"
+              style={styles.title}
+            >
               Power Shop
             </ThemedText>
           </View>
-          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+          <ThemedText
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            style={styles.subtitle}
+          >
             Purchase XP and Energy to boost your progress
           </ThemedText>
-          
+
           <View style={styles.resourcesDisplay}>
             <View style={styles.gemsDisplay}>
               <Gem size={20} color={theme.colors.warning} />
-              <ThemedText variant="heading3" weight="bold" color="warning" style={styles.gemsText}>
+              <ThemedText
+                variant="heading3"
+                weight="bold"
+                color="warning"
+                style={styles.gemsText}
+              >
                 {progress?.meta.gems || 0}
               </ThemedText>
               <ThemedText variant="caption" color="textSecondary">
@@ -377,7 +415,12 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
             </View>
             <View style={styles.energyDisplay}>
               <Battery size={20} color={theme.colors.success} />
-              <ThemedText variant="heading3" weight="bold" color="success" style={styles.energyText}>
+              <ThemedText
+                variant="heading3"
+                weight="bold"
+                color="success"
+                style={styles.energyText}
+              >
                 {progress?.meta.energy || 0}
               </ThemedText>
               <ThemedText variant="caption" color="textSecondary">
@@ -386,7 +429,12 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
             </View>
             <View style={styles.hintsDisplay}>
               <Lightbulb size={20} color={theme.colors.warning} />
-              <ThemedText variant="heading3" weight="bold" color="warning" style={styles.hintsText}>
+              <ThemedText
+                variant="heading3"
+                weight="bold"
+                color="warning"
+                style={styles.hintsText}
+              >
                 {progress?.meta.hints || 0}
               </ThemedText>
               <ThemedText variant="caption" color="textSecondary">
@@ -397,54 +445,105 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
         </ThemedCard>
 
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            align="center"
+            style={styles.sectionTitle}
+          >
             XP Packages
           </ThemedText>
-          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.sectionSubtitle}>
+          <ThemedText
+            variant="body2"
+            color="textSecondary"
+            align="center"
+            style={styles.sectionSubtitle}
+          >
             Skip the grind and boost your progress instantly!
           </ThemedText>
-          
+
           <View style={styles.packagesGrid}>
             {xpPackages.map((pkg) => (
               <View
                 key={pkg.id}
                 style={[
                   styles.packageCard,
-                  { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border },
-                  pkg.popular && { borderColor: theme.colors.primary, backgroundColor: `${theme.colors.primary}10` }
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                  pkg.popular && {
+                    borderColor: theme.colors.primary,
+                    backgroundColor: `${theme.colors.primary}10`,
+                  },
                 ]}
               >
                 {pkg.badge && (
-                  <View style={[
-                    styles.packageBadge,
-                    { backgroundColor: pkg.popular ? theme.colors.primary : theme.colors.warning }
-                  ]}>
-                    <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
+                  <View
+                    style={[
+                      styles.packageBadge,
+                      {
+                        backgroundColor: pkg.popular
+                          ? theme.colors.primary
+                          : theme.colors.warning,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      variant="caption"
+                      weight="bold"
+                      color="textInverse"
+                      style={styles.badgeText}
+                    >
                       {pkg.badge}
                     </ThemedText>
                   </View>
                 )}
-                
-                <ThemedText variant="heading2" weight="bold" style={styles.packageXP}>
+
+                <ThemedText
+                  variant="heading2"
+                  weight="bold"
+                  style={styles.packageXP}
+                >
                   +{pkg.xp}
                 </ThemedText>
-                <ThemedText variant="body2" color="textSecondary" weight="semibold" style={styles.packageXPLabel}>
+                <ThemedText
+                  variant="body2"
+                  color="textSecondary"
+                  weight="semibold"
+                  style={styles.packageXPLabel}
+                >
                   XP
                 </ThemedText>
-                
+
                 <View style={styles.packageCost}>
-                  <ThemedText variant="heading4" weight="bold" color="warning" style={styles.packageGems}>
+                  <ThemedText
+                    variant="heading4"
+                    weight="bold"
+                    color="warning"
+                    style={styles.packageGems}
+                  >
                     {pkg.gems}
                   </ThemedText>
                   <Gem size={16} color={theme.colors.warning} />
-                  <ThemedText variant="caption" color="textSecondary" style={styles.packageGemsLabel}>
+                  <ThemedText
+                    variant="caption"
+                    color="textSecondary"
+                    style={styles.packageGemsLabel}
+                  >
                     Gems
                   </ThemedText>
                 </View>
-                
+
                 <ThemedButton
-                  title={(progress?.meta.gems || 0) < pkg.gems ? "Not enough gems" : "Purchase"}
-                  variant={(progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"}
+                  title={
+                    (progress?.meta.gems || 0) < pkg.gems
+                      ? "Not enough gems"
+                      : "Purchase"
+                  }
+                  variant={
+                    (progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"
+                  }
                   size="sm"
                   fullWidth
                   disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems}
@@ -457,63 +556,117 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
         </ThemedCard>
 
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            align="center"
+            style={styles.sectionTitle}
+          >
             Energy Packages
           </ThemedText>
-          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.sectionSubtitle}>
+          <ThemedText
+            variant="body2"
+            color="textSecondary"
+            align="center"
+            style={styles.sectionSubtitle}
+          >
             Refuel your energy to keep playing without waiting!
           </ThemedText>
-          
+
           <View style={styles.packagesGrid}>
             {energyPackages.map((pkg) => (
               <View
                 key={pkg.id}
                 style={[
                   styles.packageCard,
-                  { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border },
-                  pkg.popular && { borderColor: theme.colors.success, backgroundColor: `${theme.colors.success}10` }
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                  pkg.popular && {
+                    borderColor: theme.colors.success,
+                    backgroundColor: `${theme.colors.success}10`,
+                  },
                 ]}
               >
                 {pkg.badge && (
-                  <View style={[
-                    styles.packageBadge,
-                    { backgroundColor: pkg.popular ? theme.colors.success : theme.colors.info }
-                  ]}>
-                    <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
+                  <View
+                    style={[
+                      styles.packageBadge,
+                      {
+                        backgroundColor: pkg.popular
+                          ? theme.colors.success
+                          : theme.colors.info,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      variant="caption"
+                      weight="bold"
+                      color="textInverse"
+                      style={styles.badgeText}
+                    >
                       {pkg.badge}
                     </ThemedText>
                   </View>
                 )}
-                
-                <ThemedText variant="heading2" weight="bold" style={styles.packageXP}>
+
+                <ThemedText
+                  variant="heading2"
+                  weight="bold"
+                  style={styles.packageXP}
+                >
                   +{pkg.energy}
                 </ThemedText>
-                <ThemedText variant="body2" color="textSecondary" weight="semibold" style={styles.packageXPLabel}>
+                <ThemedText
+                  variant="body2"
+                  color="textSecondary"
+                  weight="semibold"
+                  style={styles.packageXPLabel}
+                >
                   Energy
                 </ThemedText>
-                
+
                 <View style={styles.packageCost}>
-                  <ThemedText variant="heading4" weight="bold" color="warning" style={styles.packageGems}>
+                  <ThemedText
+                    variant="heading4"
+                    weight="bold"
+                    color="warning"
+                    style={styles.packageGems}
+                  >
                     {pkg.gems}
                   </ThemedText>
                   <Gem size={16} color={theme.colors.warning} />
-                  <ThemedText variant="caption" color="textSecondary" style={styles.packageGemsLabel}>
+                  <ThemedText
+                    variant="caption"
+                    color="textSecondary"
+                    style={styles.packageGemsLabel}
+                  >
                     Gems
                   </ThemedText>
                 </View>
-                
+
                 <ThemedButton
                   title={
-                    (progress?.meta.energy || 0) >= economy.energy.refillMax 
-                      ? "Energy Full" 
-                      : (progress?.meta.gems || 0) < pkg.gems 
-                        ? "Not enough gems" 
-                        : "Purchase"
+                    (progress?.meta.energy || 0) >= economy.energy.refillMax
+                      ? "Energy Full"
+                      : (progress?.meta.gems || 0) < pkg.gems
+                      ? "Not enough gems"
+                      : "Purchase"
                   }
-                  variant={(progress?.meta.gems || 0) >= pkg.gems && (progress?.meta.energy || 0) < economy.energy.refillMax ? "primary" : "ghost"}
+                  variant={
+                    (progress?.meta.gems || 0) >= pkg.gems &&
+                    (progress?.meta.energy || 0) < economy.energy.refillMax
+                      ? "primary"
+                      : "ghost"
+                  }
                   size="sm"
                   fullWidth
-                  disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems || (progress?.meta.energy || 0) >= economy.energy.refillMax}
+                  disabled={
+                    purchasing ||
+                    (progress?.meta.gems || 0) < pkg.gems ||
+                    (progress?.meta.energy || 0) >= economy.energy.refillMax
+                  }
                   onPress={() => handlePurchaseEnergy(pkg.energy, pkg.gems)}
                   style={styles.purchaseButton}
                 />
@@ -523,58 +676,105 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
         </ThemedCard>
 
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" align="center" style={styles.sectionTitle}>
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            align="center"
+            style={styles.sectionTitle}
+          >
             Hint Packages
           </ThemedText>
-          <ThemedText variant="body2" color="textSecondary" align="center" style={styles.sectionSubtitle}>
+          <ThemedText
+            variant="body2"
+            color="textSecondary"
+            align="center"
+            style={styles.sectionSubtitle}
+          >
             Get help when you're stuck on difficult words!
           </ThemedText>
-          
+
           <View style={styles.packagesGrid}>
             {hintPackages.map((pkg) => (
               <View
                 key={pkg.id}
                 style={[
                   styles.packageCard,
-                  { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border },
-                  pkg.popular && { borderColor: theme.colors.warning, backgroundColor: `${theme.colors.warning}10` }
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                  pkg.popular && {
+                    borderColor: theme.colors.warning,
+                    backgroundColor: `${theme.colors.warning}10`,
+                  },
                 ]}
               >
                 {pkg.badge && (
-                  <View style={[
-                    styles.packageBadge,
-                    { backgroundColor: pkg.popular ? theme.colors.warning : theme.colors.primary }
-                  ]}>
-                    <ThemedText variant="caption" weight="bold" color="textInverse" style={styles.badgeText}>
+                  <View
+                    style={[
+                      styles.packageBadge,
+                      {
+                        backgroundColor: pkg.popular
+                          ? theme.colors.warning
+                          : theme.colors.primary,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      variant="caption"
+                      weight="bold"
+                      color="textInverse"
+                      style={styles.badgeText}
+                    >
                       {pkg.badge}
                     </ThemedText>
                   </View>
                 )}
-                
-                <ThemedText variant="heading2" weight="bold" style={styles.packageXP}>
+
+                <ThemedText
+                  variant="heading2"
+                  weight="bold"
+                  style={styles.packageXP}
+                >
                   +{pkg.hints}
                 </ThemedText>
-                <ThemedText variant="body2" color="textSecondary" weight="semibold" style={styles.packageXPLabel}>
+                <ThemedText
+                  variant="body2"
+                  color="textSecondary"
+                  weight="semibold"
+                  style={styles.packageXPLabel}
+                >
                   HINTS
                 </ThemedText>
-                
+
                 <View style={styles.packageCost}>
-                  <ThemedText variant="heading4" weight="bold" color="warning" style={styles.packageGems}>
+                  <ThemedText
+                    variant="heading4"
+                    weight="bold"
+                    color="warning"
+                    style={styles.packageGems}
+                  >
                     {pkg.gems}
                   </ThemedText>
                   <Gem size={16} color={theme.colors.warning} />
-                  <ThemedText variant="caption" color="textSecondary" style={styles.packageGemsLabel}>
+                  <ThemedText
+                    variant="caption"
+                    color="textSecondary"
+                    style={styles.packageGemsLabel}
+                  >
                     gems
                   </ThemedText>
                 </View>
-                
+
                 <ThemedButton
                   title={
-                    (progress?.meta.gems || 0) < pkg.gems 
-                      ? "Not enough gems" 
+                    (progress?.meta.gems || 0) < pkg.gems
+                      ? "Not enough gems"
                       : "Purchase"
                   }
-                  variant={(progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"}
+                  variant={
+                    (progress?.meta.gems || 0) >= pkg.gems ? "primary" : "ghost"
+                  }
                   size="sm"
                   fullWidth
                   disabled={purchasing || (progress?.meta.gems || 0) < pkg.gems}
@@ -600,36 +800,46 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
         showCloseButton={false}
       >
         <View style={styles.modalContent}>
-          <ThemedText variant="body1" align="center" style={styles.modalMessage}>
+          <ThemedText
+            variant="body1"
+            align="center"
+            style={styles.modalMessage}
+          >
             {modalData?.message}
           </ThemedText>
-          
-          {modalData?.type !== 'error' && modalData?.amount && modalData?.cost && (
-            <View style={styles.modalSummary}>
-              <View style={styles.modalSummaryRow}>
-                <ThemedText variant="body2" color="textSecondary">
-                  {modalData.type === 'xp' ? 'XP Amount:' : 'Energy Amount:'}
-                </ThemedText>
-                <ThemedText variant="body2" weight="semibold" color="primary">
-                  +{modalData.amount}
-                </ThemedText>
-              </View>
-              <View style={styles.modalSummaryRow}>
-                <ThemedText variant="body2" color="textSecondary">
-                  Cost:
-                </ThemedText>
-                <View style={styles.modalCostRow}>
-                  <ThemedText variant="body2" weight="semibold" color="warning">
-                    {modalData.cost}
+
+          {modalData?.type !== "error" &&
+            modalData?.amount &&
+            modalData?.cost && (
+              <View style={styles.modalSummary}>
+                <View style={styles.modalSummaryRow}>
+                  <ThemedText variant="body2" color="textSecondary">
+                    {modalData.type === "xp" ? "XP Amount:" : "Energy Amount:"}
                   </ThemedText>
-                  <Gem size={14} color={theme.colors.warning} />
+                  <ThemedText variant="body2" weight="semibold" color="primary">
+                    +{modalData.amount}
+                  </ThemedText>
+                </View>
+                <View style={styles.modalSummaryRow}>
+                  <ThemedText variant="body2" color="textSecondary">
+                    Cost:
+                  </ThemedText>
+                  <View style={styles.modalCostRow}>
+                    <ThemedText
+                      variant="body2"
+                      weight="semibold"
+                      color="warning"
+                    >
+                      {modalData.cost}
+                    </ThemedText>
+                    <Gem size={14} color={theme.colors.warning} />
+                  </View>
                 </View>
               </View>
-            </View>
-          )}
-          
+            )}
+
           <View style={styles.modalButtons}>
-            {modalData?.type === 'error' ? (
+            {modalData?.type === "error" ? (
               <ThemedButton
                 title="OK"
                 variant="primary"
@@ -667,20 +877,23 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({ onNavigate, fromScreen = "l
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent',
+    position: "relative" as const,
+    backgroundColor: "transparent",
+    ...(Platform.OS === "web"
+      ? { maxWidth: 1600, alignSelf: "center" as const }
+      : {}),
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start' as const,
+    justifyContent: "flex-start" as const,
   },
   backButton: {
-    alignSelf: 'flex-start' as const,
+    alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
   },
   headerCard: {
@@ -691,9 +904,9 @@ const createStyles = (theme: any) => ({
     elevation: 12,
   },
   headerTitle: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginBottom: theme.spacing.xs,
   },
   title: {
@@ -711,21 +924,21 @@ const createStyles = (theme: any) => ({
     gap: theme.spacing.sm,
   },
   gemsDisplay: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: theme.spacing.xs,
   },
   energyDisplay: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: theme.spacing.xs,
   },
   hintsDisplay: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: theme.spacing.xs,
   },
   gemsText: {
@@ -751,21 +964,21 @@ const createStyles = (theme: any) => ({
     marginBottom: theme.spacing.lg,
   },
   packagesGrid: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
     gap: theme.spacing.sm,
-    justifyContent: 'space-between' as const,
+    justifyContent: "space-between" as const,
   },
   packageCard: {
-    width: '48%' as const,
+    width: "48%" as const,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.base,
     borderWidth: 2,
-    alignItems: 'center' as const,
-    position: 'relative' as const,
+    alignItems: "center" as const,
+    position: "relative" as const,
   },
   packageBadge: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: -8,
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: 4,
@@ -783,8 +996,8 @@ const createStyles = (theme: any) => ({
     marginBottom: theme.spacing.sm,
   },
   packageCost: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 4,
     marginBottom: theme.spacing.sm,
   },
@@ -802,34 +1015,34 @@ const createStyles = (theme: any) => ({
   },
   // Modal styles
   modalContent: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
   },
   modalMessage: {
     marginBottom: theme.spacing.lg,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
     lineHeight: 22,
   },
   modalSummary: {
-    width: '100%' as const,
+    width: "100%" as const,
     marginBottom: theme.spacing.lg,
     padding: theme.spacing.base,
     backgroundColor: theme.colors.surfaceSecondary,
     borderRadius: theme.borderRadius.md,
   },
   modalSummaryRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.xs,
   },
   modalCostRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 4,
   },
   modalButtons: {
-    flexDirection: 'row' as const,
-    width: '100%' as const,
+    flexDirection: "row" as const,
+    width: "100%" as const,
     gap: theme.spacing.sm,
   },
   cancelButton: {

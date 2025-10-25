@@ -820,6 +820,9 @@ const createStyles = (theme: any) => ({
     flex: 1,
     position: "relative" as const,
     backgroundColor: "transparent",
+    ...(Platform.OS === "web"
+      ? { maxWidth: 1600, alignSelf: "center" as const }
+      : {}),
   },
   scrollContainer: {
     flex: 1,

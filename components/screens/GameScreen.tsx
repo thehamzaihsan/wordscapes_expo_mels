@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -531,7 +532,14 @@ export default function GameScreen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, alignItems: "center" },
+  container: {
+    flex: 1,
+    padding: 16,
+    alignItems: "center",
+    ...(Platform.OS === "web"
+      ? { maxWidth: 1600, alignSelf: "center" as const }
+      : {}),
+  },
   header: {
     width: "100%",
     flexDirection: "row",

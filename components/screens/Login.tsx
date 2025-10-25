@@ -3,7 +3,7 @@ import { signInEmailPassword } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
 import { ChevronLeft, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StatusBar, View } from "react-native";
+import { Platform, ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "../common/LoadingScreen";
 import ThemedButton from "../ui/ThemedButton";
@@ -26,9 +26,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [isScreenLoading, setIsScreenLoading] = useState<boolean>(true);
 
   useEffect(() => {
-      // Simulate a short delay for a smoother transition
-      const timer = setTimeout(() => setIsScreenLoading(false), 300); 
-      return () => clearTimeout(timer);
+    // Simulate a short delay for a smoother transition
+    const timer = setTimeout(() => setIsScreenLoading(false), 300);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleBackClick = (): void => {
@@ -38,8 +38,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     setShowPassword(false);
   };
 
-  
-
   const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
       showToast("Email & password required", "error");
@@ -47,7 +45,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
     }
     setIsLoading(true);
     try {
-      const res = await signInEmailPassword(email.trim().toLowerCase(), password);
+      const res = await signInEmailPassword(
+        email.trim().toLowerCase(),
+        password
+      );
       if (!res.ok) {
         showToast(res.error || "Login failed", "error");
       } else {
@@ -65,23 +66,29 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const handleForgotPassword = () => onNavigate("forgot-password");
   const handleCreateAccount = (): void => onNavigate("create-account");
 
-    if (isScreenLoading) {
+  if (isScreenLoading) {
     return <LoadingScreen />;
   }
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      <ScrollView 
-        contentContainerStyle={[styles.loginScrollContent, {
-          paddingTop: insets.top + theme.spacing.lg,
-          paddingBottom: insets.bottom + theme.spacing.lg,
-          paddingLeft: insets.left + theme.spacing.lg,
-          paddingRight: insets.right + theme.spacing.lg,
-        }]}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.loginScrollContent,
+          {
+            paddingTop: insets.top + theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Back Button */}
         <ThemedButton
           title="Back"
@@ -93,25 +100,35 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         />
 
         {/* /* Compact Logo */}
-         {/* <View style={styles.compactLogoContainer}> */}
-          {/* REPLACE <Logo /> with the Image component */}
-          {/* <Image
+        {/* <View style={styles.compactLogoContainer}> */}
+        {/* REPLACE <Logo /> with the Image component */}
+        {/* <Image
             source={require("../../../assets/images/WorldSprings_logo_1.png")} 
             style={styles.logoImage} 
             resizeMode="contain" 
           /> */}
-          {/* <WordSpringsText style={{ fontSize: 32 }}> 
+        {/* <WordSpringsText style={{ fontSize: 32 }}> 
             WORDSPRINGS
           </WordSpringsText> */}
         {/* </View>  */}
 
         {/* Login Form Card */}
         <ThemedCard variant="glassStrong" padding="xl" style={styles.loginCard}>
-          <ThemedText variant="heading2" weight="bold" align="center" style={styles.loginTitle}>
+          <ThemedText
+            variant="heading2"
+            weight="bold"
+            align="center"
+            style={styles.loginTitle}
+          >
             Sign In to Play
           </ThemedText>
-          
-          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.loginSubtitle}>
+
+          <ThemedText
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            style={styles.loginSubtitle}
+          >
             Enter your credentials to continue your word journey
           </ThemedText>
 
@@ -141,9 +158,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
               variant="outlined"
               leftIcon={<Lock size={20} color={theme.colors.textSecondary} />}
               rightIcon={
-                showPassword ? 
-                  <EyeOff size={20} color={theme.colors.textSecondary} /> : 
+                showPassword ? (
+                  <EyeOff size={20} color={theme.colors.textSecondary} />
+                ) : (
                   <Eye size={20} color={theme.colors.textSecondary} />
+                )
               }
               onRightIconPress={() => setShowPassword(!showPassword)}
               style={styles.input}
@@ -173,11 +192,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 
           {/* Divider */}
           <View style={styles.dividerContainer}>
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-            <ThemedText variant="caption" color="textSecondary" style={styles.dividerText}>
+            <View
+              style={[styles.divider, { backgroundColor: theme.colors.border }]}
+            />
+            <ThemedText
+              variant="caption"
+              color="textSecondary"
+              style={styles.dividerText}
+            >
               or
             </ThemedText>
-            <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+            <View
+              style={[styles.divider, { backgroundColor: theme.colors.border }]}
+            />
           </View>
 
           {/* Alternative Actions */}
@@ -210,27 +237,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent', // Remove background to show layout image
+    position: "relative" as const,
+    backgroundColor: "transparent", // Remove background to show layout image
+    // Web: center the content with a max width for desktop layouts.
+    // Mobile: take full width so the screen is visible on small devices.
+    ...(Platform.OS === "web"
+      ? { maxWidth: 1600, alignSelf: "center" as const }
+      : {}),
   },
   loginScrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start' as const,
+    justifyContent: "flex-start" as const,
   },
   backButton: {
-    alignSelf: 'flex-start' as const,
+    alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
     paddingHorizontal: 12,
     paddingRight: 15,
   },
   compactLogoContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.xl2,
   },
   loginCard: {
     maxWidth: 400,
-    alignSelf: 'center' as const,
-    width: '100%',
+    alignSelf: "center" as const,
+    width: "100%",
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
@@ -260,11 +292,11 @@ const createStyles = (theme: any) => ({
   },
   forgotButton: {
     marginBottom: theme.spacing.xl,
-    alignSelf: 'center' as const,
+    alignSelf: "center" as const,
   },
   dividerContainer: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     marginVertical: theme.spacing.xl,
   },
   divider: {
@@ -283,11 +315,10 @@ const createStyles = (theme: any) => ({
   bottomSpacing: {
     height: theme.spacing.xl4,
   },
-    logoImage: {  
-    width: 150,   
-    height: 150,  
+  logoImage: {
+    width: 150,
+    height: 150,
   },
-
 });
 
 export default LoginScreen;

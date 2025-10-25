@@ -1,10 +1,18 @@
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { sendSignupOtp } from "@/lib/auth";
 import { isSupabaseEnabled } from "@/lib/supabase";
-import { ChevronLeft, Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  User,
+} from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import {
   Keyboard,
+  Platform,
   ScrollView,
   StatusBar,
   TouchableOpacity,
@@ -113,19 +121,25 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      <ScrollView 
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.scrollContent, {
-          paddingTop: insets.top + theme.spacing.lg,
-          paddingBottom: insets.bottom + theme.spacing.lg,
-          paddingLeft: insets.left + theme.spacing.lg,
-          paddingRight: insets.right + theme.spacing.lg,
-        }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Back Button */}
         <ThemedButton
           title="Back"
@@ -137,12 +151,26 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
         />
 
         {/* Create Account Card */}
-        <ThemedCard variant="glassStrong" padding="xl" style={styles.accountCard}>
-          <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="xl"
+          style={styles.accountCard}
+        >
+          <ThemedText
+            variant="heading2"
+            weight="bold"
+            align="center"
+            style={styles.title}
+          >
             Create Account
           </ThemedText>
-          
-          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+
+          <ThemedText
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            style={styles.subtitle}
+          >
             Join the word journey and save your progress
           </ThemedText>
 
@@ -160,7 +188,9 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   }}
                   placeholder="Enter your name"
                   variant="outlined"
-                  leftIcon={<User size={20} color={theme.colors.textSecondary} />}
+                  leftIcon={
+                    <User size={20} color={theme.colors.textSecondary} />
+                  }
                   returnKeyType="next"
                   onSubmitEditing={() => emailRef.current?.focus()}
                   autoCapitalize="words"
@@ -182,7 +212,9 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   keyboardType="email-address"
                   autoCapitalize="none"
                   variant="outlined"
-                  leftIcon={<Mail size={20} color={theme.colors.textSecondary} />}
+                  leftIcon={
+                    <Mail size={20} color={theme.colors.textSecondary} />
+                  }
                   returnKeyType="next"
                   onSubmitEditing={() => passRef.current?.focus()}
                   style={styles.input}
@@ -202,11 +234,15 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   placeholder="Enter your password"
                   secureTextEntry={!showPassword}
                   variant="outlined"
-                  leftIcon={<Lock size={20} color={theme.colors.textSecondary} />}
+                  leftIcon={
+                    <Lock size={20} color={theme.colors.textSecondary} />
+                  }
                   rightIcon={
-                    showPassword ? 
-                      <EyeOff size={20} color={theme.colors.textSecondary} /> : 
+                    showPassword ? (
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
+                    ) : (
                       <Eye size={20} color={theme.colors.textSecondary} />
+                    )
                   }
                   onRightIconPress={() => setShowPassword(!showPassword)}
                   returnKeyType="done"
@@ -219,7 +255,11 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
               </View>
 
               {/* Avatar Selection */}
-              <ThemedText variant="body1" weight="semibold" style={styles.avatarLabel}>
+              <ThemedText
+                variant="body1"
+                weight="semibold"
+                style={styles.avatarLabel}
+              >
                 Choose Avatar
               </ThemedText>
               <View style={styles.avatarGrid}>
@@ -230,8 +270,16 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                       key={a + i}
                       style={[
                         styles.avatarItem,
-                        { borderColor: active ? theme.colors.primary : theme.colors.border },
-                        { backgroundColor: active ? `${theme.colors.primary}20` : theme.colors.surfaceSecondary }
+                        {
+                          borderColor: active
+                            ? theme.colors.primary
+                            : theme.colors.border,
+                        },
+                        {
+                          backgroundColor: active
+                            ? `${theme.colors.primary}20`
+                            : theme.colors.surfaceSecondary,
+                        },
                       ]}
                       onPress={() => setAvatar(a)}
                     >
@@ -243,7 +291,11 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 
               {/* Error Display */}
               {error && (
-                <ThemedText variant="body2" color="error" style={styles.errorText}>
+                <ThemedText
+                  variant="body2"
+                  color="error"
+                  style={styles.errorText}
+                >
                   {error}
                 </ThemedText>
               )}
@@ -273,21 +325,24 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent',
+    position: "relative" as const,
+    backgroundColor: "transparent",
+    ...(Platform.OS === "web"
+      ? { maxWidth: 1600, alignSelf: "center" as const }
+      : {}),
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start' as const,
+    justifyContent: "flex-start" as const,
   },
   backButton: {
-    alignSelf: 'flex-start' as const,
+    alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
   },
   accountCard: {
     maxWidth: 400,
-    alignSelf: 'center' as const,
-    width: '100%',
+    alignSelf: "center" as const,
+    width: "100%",
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
@@ -311,26 +366,26 @@ const createStyles = (theme: any) => ({
     marginTop: theme.spacing.base,
   },
   avatarGrid: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
-    justifyContent: 'space-between' as const,
+    justifyContent: "space-between" as const,
   },
   avatarItem: {
     width: 56,
     height: 56,
     borderRadius: theme.borderRadius.lg,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     borderWidth: 2,
   },
-  avatarText: { 
-    fontSize: 24
+  avatarText: {
+    fontSize: 24,
   },
   errorText: {
     marginBottom: theme.spacing.base,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
   createButton: {
     marginTop: theme.spacing.sm,
