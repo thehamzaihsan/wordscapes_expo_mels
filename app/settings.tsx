@@ -1,10 +1,10 @@
-import React from "react";
-import { useFocusEffect, useRouter } from 'expo-router';
-import LoadingScreen from "./components/common/LoadingScreen";
-import { useCallback } from 'react';
-import { BackHandler, Platform, View } from 'react-native';
-import BackgroundImage from "./components/common/BackgroundImage";
-import SettingsScreen from './components/screens/SettingsScreen';
+import LoadingScreen from "@/components/common/LoadingScreen";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback } from "react";
+
+import BackgroundImage from "@/components/common/BackgroundImage";
+import SettingsScreen from "@/components/screens/SettingsScreen";
+import { BackHandler, Platform, View } from "react-native";
 
 export default function SettingsRoute() {
   const router = useRouter();
@@ -18,8 +18,11 @@ export default function SettingsRoute() {
         return true; // Prevent default behavior
       };
 
-      if (Platform.OS === 'android') {
-        const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      if (Platform.OS === "android") {
+        const subscription = BackHandler.addEventListener(
+          "hardwareBackPress",
+          onBackPress
+        );
         return () => subscription.remove();
       }
     }, [router])
@@ -28,12 +31,12 @@ export default function SettingsRoute() {
   const handleNavigate = (screen: string) => {
     setIsLoading(true);
     setTimeout(() => {
-      if (screen === 'back') {
+      if (screen === "back") {
         router.back();
-      } else if (screen === 'credits') {
-        router.push('/credits');
-      } else if (screen === 'debug') {
-        router.push('/debug');
+      } else if (screen === "credits") {
+        router.push("/credits");
+      } else if (screen === "debug") {
+        router.push("/debug");
       }
       setTimeout(() => setIsLoading(false), 100);
     }, 600);

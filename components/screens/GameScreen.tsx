@@ -86,7 +86,7 @@ export default function GameScreen({
   const animationsEnabled = settings.animationsEnabled;
 
   const toggleSound = useCallback(() => {
-    updateSetting('soundEnabled', !soundEnabled);
+    updateSetting("soundEnabled", !soundEnabled);
   }, [soundEnabled, updateSetting]);
 
   // Preload sounds
@@ -101,19 +101,19 @@ export default function GameScreen({
       try {
         const [correct, bonus, wrong, complete] = await Promise.all([
           Audio.Sound.createAsync(
-            require("../../../assets/sounds/correct-word.mp3"),
+            require("../../assets/sounds/correct-word.mp3"),
             { volume: 0.7 }
           ),
           Audio.Sound.createAsync(
-            require("../../../assets/sounds/bonus-word.mp3"),
+            require("../../assets/sounds/bonus-word.mp3"),
             { volume: 0.7 }
           ),
           Audio.Sound.createAsync(
-            require("../../../assets/sounds/wrong-word.mp3"),
+            require("../../assets/sounds/wrong-word.mp3"),
             { volume: 0.6 }
           ),
           Audio.Sound.createAsync(
-            require("../../../assets/sounds/level-complete.mp3"),
+            require("../../assets/sounds/level-complete.mp3"),
             { volume: 0.8 }
           ),
         ]);
@@ -307,13 +307,15 @@ export default function GameScreen({
         });
         try {
           await updateGuestSnapshotFromProgress(updated);
-          
+
           // Trigger sync for logged-in users to push the completion to remote immediately
           const {
             data: { session },
           } = await supabase.auth.getSession();
           if (session?.user?.id) {
-            console.info("[COMPLETE] Syncing level completion to remote for logged-in user");
+            console.info(
+              "[COMPLETE] Syncing level completion to remote for logged-in user"
+            );
             await syncUser(session.user.id).catch((syncErr) => {
               console.warn("[COMPLETE] Sync failed but continuing", syncErr);
             });
@@ -362,11 +364,11 @@ export default function GameScreen({
         <>
           {/* Floating letters overlay */}
           {animatingLetters.length > 0 && (
-            <View 
+            <View
               style={[
-                StyleSheet.absoluteFill, 
-                { zIndex: 1000, elevation: 1000 }
-              ]} 
+                StyleSheet.absoluteFill,
+                { zIndex: 1000, elevation: 1000 },
+              ]}
               pointerEvents="none"
             >
               {animatingLetters.map((it) => (
@@ -459,7 +461,7 @@ export default function GameScreen({
                 }}
                 validWords={allValidWords}
                 foundWords={[...foundCrosswordWords, ...foundBonusWords]}
-                crosswordWords={crosswordWords} 
+                crosswordWords={crosswordWords}
                 onHint={handleWordHint}
                 hintsLeft={globalHints}
                 canUsePaidHints={false}
@@ -474,18 +476,29 @@ export default function GameScreen({
 
       <Modal transparent visible={gameComplete} onRequestClose={() => {}}>
         <View style={styles.modalContainer}>
-          <ThemedCard style={styles.modalCard} variant="glassStrong" padding="lg">
-            <ThemedText >LEVEL COMPLETED</ThemedText>
+          <ThemedCard
+            style={styles.modalCard}
+            variant="glassStrong"
+            padding="lg"
+          >
+            <ThemedText>LEVEL COMPLETED</ThemedText>
             {animationsEnabled && (
               <LottieView
-                source={require("../../../assets/animations/level-complete.json")}
+                source={require("../../assets/animations/level-complete.json")}
                 autoPlay
                 loop={false}
                 style={{ width: 200, height: 200 }}
               />
             )}
             {!animationsEnabled && (
-              <View style={{ width: 200, height: 200, justifyContent: 'center', alignItems: 'center' }}>
+              <View
+                style={{
+                  width: 200,
+                  height: 200,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
                 <Text style={{ fontSize: 60 }}>🎉</Text>
               </View>
             )}
@@ -507,8 +520,7 @@ export default function GameScreen({
               onPress={() => {
                 onNavigate?.("levels");
               }}
-            >
-            </ThemedButton>
+            ></ThemedButton>
           </ThemedCard>
         </View>
       </Modal>

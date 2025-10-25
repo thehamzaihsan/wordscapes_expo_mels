@@ -1,3 +1,4 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
 import { sendPasswordResetOtp } from "@/lib/auth";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
 
 export default function ForgotPasswordEmail() {
   const router = useRouter();

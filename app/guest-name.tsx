@@ -1,10 +1,10 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import GuestNameScreen from "@/components/screens/GuestNameScreen";
 import { loadGuestProgress } from "@/hooks/guest-progress";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
-import GuestNameScreen from "./components/screens/GuestNameScreen";
 
 export default function GuestNameRoute() {
   const router = useRouter();
@@ -52,12 +52,13 @@ export default function GuestNameRoute() {
     }, 600);
   };
 
-  if (checking) return (
-    <View style={{ flex: 1 }}>
-      <BackgroundImage />
-      <LoadingScreen />
-    </View>
-  );
+  if (checking)
+    return (
+      <View style={{ flex: 1 }}>
+        <BackgroundImage />
+        <LoadingScreen />
+      </View>
+    );
 
   return (
     <View style={{ flex: 1 }}>

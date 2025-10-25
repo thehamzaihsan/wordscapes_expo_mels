@@ -3,7 +3,7 @@ import { Image } from "react-native";
 export default function Logo() {
   return (
     <Image
-      source={require("../../../assets/images/wordspring.png")}
+      source={require("../../assets/images/wordspring.png")}
       style={{
         width: 350,
         height: 100,
