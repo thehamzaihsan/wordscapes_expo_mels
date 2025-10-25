@@ -1,7 +1,7 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import CreateAccountScreen from "@/components/screens/CreateAccountScreen";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import CreateAccountScreen from "./components/screens/CreateAccountScreen";
 
 export default function CreateAccountRoute() {
   const router = useRouter();

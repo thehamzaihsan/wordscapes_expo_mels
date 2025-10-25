@@ -1,9 +1,9 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import XPShopScreen from "@/components/screens/XPShopScreen";
 import { useRouter } from "expo-router";
 import React from "react";
 import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
-import XPShopScreen from "./components/screens/XPShopScreen";
 
 export default function XPShopRoute() {
   const router = useRouter();

@@ -1,5 +1,5 @@
-import PurchaseSuccessModal from "@/app/components/ui/PurchaseSuccessModal";
 import PayPalModal from "@/app/lib/PayPalModal";
+import PurchaseSuccessModal from "@/components/ui/PurchaseSuccessModal";
 import { loadGuestProgress, saveGuestProgress } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { mutateLocalStats, syncUser } from "@/lib/sync";

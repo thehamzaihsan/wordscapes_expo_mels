@@ -1,9 +1,9 @@
-import React from "react";
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import DebugScreen from "@/components/screens/DebugScreen";
 import { useRouter } from "expo-router";
+import React from "react";
 import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
-import DebugScreen from "./components/screens/DebugScreen";
 
 export default function DebugRoute() {
   const router = useRouter();

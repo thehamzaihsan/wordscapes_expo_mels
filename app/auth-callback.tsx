@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator, Text } from "react-native";
-import { useRouter } from "expo-router";
-import { supabase } from "@/lib/supabase";
+import BackgroundImage from "@/components/common/BackgroundImage";
 import { remapGuestSnapshotToUser } from "@/lib/guestSnapshot";
+import { supabase } from "@/lib/supabase";
 import { syncUser } from "@/lib/sync";
-import BackgroundImage from "./components/common/BackgroundImage";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 
 export default function AuthCallbackScreen() {
   const router = useRouter();

@@ -1,35 +1,35 @@
-import { ImageBackground, Platform, View } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from "@/hooks/useTheme";
+import { ImageBackground, Platform, View } from "react-native";
 
 export default function BackgroundImage() {
   const { themeName } = useTheme();
-  const isDark = themeName === 'dark' || themeName === 'game';
+  const isDark = themeName === "dark" || themeName === "game";
 
   const overlay = isDark ? (
     <View
       style={{
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
       }}
     />
   ) : null;
 
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     // Use CSS background-image for web - much more reliable
     return (
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
+          width: "100%",
+          height: "100%",
           zIndex: -1,
           // @ts-ignore - web-specific styles
-          backgroundImage: 'url(/images/default_background.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
+          backgroundImage: "url(/images/default_background.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       >
         {overlay}
@@ -40,11 +40,11 @@ export default function BackgroundImage() {
   // Use ImageBackground component for mobile platforms to support overlay
   return (
     <ImageBackground
-      source={require('../../../images/default_background.jpg')}
+      source={require("../../images/default_background.jpg")}
       style={{
-        width: '100%',
-        height: '100%',
-        position: 'absolute',
+        width: "100%",
+        height: "100%",
+        position: "absolute",
         top: 0,
         left: 0,
         zIndex: -1,

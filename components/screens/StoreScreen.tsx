@@ -25,6 +25,7 @@ import {
   NativeSyntheticEvent,
   Platform,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -119,10 +120,10 @@ export default function CombinedStoreScreen() {
       "Ocean of Gems",
     ];
     const images = [
-      require("../../../assets/images/gem1.png"),
-      require("../../../assets/images/gem2.png"),
-      require("../../../assets/images/gem3.png"),
-      require("../../../assets/images/gem4.png"),
+      require("../../assets/images/gem1.png"),
+      require("../../assets/images/gem2.png"),
+      require("../../assets/images/gem3.png"),
+      require("../../assets/images/gem4.png"),
     ];
 
     return purchaseOptions.map((option, index) => ({
@@ -240,7 +241,7 @@ export default function CombinedStoreScreen() {
         animated: false,
       });
     }
-  }, [activeTab]);
+  }, [activeTab, shopIndex, subscriptionIndex]);
 
   // FIX: Handle scroll events properly for both mobile and web
   const handleScroll =
@@ -320,7 +321,10 @@ export default function CombinedStoreScreen() {
         <ThemedCard
           variant="glassStrong"
           padding="lg"
-          style={[styles.offerCard, { backgroundColor: offer.bgColor }]}
+          style={StyleSheet.flatten([
+            styles.offerCard,
+            { backgroundColor: offer.bgColor },
+          ])}
         >
           {offer.popular && (
             <View style={[styles.popularBadge, styles.enhancedBadge]}>
@@ -372,7 +376,7 @@ export default function CombinedStoreScreen() {
           </ThemedText>
 
           <View style={styles.imageContainer}>
-            <View style={styles.imageGlow} />
+            <View style={styles.imageGlow as any} />
             <Image
               source={offer.image}
               style={styles.offerImage}
@@ -452,10 +456,10 @@ export default function CombinedStoreScreen() {
         <ThemedCard
           variant="glassStrong"
           padding="lg"
-          style={[
+          style={StyleSheet.flatten([
             styles.subscriptionCard,
             { backgroundColor: subscription.bgColor },
-          ]}
+          ])}
         >
           {subscription.popular && (
             <View style={[styles.popularBadge, styles.enhancedBadge]}>
@@ -641,7 +645,7 @@ export default function CombinedStoreScreen() {
         {/* Tab Selector */}
         <ThemedCard
           variant="glassStrong"
-          padding="xs"
+          padding="sm"
           style={styles.tabContainer}
         >
           <View style={styles.tabSelector}>
@@ -660,7 +664,10 @@ export default function CombinedStoreScreen() {
                 />
               }
               onPress={() => setActiveTab("shop")}
-              style={[styles.tab, activeTab === "shop" && styles.activeTab]}
+              style={StyleSheet.flatten([
+                styles.tab,
+                activeTab === "shop" && styles.activeTab,
+              ])}
             />
             <ThemedButton
               title="PREMIUM"
@@ -677,10 +684,10 @@ export default function CombinedStoreScreen() {
                 />
               }
               onPress={() => setActiveTab("subscription")}
-              style={[
+              style={StyleSheet.flatten([
                 styles.tab,
                 activeTab === "subscription" && styles.activeTab,
-              ]}
+              ])}
             />
           </View>
         </ThemedCard>
@@ -692,7 +699,7 @@ export default function CombinedStoreScreen() {
             <>
               <TouchableOpacity
                 style={[
-                  styles.navButton,
+                  styles.navButton as any,
                   styles.navButtonLeft,
                   {
                     opacity: currentIndex === 0 ? 0.5 : 1,
@@ -713,7 +720,7 @@ export default function CombinedStoreScreen() {
 
               <TouchableOpacity
                 style={[
-                  styles.navButton,
+                  styles.navButton as any,
                   styles.navButtonRight,
                   {
                     opacity: currentIndex === items.length - 1 ? 0.5 : 1,

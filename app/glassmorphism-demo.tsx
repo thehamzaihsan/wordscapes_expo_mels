@@ -1,7 +1,7 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import GlassmorphismDemo from "@/components/screens/GlassmorphismDemo";
 import { useRouter } from "expo-router";
 import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import GlassmorphismDemo from "./components/screens/GlassmorphismDemo";
 
 export default function GlassmorphismDemoRoute() {
   const router = useRouter();

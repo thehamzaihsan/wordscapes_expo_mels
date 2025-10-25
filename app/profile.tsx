@@ -1,11 +1,11 @@
-import React from "react";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { showToast } from "@/lib/toast";
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import PlayerProfileScreen from "@/components/screens/PlayerProfileScreen";
 import { signOutSupabase } from "@/lib/auth";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
-import PlayerProfileScreen from "./components/screens/PlayerProfileScreen";
+import { showToast } from "@/lib/toast";
+import { useRouter } from "expo-router";
+import React from "react";
+import { View } from "react-native";
 
 export default function ProfileRoute() {
   const router = useRouter();
@@ -33,7 +33,10 @@ export default function ProfileRoute() {
     <View style={{ flex: 1 }}>
       <BackgroundImage />
       {isLoading && <LoadingScreen progress={0.7} />}
-      <PlayerProfileScreen onNavigate={handleNavigate} onLogout={handleLogout} />
+      <PlayerProfileScreen
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+      />
     </View>
   );
 }

@@ -1,18 +1,25 @@
-import { useTheme, useThemedStyles } from '@/hooks/useTheme';
-import { useRouter } from 'expo-router';
-import { ChevronLeft, Code, Github, Heart, Linkedin, Mail } from 'lucide-react-native';
+import ThemedButton from "@/components/ui/ThemedButton";
+import ThemedCard from "@/components/ui/ThemedCard";
+import ThemedText from "@/components/ui/ThemedText";
+import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import { useRouter } from "expo-router";
+import {
+  ChevronLeft,
+  Code,
+  Github,
+  Heart,
+  Linkedin,
+  Mail,
+} from "lucide-react-native";
 import {
   Image,
   Linking,
   ScrollView,
   StatusBar,
   TouchableOpacity,
-  View
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ThemedButton from './components/ui/ThemedButton';
-import ThemedCard from './components/ui/ThemedCard';
-import ThemedText from './components/ui/ThemedText';
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Developer {
   id: number;
@@ -34,7 +41,7 @@ const developers: Developer[] = [
     bio: "Full-stack developer with 5+ years of experience in React Native and mobile app development. Passionate about creating beautiful, user-friendly interfaces.",
     github: "https://github.com/thehamzaihsan",
     linkedin: "https://linkedin.com/in/hamzaihsan",
-    email: "hamza@hamzaihsan.me"
+    email: "hamza@hamzaihsan.me",
   },
   {
     id: 2,
@@ -44,7 +51,7 @@ const developers: Developer[] = [
     bio: "Specialized in game algorithms and crossword generation. Expert in TypeScript and performance optimization for mobile gaming experiences.",
     github: "https://github.com/sarahchen",
     linkedin: "https://linkedin.com/in/sarahchen",
-    email: "sarah@wordscapes.app"
+    email: "sarah@wordscapes.app",
   },
   {
     id: 3,
@@ -54,8 +61,8 @@ const developers: Developer[] = [
     bio: "Backend architect with expertise in Supabase, cloud infrastructure, and real-time data synchronization. Ensures smooth gameplay across all devices.",
     github: "https://github.com/mrodriguez",
     linkedin: "https://linkedin.com/in/mrodriguez",
-    email: "michael@wordscapes.app"
-  }
+    email: "michael@wordscapes.app",
+  },
 ];
 
 export default function CreditsScreen() {
@@ -71,12 +78,17 @@ export default function CreditsScreen() {
         await Linking.openURL(url);
       }
     } catch (error) {
-      console.error('Failed to open URL:', error);
+      console.error("Failed to open URL:", error);
     }
   };
 
   const renderDeveloper = (developer: Developer) => (
-    <ThemedCard key={developer.id} variant="glassStrong" padding="lg" style={styles.developerCard}>
+    <ThemedCard
+      key={developer.id}
+      variant="glassStrong"
+      padding="lg"
+      style={styles.developerCard}
+    >
       {/* Developer Image */}
       <View style={styles.imageContainer}>
         <View style={styles.imageWrapper}>
@@ -87,13 +99,29 @@ export default function CreditsScreen() {
 
       {/* Developer Info */}
       <View style={styles.developerInfo}>
-        <ThemedText variant="heading3" weight="bold" align="center" style={styles.developerName}>
+        <ThemedText
+          variant="heading3"
+          weight="bold"
+          align="center"
+          style={styles.developerName}
+        >
           {developer.name}
         </ThemedText>
-        <ThemedText variant="body1" weight="semibold" align="center" color="primary" style={styles.developerTitle}>
+        <ThemedText
+          variant="body1"
+          weight="semibold"
+          align="center"
+          color="primary"
+          style={styles.developerTitle}
+        >
           {developer.title}
         </ThemedText>
-        <ThemedText variant="body2" align="center" color="textSecondary" style={styles.developerBio}>
+        <ThemedText
+          variant="body2"
+          align="center"
+          color="textSecondary"
+          style={styles.developerBio}
+        >
           {developer.bio}
         </ThemedText>
       </View>
@@ -130,18 +158,24 @@ export default function CreditsScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      <ScrollView 
-        contentContainerStyle={[styles.scrollContent, {
-          paddingTop: insets.top + theme.spacing.lg,
-          paddingBottom: insets.bottom + theme.spacing.lg,
-          paddingLeft: insets.left + theme.spacing.lg,
-          paddingRight: insets.right + theme.spacing.lg,
-        }]}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Back Button */}
         <ThemedButton
           title="Back"
@@ -153,10 +187,19 @@ export default function CreditsScreen() {
         />
 
         {/* Header Card */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="lg"
+          style={styles.headerCard}
+        >
           <View style={styles.headerTitle}>
             <Code size={24} color={theme.colors.primary} />
-            <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+            <ThemedText
+              variant="heading2"
+              weight="bold"
+              align="center"
+              style={styles.title}
+            >
               Credits
             </ThemedText>
           </View>
@@ -165,9 +208,18 @@ export default function CreditsScreen() {
               Meet the amazing team behind Wordscapes
             </ThemedText>
             <View style={styles.heartContainer}>
-              <ThemedText variant="body2" color="textSecondary">Made with </ThemedText>
-              <Heart size={16} color={theme.colors.error} style={styles.heartIcon} />
-              <ThemedText variant="body2" color="textSecondary"> by our dedicated team</ThemedText>
+              <ThemedText variant="body2" color="textSecondary">
+                Made with{" "}
+              </ThemedText>
+              <Heart
+                size={16}
+                color={theme.colors.error}
+                style={styles.heartIcon}
+              />
+              <ThemedText variant="body2" color="textSecondary">
+                {" "}
+                by our dedicated team
+              </ThemedText>
             </View>
           </View>
         </ThemedCard>
@@ -178,12 +230,27 @@ export default function CreditsScreen() {
         </View>
 
         {/* Thank You Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.thankYouCard}>
-          <ThemedText variant="heading3" weight="bold" align="center" style={styles.thankYouTitle}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="lg"
+          style={styles.thankYouCard}
+        >
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            align="center"
+            style={styles.thankYouTitle}
+          >
             Thank You for Playing! 🎮
           </ThemedText>
-          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.thankYouText}>
-            We hope you're enjoying Wordscapes. Your feedback and support help us create better gaming experiences.
+          <ThemedText
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            style={styles.thankYouText}
+          >
+            We hope you're enjoying Wordscapes. Your feedback and support help
+            us create better gaming experiences.
           </ThemedText>
           <View style={styles.versionInfo}>
             <ThemedText variant="caption" align="center" color="textTertiary">
@@ -202,15 +269,15 @@ export default function CreditsScreen() {
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent',
+    position: "relative" as const,
+    backgroundColor: "transparent",
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start' as const,
+    justifyContent: "flex-start" as const,
   },
   backButton: {
-    alignSelf: 'flex-start' as const,
+    alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
   },
   headerCard: {
@@ -221,21 +288,21 @@ const createStyles = (theme: any) => ({
     elevation: 12,
   },
   headerTitle: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginBottom: theme.spacing.sm,
   },
   title: {
     marginLeft: theme.spacing.sm,
   },
   headerSubtitle: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
   },
   heartContainer: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginTop: theme.spacing.xs,
   },
   heartIcon: {
@@ -251,18 +318,18 @@ const createStyles = (theme: any) => ({
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '20',
+    borderColor: theme.colors.primary + "20",
   },
   imageContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.lg,
   },
   imageWrapper: {
-    position: 'relative' as const,
+    position: "relative" as const,
     width: 100,
     height: 100,
     borderRadius: 50,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
     borderWidth: 3,
     borderColor: theme.colors.primary,
     shadowOpacity: 0.3,
@@ -271,20 +338,20 @@ const createStyles = (theme: any) => ({
     elevation: 8,
   },
   developerImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover' as const,
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover" as const,
   },
   imageOverlay: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.colors.primary + '10',
+    backgroundColor: theme.colors.primary + "10",
   },
   developerInfo: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.lg,
   },
   developerName: {
@@ -295,20 +362,20 @@ const createStyles = (theme: any) => ({
   },
   developerBio: {
     lineHeight: 20,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
   socialLinks: {
-    flexDirection: 'row' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "center" as const,
     gap: theme.spacing.md,
   },
   socialButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: theme.colors.surface + '20',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    backgroundColor: theme.colors.surface + "20",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderWidth: 1,
     borderColor: theme.colors.border,
     shadowOpacity: 0.1,
@@ -322,7 +389,7 @@ const createStyles = (theme: any) => ({
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
     borderWidth: 1,
-    borderColor: theme.colors.success + '20',
+    borderColor: theme.colors.success + "20",
   },
   thankYouTitle: {
     marginBottom: theme.spacing.md,
@@ -334,7 +401,7 @@ const createStyles = (theme: any) => ({
   versionInfo: {
     paddingTop: theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border + '40',
+    borderTopColor: theme.colors.border + "40",
   },
   bottomSpacing: {
     height: theme.spacing.xl4,
