@@ -13,11 +13,8 @@ import { getLocalSnapshot, pullRemote } from "@/lib/sync";
 import type { LocalUserSnapshot } from "@/lib/syncTypes";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-<<<<<<< HEAD
+
 import { Platform, StatusBar, StyleSheet, View } from "react-native";
-=======
-import { StatusBar, StyleSheet, View } from "react-native";
->>>>>>> 7ac9e8b22b7d1c58f1fb131b116adcba9d8beca7
 
 // Import the level components
 import LoadingScreen from "../common/LoadingScreen";
