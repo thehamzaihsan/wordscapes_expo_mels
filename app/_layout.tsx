@@ -247,19 +247,19 @@ export default function RootLayout() {
     }
   }, [appIsReady]);
 
-  // While the app is not ready, we show your custom splash screen.
-  // This will now be visible for a minimum of 3 seconds.
-  if (!appIsReady) {
-    return <AnimatedSplashScreen />;
-  }
-
-  // When ready, render the main app and attach the callback to hide the native splash.
+  // Wrap both the splash screen and the main app content with ThemeProvider
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
-          <LayoutWithInsets />
-          <ToastHost />
+          {appIsReady ? (
+            <>
+              <LayoutWithInsets />
+              <ToastHost />
+            </>
+          ) : (
+            <AnimatedSplashScreen />
+          )}
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
