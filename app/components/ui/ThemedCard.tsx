@@ -72,23 +72,14 @@ const Card: React.FC<CardProps> = ({
           backgroundColor: theme.colors.glassmorphismBackground,
           borderColor: theme.colors.glassmorphismBorder,
           borderWidth: 1,
-          shadowColor: theme.name === 'light' ? '#000' : '#fff',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: theme.name === 'light' ? 0.08 : 0.15,
-          shadowRadius: 6,
-          
-          elevation: 4,
+          ...theme.shadows.base,
         };
       case 'glassStrong':
         return {
           backgroundColor: theme.colors.glassmorphismBackgroundStrong,
           borderColor: theme.colors.glassmorphismBorderStrong,
           borderWidth: 1.5,
-          shadowColor: theme.name === 'light' ? '#000' : '#fff',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: theme.name === 'light' ? 0.12 : 0.25,
-          shadowRadius: 8,
-          elevation: 6,
+          ...theme.shadows.lg,
         };
       default:
         return {

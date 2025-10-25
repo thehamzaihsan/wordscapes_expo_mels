@@ -1,143 +1,455 @@
-{  "Mountain": [
+{
+  "Mountain": [
     {
       "level": 1,
       "difficulty": "easy",
       "baseWord": "TOP",
-      "letters": ["T", "O", "P"],
-      "crosswordWords": ["TOP", "POT", "OPT", "TO"]
+      "letters": [
+        "T",
+        "O",
+        "P"
+      ],
+      "crosswordWords": [
+        "TOP",
+        "POT",
+        "OPT",
+        "TO"
+      ]
     },
     {
       "level": 2,
       "difficulty": "easy",
       "baseWord": "PEAK",
-      "letters": ["P", "E", "A", "K"],
-      "crosswordWords": ["PEAK",  "APE", "PEA"]
+      "letters": [
+        "P",
+        "E",
+        "A",
+        "K"
+      ],
+      "crosswordWords": [
+        "PEAK",
+        "APE",
+        "PEA"
+      ]
     },
     {
       "level": 3,
       "difficulty": "easy",
       "baseWord": "HILL",
-      "letters": ["H", "I", "L", "L"],
-      "crosswordWords": ["HILL", "ILL", "HI"]
+      "letters": [
+        "H",
+        "I",
+        "L",
+        "L"
+      ],
+      "crosswordWords": [
+        "HILL",
+        "ILL",
+        "HI"
+      ]
     },
     {
       "level": 4,
       "difficulty": "easy",
       "baseWord": "ROPE",
-      "letters": ["R", "O", "P", "E"],
-      "crosswordWords": ["ROPE", "PORE", "REPO", "ORE", "PRO", "ROE"]
+      "letters": [
+        "R",
+        "O",
+        "P",
+        "E"
+      ],
+      "crosswordWords": [
+        "ROPE",
+        "PORE",
+        "REPO",
+        "ORE",
+        "PRO",
+        "ROE"
+      ]
     },
     {
       "level": 5,
       "difficulty": "easy",
       "baseWord": "COLD",
-      "letters": ["C", "O", "L", "D"],
-      "crosswordWords": ["COLD", "CLOD", "OLD", "COD", "COL"]
+      "letters": [
+        "C",
+        "O",
+        "L",
+        "D"
+      ],
+      "crosswordWords": [
+        "COLD",
+        "CLOD",
+        "OLD",
+        "COD",
+        "COL"
+      ]
     },
     {
       "level": 6,
       "difficulty": "medium",
       "baseWord": "SNOW",
-      "letters": ["S", "N", "O", "W"],
-      "crosswordWords": ["SNOW", "SOWN", "OWN", "NOW", "SON", "WON"]
+      "letters": [
+        "S",
+        "N",
+        "O",
+        "W"
+      ],
+      "crosswordWords": [
+        "SNOW",
+        "SOWN",
+        "OWN",
+        "NOW",
+        "SON",
+        "WON"
+      ]
     },
     {
       "level": 7,
       "difficulty": "medium",
       "baseWord": "STONE",
-      "letters": ["S", "T", "O", "N", "E"],
-      "crosswordWords": ["STONE", "TONE", "NOTE", "NEST", "NOSE", "SENT", "SET", "ONE", "TOE", "TEN"]
+      "letters": [
+        "S",
+        "T",
+        "O",
+        "N",
+        "E"
+      ],
+      "crosswordWords": [
+        "STONE",
+        "TONE",
+        "NOTE",
+        "NEST",
+        "NOSE",
+        "SENT",
+        "SET",
+        "ONE",
+        "TOE",
+        "TEN"
+      ]
     },
     {
       "level": 8,
       "difficulty": "medium",
       "baseWord": "TRAIL",
-      "letters": ["T", "R", "A", "I", "L"],
-      "crosswordWords": ["TRAIL", "TRIAL", "TAIL", "RAIL", "LAIR", "AIR", "RAT", "TAR", "ART", "LIT"]
+      "letters": [
+        "T",
+        "R",
+        "A",
+        "I",
+        "L"
+      ],
+      "crosswordWords": [
+        "TRAIL",
+        "TRIAL",
+        "TAIL",
+        "RAIL",
+        "LAIR",
+        "AIR",
+        "RAT",
+        "TAR",
+        "ART",
+        "LIT"
+      ]
     },
     {
       "level": 9,
       "difficulty": "medium",
       "baseWord": "CLIMB",
-      "letters": ["C", "L", "I", "M", "B"],
-      "crosswordWords": ["CLIMB", "LIMB", "MIL", "LIB"]
+      "letters": [
+        "C",
+        "L",
+        "I",
+        "M",
+        "B"
+      ],
+      "crosswordWords": [
+        "CLIMB",
+        "LIMB",
+        "MIL",
+        "LIB"
+      ]
     },
     {
       "level": 10,
       "difficulty": "medium",
       "baseWord": "RIDGE",
-      "letters": ["R", "I", "D", "G", "E"],
-      "crosswordWords": ["RIDGE", "DIRGE", "RIDE", "DIRE", "GRID", "RED", "DIG", "RID", "IRE"]
+      "letters": [
+        "R",
+        "I",
+        "D",
+        "G",
+        "E"
+      ],
+      "crosswordWords": [
+        "RIDGE",
+        "DIRGE",
+        "RIDE",
+        "DIRE",
+        "GRID",
+        "RED",
+        "DIG",
+        "RID",
+        "IRE"
+      ]
     },
     {
       "level": 11,
       "difficulty": "hard",
       "baseWord": "CABIN",
-      "letters": ["C", "A", "B", "I", "N"],
-      "crosswordWords": ["CABIN", "CAIN", "BAN", "CAN", "CAB", "BIN", "NAB"]
+      "letters": [
+        "C",
+        "A",
+        "B",
+        "I",
+        "N"
+      ],
+      "crosswordWords": [
+        "CABIN",
+        "CAIN",
+        "BAN",
+        "CAN",
+        "CAB",
+        "BIN",
+        "NAB"
+      ]
     },
     {
       "level": 12,
       "difficulty": "hard",
       "baseWord": "CLOUD",
-      "letters": ["C", "L", "O", "U", "D"],
-      "crosswordWords": ["CLOUD", "COULD", "COLD", "OLD", "CUD", "DUO", "COD"]
+      "letters": [
+        "C",
+        "L",
+        "O",
+        "U",
+        "D"
+      ],
+      "crosswordWords": [
+        "CLOUD",
+        "COULD",
+        "COLD",
+        "OLD",
+        "CUD",
+        "DUO",
+        "COD"
+      ]
     },
     {
       "level": 13,
       "difficulty": "hard",
       "baseWord": "FOREST",
-      "letters": ["F", "O", "R", "E", "S", "T"],
-      "crosswordWords": ["FOREST", "STORE", "REST", "SOFT", "FORE", "TORE", "SET", "ORE", "FOR"]
+      "letters": [
+        "F",
+        "O",
+        "R",
+        "E",
+        "S",
+        "T"
+      ],
+      "crosswordWords": [
+        "FOREST",
+        "STORE",
+        "REST",
+        "SOFT",
+        "FORE",
+        "TORE",
+        "SET",
+        "ORE",
+        "FOR"
+      ]
     },
     {
       "level": 14,
       "difficulty": "hard",
       "baseWord": "SUMMIT",
-      "letters": ["S", "U", "M", "M", "I", "T"],
-      "crosswordWords": ["SUMMIT", "MIST", "MUST", "SUIT", "SIT", "SUM", "ITS"]
+      "letters": [
+        "S",
+        "U",
+        "M",
+        "M",
+        "I",
+        "T"
+      ],
+      "crosswordWords": [
+        "SUMMIT",
+        "MIST",
+        "MUST",
+        "SUIT",
+        "SIT",
+        "SUM",
+        "ITS"
+      ]
     },
     {
       "level": 15,
       "difficulty": "hard",
       "baseWord": "VALLEY",
-      "letters": ["V", "A", "L", "L", "E", "Y"],
-      "crosswordWords": ["VALLEY", "ALLEY", "VALE", "LEVY", "YELL", "ALL", "ALE", "LAY", "YEA"]
+      "letters": [
+        "V",
+        "A",
+        "L",
+        "L",
+        "E",
+        "Y"
+      ],
+      "crosswordWords": [
+        "VALLEY",
+        "ALLEY",
+        "VALE",
+        "LEVY",
+        "YELL",
+        "ALL",
+        "ALE",
+        "LAY",
+        "YEA"
+      ]
     },
     {
       "level": 16,
       "difficulty": "expert",
       "baseWord": "FROZEN",
-      "letters": ["F", "R", "O", "Z", "E", "N"],
-      "crosswordWords": ["FROZEN", "ZONE", "ZERO", "FORE", "ONE", "ORE", "FOR", "NOR", "FOE"]
+      "letters": [
+        "F",
+        "R",
+        "O",
+        "Z",
+        "E",
+        "N"
+      ],
+      "crosswordWords": [
+        "FROZEN",
+        "ZONE",
+        "ZERO",
+        "FORE",
+        "ONE",
+        "ORE",
+        "FOR",
+        "NOR",
+        "FOE"
+      ]
     },
     {
       "level": 17,
       "difficulty": "expert",
       "baseWord": "TRAVEL",
-      "letters": ["T", "R", "A", "V", "E", "L"],
-      "crosswordWords": ["TRAVEL", "ALERT", "ALTER", "LATER", "VALE", "RATE", "REAL", "TALE", "TEAR", "VET", "EAR", "ART", "RAT", "ATE", "LET", "EAT"]
+      "letters": [
+        "T",
+        "R",
+        "A",
+        "V",
+        "E",
+        "L"
+      ],
+      "crosswordWords": [
+        "TRAVEL",
+        "ALERT",
+        "ALTER",
+        "LATER",
+        "VALE",
+        "RATE",
+        "REAL",
+        "TALE",
+        "TEAR",
+        "VET",
+        "EAR",
+        "ART",
+        "RAT",
+        "ATE",
+        "LET",
+        "EAT"
+      ]
     },
     {
       "level": 18,
       "difficulty": "expert",
       "baseWord": "ALPINE",
-      "letters": ["A", "L", "P", "I", "N", "E"],
-      "crosswordWords": ["ALPINE", "PLAIN", "PANEL", "PLANE", "ALIEN", "PINE", "PAIN", "PALE", "LEAP", "LINE", "NAIL", "PEN", "NAP", "LAP", "LIE", "NIL"]
+      "letters": [
+        "A",
+        "L",
+        "P",
+        "I",
+        "N",
+        "E"
+      ],
+      "crosswordWords": [
+        "ALPINE",
+        "PLAIN",
+        "PANEL",
+        "PLANE",
+        "ALIEN",
+        "PINE",
+        "PAIN",
+        "PALE",
+        "LEAP",
+        "LINE",
+        "NAIL",
+        "PEN",
+        "NAP",
+        "LAP",
+        "LIE",
+        "NIL"
+      ]
     },
     {
       "level": 19,
       "difficulty": "expert",
       "baseWord": "GLACIER",
-      "letters": ["G", "L", "A", "C", "I", "E", "R"],
-      "crosswordWords": ["GLACIER", "GRACE", "CLEAR", "LARGE", "CIGAR", "RACE", "CARE", "LACE", "RICE", "REAL", "CAGE", "GEAR", "RAGE", "ACRE", "CAR", "ARC", "AGE", "EAR", "ICE", "LIE", "LEG"]
+      "letters": [
+        "G",
+        "L",
+        "A",
+        "C",
+        "I",
+        "E",
+        "R"
+      ],
+      "crosswordWords": [
+        "GLACIER",
+        "GRACE",
+        "CLEAR",
+        "LARGE",
+        "CIGAR",
+        "RACE",
+        "CARE",
+        "LACE",
+        "RICE",
+        "REAL",
+        "CAGE",
+        "GEAR",
+        "RAGE",
+        "ACRE",
+        "CAR",
+        "ARC",
+        "AGE",
+        "EAR",
+        "ICE",
+        "LIE",
+        "LEG"
+      ]
     },
     {
       "level": 20,
       "difficulty": "expert",
       "baseWord": "HORIZON",
-      "letters": ["H", "O", "R", "I", "Z", "O", "N"],
-      "crosswordWords": ["HORIZON", "RHINO", "HORN", "IRON", "ZINC", "NOON", "ZERO", "NOR", "ION", "ZOO"]
+      "letters": [
+        "H",
+        "O",
+        "R",
+        "I",
+        "Z",
+        "O",
+        "N"
+      ],
+      "crosswordWords": [
+        "HORIZON",
+        "RHINO",
+        "HORN",
+        "IRON",
+        "NOR",
+        "ION",
+        "ZOO"
+      ]
     }
   ],
   "Ocean": [
@@ -145,141 +457,531 @@
       "level": 1,
       "difficulty": "easy",
       "baseWord": "SEA",
-      "letters": ["S", "E", "A"],
-      "crosswordWords": ["SEA", "SAE", "AS"]
+      "letters": [
+        "S",
+        "E",
+        "A"
+      ],
+      "crosswordWords": [
+        "SEA",
+        "SAE",
+        "AS"
+      ]
     },
     {
       "level": 2,
       "difficulty": "easy",
       "baseWord": "FISH",
-      "letters": ["F", "I", "S", "H"],
-      "crosswordWords": ["FISH", "HIS", "IF"]
+      "letters": [
+        "F",
+        "I",
+        "S",
+        "H"
+      ],
+      "crosswordWords": [
+        "FISH",
+        "HIS",
+        "IF"
+      ]
     },
     {
       "level": 3,
       "difficulty": "easy",
       "baseWord": "WAVE",
-      "letters": ["W", "A", "V", "E"],
-      "crosswordWords": ["WAVE", "WEAVE", "WAVE", "AVE", "WE"]
+      "letters": [
+        "W",
+        "A",
+        "V",
+        "E"
+      ],
+      "crosswordWords": [
+        "WAVE",
+        "WAVE",
+        "AVE",
+        "WE"
+      ]
     },
     {
       "level": 4,
       "difficulty": "easy",
       "baseWord": "BLUE",
-      "letters": ["B", "L", "U", "E"],
-      "crosswordWords": ["BLUE", "BULB", "BLUE", "CUB", "CUE"]
+      "letters": [
+        "B",
+        "L",
+        "U",
+        "E"
+      ],
+      "crosswordWords": [
+        "BLUE",
+        "BLUE"
+      ]
     },
     {
       "level": 5,
       "difficulty": "easy",
       "baseWord": "SAND",
-      "letters": ["S", "A", "N", "D"],
-      "crosswordWords": ["SAND", "DANS", "AND", "SAD", "DAN", "ADS"]
+      "letters": [
+        "S",
+        "A",
+        "N",
+        "D"
+      ],
+      "crosswordWords": [
+        "SAND",
+        "AND",
+        "SAD",
+        "DAN",
+        "ADS"
+      ]
     },
     {
       "level": 6,
       "difficulty": "medium",
       "baseWord": "CORAL",
-      "letters": ["C", "O", "R", "A", "L"],
-      "crosswordWords": ["CORAL", "CAROL", "ORAL", "COLA", "COAL", "CAR", "ARC", "OAR"]
+      "letters": [
+        "C",
+        "O",
+        "R",
+        "A",
+        "L"
+      ],
+      "crosswordWords": [
+        "CORAL",
+        "CAROL",
+        "ORAL",
+        "COLA",
+        "COAL",
+        "CAR",
+        "ARC",
+        "OAR"
+      ]
     },
     {
       "level": 7,
       "difficulty": "medium",
       "baseWord": "SHELL",
-      "letters": ["S", "H", "E", "L", "L"],
-      "crosswordWords": ["SHELL", "HELL", "SELL", "SHE", "HE"]
+      "letters": [
+        "S",
+        "H",
+        "E",
+        "L",
+        "L"
+      ],
+      "crosswordWords": [
+        "SHELL",
+        "HELL",
+        "SELL",
+        "SHE",
+        "HE"
+      ]
     },
     {
       "level": 8,
       "difficulty": "medium",
       "baseWord": "PEARL",
-      "letters": ["P", "E", "A", "R", "L"],
-      "crosswordWords": ["PEARL", "REAP", "REAL", "PALE", "PEAR", "LEAP", "EARL", "EAR", "PEA", "PAL", "ALE", "ARE"]
+      "letters": [
+        "P",
+        "E",
+        "A",
+        "R",
+        "L"
+      ],
+      "crosswordWords": [
+        "PEARL",
+        "REAP",
+        "REAL",
+        "PALE",
+        "PEAR",
+        "LEAP",
+        "EARL",
+        "EAR",
+        "PEA",
+        "PAL",
+        "ALE",
+        "ARE"
+      ]
     },
     {
       "level": 9,
       "difficulty": "medium",
       "baseWord": "BEACH",
-      "letters": ["B", "E", "A", "C", "H"],
-      "crosswordWords": ["BEACH", "EACH", "ACHE", "CAB", "ACE", "BAD"]
+      "letters": [
+        "B",
+        "E",
+        "A",
+        "C",
+        "H"
+      ],
+      "crosswordWords": [
+        "BEACH",
+        "EACH",
+        "ACHE",
+        "CAB",
+        "ACE"
+      ]
     },
     {
       "level": 10,
       "difficulty": "medium",
       "baseWord": "WHALE",
-      "letters": ["W", "H", "A", "L", "E"],
-      "crosswordWords": ["WHALE", "HEAL", "HALE", "WALE", "AWHILE", "LAW", "AWE", "ALE", "HEW"]
+      "letters": [
+        "W",
+        "H",
+        "A",
+        "L",
+        "E"
+      ],
+      "crosswordWords": [
+        "WHALE",
+        "HEAL",
+        "HALE",
+        "WALE",
+        "LAW",
+        "AWE",
+        "ALE",
+        "HEW"
+      ]
     },
     {
       "level": 11,
       "difficulty": "hard",
       "baseWord": "OCEAN",
-      "letters": ["O", "C", "E", "A", "N"],
-      "crosswordWords": ["OCEAN", "CANOE", "ACNE", "CONE", "CANE", "ONCE", "CAN", "ONE", "ACE", "CON"]
+      "letters": [
+        "O",
+        "C",
+        "E",
+        "A",
+        "N"
+      ],
+      "crosswordWords": [
+        "OCEAN",
+        "CANOE",
+        "ACNE",
+        "CONE",
+        "CANE",
+        "ONCE",
+        "CAN",
+        "ONE",
+        "ACE",
+        "CON"
+      ]
     },
     {
       "level": 12,
       "difficulty": "hard",
       "baseWord": "ISLAND",
-      "letters": ["I", "S", "L", "A", "N", "D"],
-      "crosswordWords": ["ISLAND", "LANDS", "SNAIL", "NAILS", "SAIL", "SAND", "LAND", "SAID", "NAIL", "LAID", "LIDS", "AIDS", "LID", "LID", "AID", "SAD", "LAD"]
+      "letters": [
+        "I",
+        "S",
+        "L",
+        "A",
+        "N",
+        "D"
+      ],
+      "crosswordWords": [
+        "ISLAND",
+        "LANDS",
+        "SNAIL",
+        "NAILS",
+        "SAIL",
+        "SAND",
+        "LAND",
+        "SAID",
+        "NAIL",
+        "LAID",
+        "LIDS",
+        "AIDS",
+        "LID",
+        "LID",
+        "AID",
+        "SAD",
+        "LAD"
+      ]
     },
     {
       "level": 13,
       "difficulty": "hard",
       "baseWord": "SAILOR",
-      "letters": ["S", "A", "I", "L", "O", "R"],
-      "crosswordWords": ["SAILOR", "SOLAR", "RAILS", "LIARS", "LIAR", "LAIR", "ORAL", "RAIL", "SAIL", "AIR", "OIL", "SIR"]
+      "letters": [
+        "S",
+        "A",
+        "I",
+        "L",
+        "O",
+        "R"
+      ],
+      "crosswordWords": [
+        "SAILOR",
+        "SOLAR",
+        "RAILS",
+        "LIARS",
+        "LIAR",
+        "LAIR",
+        "ORAL",
+        "RAIL",
+        "SAIL",
+        "AIR",
+        "OIL",
+        "SIR"
+      ]
     },
     {
       "level": 14,
       "difficulty": "hard",
       "baseWord": "ANCHOR",
-      "letters": ["A", "N", "C", "H", "O", "R"],
-      "crosswordWords": ["ANCHOR", "RANCH", "ARCH", "CORN", "CHAR", "ROAN", "HORN", "CAN", "CAR", "OAR", "ARC", "RAN", "NOR"]
+      "letters": [
+        "A",
+        "N",
+        "C",
+        "H",
+        "O",
+        "R"
+      ],
+      "crosswordWords": [
+        "ANCHOR",
+        "RANCH",
+        "ARCH",
+        "CORN",
+        "CHAR",
+        "ROAN",
+        "HORN",
+        "CAN",
+        "CAR",
+        "OAR",
+        "ARC",
+        "RAN",
+        "NOR"
+      ]
     },
     {
       "level": 15,
       "difficulty": "hard",
       "baseWord": "VESSEL",
-      "letters": ["V", "E", "S", "S", "E", "L"],
-      "crosswordWords": ["VESSEL", "ELVES", "LESS", "ELSE", "EELS", "SEES", "EVE", "SEE", "EEL"]
+      "letters": [
+        "V",
+        "E",
+        "S",
+        "S",
+        "E",
+        "L"
+      ],
+      "crosswordWords": [
+        "VESSEL",
+        "ELVES",
+        "LESS",
+        "ELSE",
+        "EELS",
+        "SEES",
+        "EVE",
+        "SEE",
+        "EEL"
+      ]
     },
     {
       "level": 16,
       "difficulty": "expert",
       "baseWord": "MARINE",
-      "letters": ["M", "A", "R", "I", "N", "E"],
-      "crosswordWords": ["MARINE", "REMAIN", "MINER", "MAIN", "MINE", "RAIN", "MANE", "NAME", "NEAR", "MEAN", "MAN", "EAR", "AIR", "ARE", "RAN"]
+      "letters": [
+        "M",
+        "A",
+        "R",
+        "I",
+        "N",
+        "E"
+      ],
+      "crosswordWords": [
+        "MARINE",
+        "REMAIN",
+        "MINER",
+        "MAIN",
+        "MINE",
+        "RAIN",
+        "MANE",
+        "NAME",
+        "NEAR",
+        "MEAN",
+        "MAN",
+        "EAR",
+        "AIR",
+        "ARE",
+        "RAN"
+      ]
     },
     {
       "level": 17,
       "difficulty": "expert",
       "baseWord": "DOLPHIN",
-      "letters": ["D", "O", "L", "P", "H", "I", "N"],
-      "crosswordWords": ["DOLPHIN", "HOLD", "POND", "LION", "LIPID", "LOAD", "LOIN", "PIN", "DIP", "LID", "HIP", "NOD", "OLD", "OIL"]
+      "letters": [
+        "D",
+        "O",
+        "L",
+        "P",
+        "H",
+        "I",
+        "N"
+      ],
+      "crosswordWords": [
+        "DOLPHIN",
+        "HOLD",
+        "POND",
+        "LION",
+        "LOIN",
+        "PIN",
+        "DIP",
+        "LID",
+        "HIP",
+        "NOD",
+        "OLD",
+        "OIL"
+      ]
     },
     {
       "level": 18,
       "difficulty": "expert",
       "baseWord": "CURRENT",
-      "letters": ["C", "U", "R", "R", "E", "N", "T"],
-      "crosswordWords": ["CURRENT", "CUTER", "CURE", "TUNER", "TRUE", "TURN", "RENT", "CENT", "RUNT", "CUT", "NET", "RUN", "TEN", "NUT", "CUE"]
+      "letters": [
+        "C",
+        "U",
+        "R",
+        "R",
+        "E",
+        "N",
+        "T"
+      ],
+      "crosswordWords": [
+        "CURRENT",
+        "CUTER",
+        "CURE",
+        "TUNER",
+        "TRUE",
+        "TURN",
+        "RENT",
+        "CENT",
+        "RUNT",
+        "CUT",
+        "NET",
+        "RUN",
+        "TEN",
+        "NUT",
+        "CUE"
+      ]
     },
     {
       "level": 19,
       "difficulty": "expert",
       "baseWord": "TREASURE",
-      "letters": ["T", "R", "E", "A", "S", "U", "R", "E"],
-      "crosswordWords": ["TREASURE", "EATERS", "ARETES", "TEASER", "EASTER", "SEATER", "STARE", "TEARS", "RATES", "ERASE", "TREES", "STEER", "REUSE", "RESET", "EATER", "URATE", "SURE", "RUST", "REST", "RATE", "EARS", "TREE", "STAR", "SEAT", "TEAR", "EAST", "SEER", "USER", "SEA", "EAR", "ATE", "EAT", "ART", "SET", "ARE", "USE", "RAT", "SAT", "TEA"]
+      "letters": [
+        "T",
+        "R",
+        "E",
+        "A",
+        "S",
+        "U",
+        "R",
+        "E"
+      ],
+      "crosswordWords": [
+        "TREASURE",
+        "EATERS",
+        "ARETES",
+        "TEASER",
+        "EASTER",
+        "SEATER",
+        "STARE",
+        "TEARS",
+        "RATES",
+        "ERASE",
+        "TREES",
+        "STEER",
+        "REUSE",
+        "RESET",
+        "EATER",
+        "URATE",
+        "SURE",
+        "RUST",
+        "REST",
+        "RATE",
+        "EARS",
+        "TREE",
+        "STAR",
+        "SEAT",
+        "TEAR",
+        "EAST",
+        "SEER",
+        "USER",
+        "SEA",
+        "EAR",
+        "ATE",
+        "EAT",
+        "ART",
+        "SET",
+        "ARE",
+        "USE",
+        "RAT",
+        "SAT",
+        "TEA"
+      ]
     },
     {
       "level": 20,
       "difficulty": "expert",
       "baseWord": "SUBMARINE",
-      "letters": ["S", "U", "B", "M", "A", "R", "I", "N", "E"],
-      "crosswordWords": ["SUBMARINE", "REMAINS", "MANURE", "URBANE", "MARINE", "BRAINS", "REMAIN", "MAINER", "RUMBA", "BEARS", "RUINS", "BEANS", "REBUS", "BASIN", "MINES", "SNARE", "BRAIN", "BEAM", "BEAR", "RAIN", "BURN", "MINE", "NAME", "SURE", "SAME", "MEAN", "MAIN", "BANE", "NEAR", "BARN", "BRIM", "BARE", "RUN", "SUM", "MAN", "SIR", "BAN", "EAR", "SEA", "BUS", "RIM", "ARE", "AIR"]
+      "letters": [
+        "S",
+        "U",
+        "B",
+        "M",
+        "A",
+        "R",
+        "I",
+        "N",
+        "E"
+      ],
+      "crosswordWords": [
+        "SUBMARINE",
+        "REMAINS",
+        "MANURE",
+        "URBANE",
+        "MARINE",
+        "BRAINS",
+        "REMAIN",
+        "MAINER",
+        "RUMBA",
+        "BEARS",
+        "RUINS",
+        "BEANS",
+        "REBUS",
+        "BASIN",
+        "MINES",
+        "SNARE",
+        "BRAIN",
+        "BEAM",
+        "BEAR",
+        "RAIN",
+        "BURN",
+        "MINE",
+        "NAME",
+        "SURE",
+        "SAME",
+        "MEAN",
+        "MAIN",
+        "BANE",
+        "NEAR",
+        "BARN",
+        "BRIM",
+        "BARE",
+        "RUN",
+        "SUM",
+        "MAN",
+        "SIR",
+        "BAN",
+        "EAR",
+        "SEA",
+        "BUS",
+        "RIM",
+        "ARE",
+        "AIR"
+      ]
     }
   ],
   "Forest": [
@@ -287,139 +989,545 @@
       "level": 1,
       "difficulty": "easy",
       "baseWord": "OAK",
-      "letters": ["O", "A", "K"],
-      "crosswordWords": ["OAK", "KOA", "OK"]
+      "letters": [
+        "O",
+        "A",
+        "K"
+      ],
+      "crosswordWords": [
+        "OAK",
+        "KOA",
+        "OK"
+      ]
     },
     {
       "level": 2,
       "difficulty": "easy",
       "baseWord": "TREE",
-      "letters": ["T", "R", "E", "E"],
-      "crosswordWords": ["TREE", "TREE", "TEE", "RE"]
+      "letters": [
+        "T",
+        "R",
+        "E",
+        "E"
+      ],
+      "crosswordWords": [
+        "TREE",
+        "TREE",
+        "TEE",
+        "RE"
+      ]
     },
     {
       "level": 3,
       "difficulty": "easy",
       "baseWord": "LEAF",
-      "letters": ["L", "E", "A", "F"],
-      "crosswordWords": ["LEAF", "FLEA", "FALE", "ALE", "ELF"]
+      "letters": [
+        "L",
+        "E",
+        "A",
+        "F"
+      ],
+      "crosswordWords": [
+        "LEAF",
+        "FLEA",
+        "ALE",
+        "ELF"
+      ]
     },
     {
       "level": 4,
       "difficulty": "easy",
       "baseWord": "BIRD",
-      "letters": ["B", "I", "R", "D"],
-      "crosswordWords": ["BIRD", "DRIB", "RID", "BID", "RIB"]
+      "letters": [
+        "B",
+        "I",
+        "R",
+        "D"
+      ],
+      "crosswordWords": [
+        "BIRD",
+        "RID",
+        "BID",
+        "RIB"
+      ]
     },
     {
       "level": 5,
       "difficulty": "easy",
       "baseWord": "DEER",
-      "letters": ["D", "E", "E", "R"],
-      "crosswordWords": ["DEER", "REED", "REDE", "RED", "ERE"]
+      "letters": [
+        "D",
+        "E",
+        "E",
+        "R"
+      ],
+      "crosswordWords": [
+        "DEER",
+        "REED",
+        "RED",
+        "ERE"
+      ]
     },
     {
       "level": 6,
       "difficulty": "medium",
       "baseWord": "GREEN",
-      "letters": ["G", "R", "E", "E", "N"],
-      "crosswordWords": ["GREEN", "GENRE", "GENE", "NEER", "ERE"]
+      "letters": [
+        "G",
+        "R",
+        "E",
+        "E",
+        "N"
+      ],
+      "crosswordWords": [
+        "GREEN",
+        "GENRE",
+        "GENE",
+        "ERE"
+      ]
     },
     {
       "level": 7,
       "difficulty": "medium",
       "baseWord": "TRUNK",
-      "letters": ["T", "R", "U", "N", "K"],
-      "crosswordWords": ["TRUNK", "TURNK", "TURN", "RUNT", "RUNK", "RUN", "NUT", "TUN"]
+      "letters": [
+        "T",
+        "R",
+        "U",
+        "N",
+        "K"
+      ],
+      "crosswordWords": [
+        "TRUNK",
+        "TURN",
+        "RUNT",
+        "RUN",
+        "NUT",
+        "TUN"
+      ]
     },
     {
       "level": 8,
       "difficulty": "medium",
       "baseWord": "PLANT",
-      "letters": ["P", "L", "A", "N", "T"],
-      "crosswordWords": ["PLANT", "PLIANT", "PLAIN", "PANT", "PLAN", "SLANT", "ANT", "LAP", "TAN", "PAT", "PAN", "TAP", "NAP", "LAT", "APT"]
+      "letters": [
+        "P",
+        "L",
+        "A",
+        "N",
+        "T"
+      ],
+      "crosswordWords": [
+        "PLANT",
+        "PANT",
+        "PLAN",
+        "ANT",
+        "LAP",
+        "TAN",
+        "PAT",
+        "PAN",
+        "TAP",
+        "NAP",
+        "LAT",
+        "APT"
+      ]
     },
     {
       "level": 9,
       "difficulty": "medium",
       "baseWord": "WOODS",
-      "letters": ["W", "O", "O", "D", "S"],
-      "crosswordWords": ["WOODS", "WOOD", "WOOS", "SOD", "WOO", "DO", "SO", "OW"]
+      "letters": [
+        "W",
+        "O",
+        "O",
+        "D",
+        "S"
+      ],
+      "crosswordWords": [
+        "WOODS",
+        "WOOD",
+        "WOOS",
+        "SOD",
+        "WOO",
+        "DO",
+        "SO",
+        "OW"
+      ]
     },
     {
       "level": 10,
       "difficulty": "medium",
       "baseWord": "ACORN",
-      "letters": ["A", "C", "O", "R", "N"],
-      "crosswordWords": ["ACORN", "NARCO", "RACON", "CORN", "CRAN", "ROAN", "CAN", "CAR", "ARC", "OAR", "ORC", "RAN", "NOR"]
+      "letters": [
+        "A",
+        "C",
+        "O",
+        "R",
+        "N"
+      ],
+      "crosswordWords": [
+        "ACORN",
+        "CORN",
+        "ROAN",
+        "CAN",
+        "CAR",
+        "ARC",
+        "OAR",
+        "ORC",
+        "RAN",
+        "NOR"
+      ]
     },
     {
       "level": 11,
       "difficulty": "hard",
       "baseWord": "BRANCH",
-      "letters": ["B", "R", "A", "N", "C", "H"],
-      "crosswordWords": ["BRANCH", "RANCH", "ARCH", "BRAN", "CHAR", "BARN", "CRAB", "BAN", "CAR", "CAN", "RAN", "ARC", "CAB", "BAR"]
+      "letters": [
+        "B",
+        "R",
+        "A",
+        "N",
+        "C",
+        "H"
+      ],
+      "crosswordWords": [
+        "BRANCH",
+        "RANCH",
+        "ARCH",
+        "BRAN",
+        "CHAR",
+        "BARN",
+        "CRAB",
+        "BAN",
+        "CAR",
+        "CAN",
+        "RAN",
+        "ARC",
+        "CAB",
+        "BAR"
+      ]
     },
     {
       "level": 12,
       "difficulty": "hard",
       "baseWord": "NATURE",
-      "letters": ["N", "A", "T", "U", "R", "E"],
-      "crosswordWords": ["NATURE", "URATE", "TUNER", "URINE", "NEAR", "TUNE", "TRUE", "RATE", "TUNA", "TURN", "EARN", "TEAR", "NEAT", "RAN", "TAN", "ANT", "EAR", "RUT", "NUT", "NET", "TEN", "ATE", "EAT", "ARE", "ART", "RAT"]
+      "letters": [
+        "N",
+        "A",
+        "T",
+        "U",
+        "R",
+        "E"
+      ],
+      "crosswordWords": [
+        "NATURE",
+        "URATE",
+        "TUNER",
+        "NEAR",
+        "TUNE",
+        "TRUE",
+        "RATE",
+        "TUNA",
+        "TURN",
+        "EARN",
+        "TEAR",
+        "NEAT",
+        "RAN",
+        "TAN",
+        "ANT",
+        "EAR",
+        "RUT",
+        "NUT",
+        "NET",
+        "TEN",
+        "ATE",
+        "EAT",
+        "ARE",
+        "ART",
+        "RAT"
+      ]
     },
     {
       "level": 13,
       "difficulty": "hard",
       "baseWord": "FLOWER",
-      "letters": ["F", "L", "O", "W", "E", "R"],
-      "crosswordWords": ["FLOWER", "FOWLER", "LOWER", "FLOWE", "WOLF", "FLEW", "FLOW", "FORE", "ROLE", "LORE", "FROE", "ROW", "LOW", "OWL", "FEW", "FOR", "ORE", "OWE", "FOE"]
+      "letters": [
+        "F",
+        "L",
+        "O",
+        "W",
+        "E",
+        "R"
+      ],
+      "crosswordWords": [
+        "FLOWER",
+        "LOWER",
+        "WOLF",
+        "FLEW",
+        "FLOW",
+        "FORE",
+        "ROLE",
+        "LORE",
+        "ROW",
+        "LOW",
+        "OWL",
+        "FEW",
+        "FOR",
+        "ORE",
+        "OWE",
+        "FOE"
+      ]
     },
     {
       "level": 14,
       "difficulty": "hard",
       "baseWord": "FOREST",
-      "letters": ["F", "O", "R", "E", "S", "T"],
-      "crosswordWords": ["FOREST", "FOSTER", "SOFTER", "STORE", "FORES", "FORTE", "FROST", "REST", "SOFT", "TORE", "FORE", "FEST", "SORE", "SET", "ORE", "FOR", "TOE"]
+      "letters": [
+        "F",
+        "O",
+        "R",
+        "E",
+        "S",
+        "T"
+      ],
+      "crosswordWords": [
+        "FOREST",
+        "FOSTER",
+        "STORE",
+        "FORTE",
+        "FROST",
+        "REST",
+        "SOFT",
+        "TORE",
+        "FORE",
+        "FEST",
+        "SORE",
+        "SET",
+        "ORE",
+        "FOR",
+        "TOE"
+      ]
     },
     {
       "level": 15,
       "difficulty": "hard",
       "baseWord": "HABITAT",
-      "letters": ["H", "A", "B", "I", "T", "A", "T"],
-      "crosswordWords": ["HABITAT", "BATH", "BAIT", "THAT", "HABIT", "HAT", "BAT", "BIT", "TAB", "HIT", "AIT"]
+      "letters": [
+        "H",
+        "A",
+        "B",
+        "I",
+        "T",
+        "A",
+        "T"
+      ],
+      "crosswordWords": [
+        "HABITAT",
+        "BATH",
+        "BAIT",
+        "THAT",
+        "HABIT",
+        "HAT",
+        "BAT",
+        "BIT",
+        "TAB",
+        "HIT"
+      ]
     },
     {
       "level": 16,
       "difficulty": "expert",
       "baseWord": "WILDLIFE",
-      "letters": ["W", "I", "L", "D", "L", "I", "F", "E"],
-      "crosswordWords": ["WILDLIFE", "FIELD", "WILD", "LIFE", "WIFE", "WIDE", "WIELD", "FILE", "IDLE", "FLEW", "FLED", "FILL", "DELI", "WELL", "WILL", "LID", "LED", "LIE", "FEW"]
+      "letters": [
+        "W",
+        "I",
+        "L",
+        "D",
+        "L",
+        "I",
+        "F",
+        "E"
+      ],
+      "crosswordWords": [
+        "WILDLIFE",
+        "FIELD",
+        "WILD",
+        "LIFE",
+        "WIFE",
+        "WIDE",
+        "WIELD",
+        "FILE",
+        "IDLE",
+        "FLEW",
+        "FLED",
+        "FILL",
+        "DELI",
+        "WELL",
+        "WILL",
+        "LID",
+        "LED",
+        "LIE",
+        "FEW"
+      ]
     },
     {
       "level": 17,
       "difficulty": "expert",
       "baseWord": "WOODLAND",
-      "letters": ["W", "O", "O", "D", "L", "A", "N", "D"],
-      "crosswordWords": ["WOODLAND", "DOWNLOAD", "WOOL", "WOOD", "LAND", "LOAD", "LOAN", "DOWN", "DAWN", "WAND", "WALD", "NOW", "OWL", "OLD", "LAD", "LOW", "DAD", "ADD", "AND", "NOD"]
+      "letters": [
+        "W",
+        "O",
+        "O",
+        "D",
+        "L",
+        "A",
+        "N",
+        "D"
+      ],
+      "crosswordWords": [
+        "WOODLAND",
+        "DOWNLOAD",
+        "WOOL",
+        "WOOD",
+        "LAND",
+        "LOAD",
+        "LOAN",
+        "DOWN",
+        "DAWN",
+        "WAND",
+        "NOW",
+        "OWL",
+        "OLD",
+        "LAD",
+        "LOW",
+        "DAD",
+        "ADD",
+        "AND",
+        "NOD"
+      ]
     },
     {
       "level": 18,
       "difficulty": "expert",
       "baseWord": "CREATURE",
-      "letters": ["C", "R", "E", "A", "T", "U", "R", "E"],
-      "crosswordWords": ["CREATURE", "CREATE", "CRATE", "CATER", "CARTER", "TRACER", "URATE", "ACUTE", "RACE", "CARE", "RATE", "CURE", "CART", "TEAR", "TRUE", "TREE", "CAR", "CAT", "ARC", "ART", "EAR", "RAT", "ATE", "EAT", "CUT", "CUE", "RUE", "RUT", "ARE"]
+      "letters": [
+        "C",
+        "R",
+        "E",
+        "A",
+        "T",
+        "U",
+        "R",
+        "E"
+      ],
+      "crosswordWords": [
+        "CREATURE",
+        "CREATE",
+        "CRATE",
+        "CATER",
+        "CARTER",
+        "TRACER",
+        "URATE",
+        "ACUTE",
+        "RACE",
+        "CARE",
+        "RATE",
+        "CURE",
+        "CART",
+        "TEAR",
+        "TRUE",
+        "TREE",
+        "CAR",
+        "CAT",
+        "ARC",
+        "ART",
+        "EAR",
+        "RAT",
+        "ATE",
+        "EAT",
+        "CUT",
+        "CUE",
+        "RUE",
+        "RUT",
+        "ARE"
+      ]
     },
     {
       "level": 19,
       "difficulty": "expert",
       "baseWord": "MEADOW",
-      "letters": ["M", "E", "A", "D", "O", "W"],
-      "crosswordWords": ["MEADOW", "MOWED", "MODE", "MADE", "DOME", "DAME", "WADE", "WOAD", "OWE", "MAD", "DAM", "MAW", "MOW", "OWL", "MAD", "WOE"]
+      "letters": [
+        "M",
+        "E",
+        "A",
+        "D",
+        "O",
+        "W"
+      ],
+      "crosswordWords": [
+        "MEADOW",
+        "MOWED",
+        "MODE",
+        "MADE",
+        "DOME",
+        "DAME",
+        "WADE",
+        "WOAD",
+        "OWE",
+        "MAD",
+        "DAM",
+        "MAW",
+        "MOW",
+        "MAD",
+        "WOE"
+      ]
     },
     {
       "level": 20,
       "difficulty": "expert",
       "baseWord": "ECOSYSTEM",
-      "letters": ["E", "C", "O", "S", "Y", "S", "T", "E", "M"],
-      "crosswordWords": ["ECOSYSTEM", "SYSTEM", "COMETS", "COSTLY", "MOSSY", "COMET", "STEAM", "COSTS", "MEATY", "MESSY", "COMES", "CYSTS", "TOMES", "MEETS", "COSTS", "COTS", "SECT", "COME", "SOME", "MOST", "MESS", "YEST", "COST", "MOSS", "MEET", "STEM", "TOMB", "COT", "SET", "MET", "SEE", "YES", "TOE", "SO"]
-    }]}
+      "letters": [
+        "E",
+        "C",
+        "O",
+        "S",
+        "Y",
+        "S",
+        "T",
+        "E",
+        "M"
+      ],
+      "crosswordWords": [
+        "ECOSYSTEM",
+        "SYSTEM",
+        "COMETS",
+        "MOSSY",
+        "COMET",
+        "COSTS",
+        "MESSY",
+        "COMES",
+        "CYSTS",
+        "TOMES",
+        "MEETS",
+        "COSTS",
+        "COTS",
+        "SECT",
+        "COME",
+        "SOME",
+        "MOST",
+        "MESS",
+        "COST",
+        "MOSS",
+        "MEET",
+        "STEM",
+        "COT",
+        "SET",
+        "MET",
+        "SEE",
+        "YES",
+        "TOE",
+        "SO"
+      ]
+    }
+  ]
+}

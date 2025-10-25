@@ -1,6 +1,19 @@
-import { Image, Platform, View } from 'react-native'
+import { ImageBackground, Platform, View } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function BackgroundImage() {
+  const { themeName } = useTheme();
+  const isDark = themeName === 'dark' || themeName === 'game';
+
+  const overlay = isDark ? (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      }}
+    />
+  ) : null;
+
   if (Platform.OS === 'web') {
     // Use CSS background-image for web - much more reliable
     return (
@@ -18,23 +31,27 @@ export default function BackgroundImage() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
         }}
-      />
-    )
+      >
+        {overlay}
+      </View>
+    );
   }
 
-  // Use Image component for mobile platforms
+  // Use ImageBackground component for mobile platforms to support overlay
   return (
-    <Image
+    <ImageBackground
       source={require('../../../images/default_background.jpg')}
-      style={{ 
-        width: '100%', 
-        height: '100%', 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        zIndex: -1
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: -1,
       }}
       resizeMode="cover"
-    />
-  )
+    >
+      {overlay}
+    </ImageBackground>
+  );
 }

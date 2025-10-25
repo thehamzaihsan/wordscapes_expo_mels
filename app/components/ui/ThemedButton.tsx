@@ -72,11 +72,7 @@ const Button: React.FC<ButtonProps> = ({
               ? theme.colors.glassmorphismBorder
               : theme.colors.glassmorphismBorderStrong,
             borderWidth: 1,
-            shadowColor: theme.name === 'light' ? '#000' : '#fff',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: theme.name === 'light' ? 0.1 : 0.2,
-            shadowRadius: 8,
-            elevation: 6,
+            ...theme.shadows.lg,
           },
           text: { color: theme.colors.text },
         };
@@ -143,11 +139,7 @@ const Button: React.FC<ButtonProps> = ({
               ? theme.colors.glassmorphismBorder 
               : theme.colors.glassmorphismBorder,
             borderWidth: 1,
-            shadowColor: theme.name === 'light' ? '#000' : '#fff',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: theme.name === 'light' ? 0.08 : 0.15,
-            shadowRadius: 6,
-            elevation: 4,
+            ...theme.shadows.base,
           },
           text: { color: disabled ? theme.colors.textTertiary : theme.colors.text },
         };
@@ -161,11 +153,7 @@ const Button: React.FC<ButtonProps> = ({
               ? theme.colors.glassmorphismBorder 
               : theme.colors.glassmorphismBorderStrong,
             borderWidth: 1.5,
-            shadowColor: theme.name === 'light' ? '#000' : '#fff',
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: theme.name === 'light' ? 0.12 : 0.25,
-            shadowRadius: 10,
-            elevation: 8,
+            ...theme.shadows.xl,
           },
           text: { color: disabled ? theme.colors.textTertiary : theme.colors.text },
         };
@@ -179,7 +167,7 @@ const Button: React.FC<ButtonProps> = ({
               ? theme.colors.glassmorphismBorder 
               : theme.colors.primary,
             borderWidth: 2,
-            shadowColor: theme.colors.primary,
+            shadowColor: '#000',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.2,
             shadowRadius: 12,

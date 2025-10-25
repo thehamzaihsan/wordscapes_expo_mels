@@ -30,7 +30,7 @@ export default function AnimatedSplashScreen() {
         resizeMode="contain"
       />
       <View>
-      <WordSpringsText style={{ fontFamily: 'Cormorant-Garamond', fontSize: 48, paddingTop: 20 }}>
+      <WordSpringsText style={{ fontFamily: 'Pacifico', fontSize: 48, paddingTop: 20 }}>
         WORD SPRINGS
       </WordSpringsText>
       </View>
