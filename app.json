@@ -32,7 +32,7 @@
   [
     "expo-splash-screen",
     {
-      "image": "assets/images/WorldSprings_logo_1.png", // <-- Use your new image
+     
       "resizeMode": "cover",                       // <-- Change to "cover"
       "backgroundColor": "#6757f7",                 // <-- A dark fallback color from your image
       "dark": {

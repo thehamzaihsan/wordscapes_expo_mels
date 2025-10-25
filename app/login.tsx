@@ -6,6 +6,7 @@ import BackgroundImage from "./components/common/BackgroundImage";
 import LoadingScreen from "./components/common/LoadingScreen";
 import LoginScreen from "./components/screens/Login";
 
+
 export default function LoginRoute() {
   const router = useRouter();
   const { session, loading } = useSupabaseAuth();

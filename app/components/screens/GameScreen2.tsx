@@ -3,19 +3,19 @@ import LottieView from "lottie-react-native";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
 import {
-  completeLevelAndPersist,
-  loadGuestProgress,
-  type GuestProgressPayload,
+    completeLevelAndPersist,
+    loadGuestProgress,
+    type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { useSettings } from "@/hooks/useSettings";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
@@ -122,9 +122,7 @@ export default function GameScreen({
         bonusSoundRef.current = bonus.sound;
         wrongSoundRef.current = wrong.sound;
         completeSoundRef.current = complete.sound;
-      } catch(error){
-         console.error("Failed to load sounds", error);
-      }
+      } catch {}
     })();
     return () => {
       mounted = false;

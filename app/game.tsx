@@ -3,7 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { BackHandler, Platform, View } from "react-native";
 import BackgroundImage from "./components/common/BackgroundImage";
-import GameScreen from "./components/screens/GameScreen";
+import GameScreen from "./components/screens/GameScreen2";
 
 export default function GameRoute() {
   const router = useRouter();
