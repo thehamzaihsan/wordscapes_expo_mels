@@ -1,5 +1,5 @@
-import economy from "@/constants/economy.json";
 import { Difficulty } from "@/constants/difficulty";
+import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
 import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
@@ -13,13 +13,13 @@ import { getLocalSnapshot, pullRemote } from "@/lib/sync";
 import type { LocalUserSnapshot } from "@/lib/syncTypes";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { Platform, StatusBar, StyleSheet, View } from "react-native";
 
 // Import the level components
+import LoadingScreen from "../common/LoadingScreen";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
 import LevelHeader from "../levels/LevelHeader";
-import LoadingScreen from "../common/LoadingScreen";
 
 interface LevelData {
   level: number;
@@ -124,27 +124,29 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             );
             const preferredName =
               authDisplayName || snapshot?.profile?.username || undefined;
-            
+
             // Calculate player level from snapshot if available
             let playerLevel = 0;
             if (snapshot?.stats?.xp) {
-              const { derivePlayerLevel } = await import("@/hooks/guest-progress");
+              const { derivePlayerLevel } = await import(
+                "@/hooks/guest-progress"
+              );
               const derived = derivePlayerLevel(snapshot.stats.xp);
               playerLevel = derived.level;
             }
-            
+
             progressToUse = buildInitialProgress(
               levelsData as any,
               preferredName,
               playerLevel
             );
-            
+
             // If we have a snapshot with XP, ensure the meta is properly set
             if (snapshot?.stats?.xp) {
               progressToUse.meta.xp = snapshot.stats.xp;
               progressToUse.meta.playerLevel = playerLevel;
             }
-            
+
             await saveGuestProgress(progressToUse);
           }
 
@@ -159,11 +161,13 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
             }
           }
           if (!isMounted) return;
-          
+
           // Ensure all categories that should be unlocked are present
-          const { ensureCategoriesUnlocked } = await import("@/hooks/guest-progress");
+          const { ensureCategoriesUnlocked } = await import(
+            "@/hooks/guest-progress"
+          );
           progressToUse = await ensureCategoriesUnlocked(progressToUse);
-          
+
           const mapped: { [key: string]: LevelData[] } = {};
           Object.keys(progressToUse.categories).forEach((cat) => {
             mapped[cat] = progressToUse!.categories[cat].map((l) => ({
@@ -215,12 +219,12 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     // Check if player has enough energy to play the level (but don't deduct yet)
     const energyCost = economy.energy.costPerLevel;
     const currentEnergy = guestMeta?.energy || 0;
-    
+
     if (currentEnergy < energyCost) {
       // Show energy insufficient message or navigate to shop
-      console.warn("Insufficient energy to play level", { 
-        required: energyCost, 
-        current: currentEnergy 
+      console.warn("Insufficient energy to play level", {
+        required: energyCost,
+        current: currentEnergy,
       });
       // For now, just prevent navigation. Could show a modal later.
       return;
@@ -285,6 +289,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
+    // Web: center the content with a max width for desktop layouts.
+    // Mobile: take full width so the screen is visible on small devices.
+    ...(Platform.OS === "web"
+      ? { width: "100%", maxWidth: 1600, alignSelf: "center" }
+      : { width: "100%" }),
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   // Loading styles removed - now using LoadingScreen component
 });

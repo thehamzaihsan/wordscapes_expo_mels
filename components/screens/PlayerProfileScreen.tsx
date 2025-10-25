@@ -10,13 +10,21 @@ import {
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
-import { getTimeUntilNextEnergyRegen, getDefaultEnergy } from "@/lib/energy";
+import { getDefaultEnergy, getTimeUntilNextEnergyRegen } from "@/lib/energy";
 import { pullRemote, syncUser } from "@/lib/sync";
 import { showToast } from "@/lib/toast";
-import { ChevronLeft, Edit3, LogOut, Trash2, User, Clock } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Clock,
+  Edit3,
+  LogOut,
+  Trash2,
+  User,
+} from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StatusBar,
   TouchableOpacity,
@@ -64,12 +72,13 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
       }
       if (!active) return;
       // Trigger energy regeneration check first
-      const gp = await triggerEnergyRegenCheck() || await loadGuestProgress();
+      const gp =
+        (await triggerEnergyRegenCheck()) || (await loadGuestProgress());
       if (!active) return;
       setProgress(gp);
       if (gp?.meta.playerName) setNameDraft(gp.meta.playerName);
       if (gp?.meta.avatar) setAvatarDraft(gp.meta.avatar);
-      
+
       // Update energy regeneration info
       updateEnergyRegenInfo(gp);
     })();
@@ -86,7 +95,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
     }
 
     const maxEnergy = getDefaultEnergy();
-    
+
     // If energy is already at max, no need to show regen timer
     if (gp.meta.energy >= maxEnergy) {
       setEnergyRegenInfo(null);
@@ -195,18 +204,24 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      <ScrollView 
-        contentContainerStyle={[styles.scrollContent, {
-          paddingTop: insets.top + theme.spacing.lg,
-          paddingBottom: insets.bottom + theme.spacing.lg,
-          paddingLeft: insets.left + theme.spacing.lg,
-          paddingRight: insets.right + theme.spacing.lg,
-        }]}
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Back Button */}
         <ThemedButton
           title="Back"
@@ -218,21 +233,39 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
         />
 
         {/* Header Card */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.headerCard}>
-          <ThemedText variant="heading2" weight="bold" align="center" style={styles.title}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="lg"
+          style={styles.headerCard}
+        >
+          <ThemedText
+            variant="heading2"
+            weight="bold"
+            align="center"
+            style={styles.title}
+          >
             PLAYER PROFILE
           </ThemedText>
-          <ThemedText variant="body2" align="center" color="textSecondary" style={styles.subtitle}>
+          <ThemedText
+            variant="body2"
+            align="center"
+            color="textSecondary"
+            style={styles.subtitle}
+          >
             Account & Progress Overview
           </ThemedText>
         </ThemedCard>
 
         {/* Identity Section */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            style={styles.sectionTitle}
+          >
             Identity
           </ThemedText>
-          
+
           <View style={styles.inputContainer}>
             <ThemedInput
               label="Display Name"
@@ -261,10 +294,14 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
         {/* Avatar Section */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            style={styles.sectionTitle}
+          >
             Avatar
           </ThemedText>
-          
+
           <View style={styles.avatarGrid}>
             {avatars.map((icon, idx) => {
               const isSelected = avatarDraft === icon;
@@ -273,8 +310,16 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                   key={icon + idx}
                   style={[
                     styles.avatarItem,
-                    { borderColor: isSelected ? theme.colors.primary : theme.colors.border },
-                    { backgroundColor: isSelected ? `${theme.colors.primary}20` : theme.colors.surfaceSecondary }
+                    {
+                      borderColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.border,
+                    },
+                    {
+                      backgroundColor: isSelected
+                        ? `${theme.colors.primary}20`
+                        : theme.colors.surfaceSecondary,
+                    },
                   ]}
                   onPress={() => handleSelectAvatar(icon)}
                 >
@@ -300,13 +345,25 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
         {/* Progress Overview */}
         <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+          <ThemedText
+            variant="heading3"
+            weight="bold"
+            style={styles.sectionTitle}
+          >
             Progress Overview
           </ThemedText>
-          
+
           {stats && (
             <View style={styles.statsGrid}>
-              <View style={[styles.statBox, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+              <View
+                style={[
+                  styles.statBox,
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
                 <ThemedText variant="heading3" weight="bold" color="primary">
                   {stats.completedLevels}
                 </ThemedText>
@@ -314,7 +371,15 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                   Completed
                 </ThemedText>
               </View>
-              <View style={[styles.statBox, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+              <View
+                style={[
+                  styles.statBox,
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
                 <ThemedText variant="heading3" weight="bold" color="primary">
                   {stats.completionPercent}%
                 </ThemedText>
@@ -322,7 +387,15 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                   Progress
                 </ThemedText>
               </View>
-              <View style={[styles.statBox, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+              <View
+                style={[
+                  styles.statBox,
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
                 <ThemedText variant="heading3" weight="bold" color="primary">
                   {stats.categories}
                 </ThemedText>
@@ -337,24 +410,52 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
         {/* Player Stats */}
         {progress && derived && (
           <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-            <ThemedText variant="heading3" weight="bold" style={styles.sectionTitle}>
+            <ThemedText
+              variant="heading3"
+              weight="bold"
+              style={styles.sectionTitle}
+            >
               Player Stats
             </ThemedText>
-            
+
             <View style={styles.resourceRow}>
-              <View style={[styles.resourcePill, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+              <View
+                style={[
+                  styles.resourcePill,
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
                 <ThemedText style={styles.resourceEmoji}>💎</ThemedText>
                 <ThemedText variant="body2" weight="semibold">
                   {progress.meta.gems}
                 </ThemedText>
               </View>
-              <View style={[styles.resourcePill, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+              <View
+                style={[
+                  styles.resourcePill,
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
                 <ThemedText style={styles.resourceEmoji}>⚡</ThemedText>
                 <ThemedText variant="body2" weight="semibold">
                   {progress.meta.energy}
                 </ThemedText>
               </View>
-              <View style={[styles.resourcePill, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border }]}>
+              <View
+                style={[
+                  styles.resourcePill,
+                  {
+                    backgroundColor: theme.colors.surfaceSecondary,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
                 <ThemedText style={styles.resourceEmoji}>💡</ThemedText>
                 <ThemedText variant="body2" weight="semibold">
                   {progress.meta.hints || 0}
@@ -367,14 +468,27 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
               <View style={styles.energyRegenSection}>
                 <View style={styles.energyRegenHeader}>
                   <Clock size={16} color={theme.colors.primary} />
-                  <ThemedText variant="body2" weight="semibold" color="primary" style={styles.energyRegenTitle}>
+                  <ThemedText
+                    variant="body2"
+                    weight="semibold"
+                    color="primary"
+                    style={styles.energyRegenTitle}
+                  >
                     Next Energy Regen
                   </ThemedText>
                 </View>
-                <ThemedText variant="body2" color="textSecondary" style={styles.energyRegenTime}>
+                <ThemedText
+                  variant="body2"
+                  color="textSecondary"
+                  style={styles.energyRegenTime}
+                >
                   +5 energy in {energyRegenInfo.timeRemaining}
                 </ThemedText>
-                <ThemedText variant="caption" color="textTertiary" style={styles.energyRegenNote}>
+                <ThemedText
+                  variant="caption"
+                  color="textTertiary"
+                  style={styles.energyRegenNote}
+                >
                   Energy automatically regenerates every hour when below maximum
                 </ThemedText>
               </View>
@@ -390,15 +504,22 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                   {derived.levelXp} / {derived.nextLevelXp} XP
                 </ThemedText>
               </View>
-              <View style={[styles.xpBarBackground, { backgroundColor: theme.colors.border }]}>
-                <View 
+              <View
+                style={[
+                  styles.xpBarBackground,
+                  { backgroundColor: theme.colors.border },
+                ]}
+              >
+                <View
                   style={[
-                    styles.xpBarFill, 
-                    { 
+                    styles.xpBarFill,
+                    {
                       backgroundColor: theme.colors.primary,
-                      width: `${(derived.levelXp / derived.nextLevelXp) * 100}%`
-                    }
-                  ]} 
+                      width: `${
+                        (derived.levelXp / derived.nextLevelXp) * 100
+                      }%`,
+                    },
+                  ]}
                 />
               </View>
             </View>
@@ -424,7 +545,10 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 fullWidth
                 onPress={handleDeleteAccount}
                 leftIcon={<Trash2 size={16} color={theme.colors.error} />}
-                style={[styles.dangerButton, { borderColor: theme.colors.error }]}
+                style={[
+                  styles.dangerButton,
+                  { borderColor: theme.colors.error },
+                ]}
               />
             </View>
           )}
@@ -451,15 +575,18 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent',
+    position: "relative" as const,
+    backgroundColor: "transparent",
+    ...(Platform.OS === "web"
+      ? { maxWidth: 1600, alignSelf: "center" as const }
+      : {}),
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start' as const,
+    justifyContent: "flex-start" as const,
   },
   backButton: {
-    alignSelf: 'flex-start' as const,
+    alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
   },
   headerCard: {
@@ -495,8 +622,8 @@ const createStyles = (theme: any) => ({
     marginTop: theme.spacing.sm,
   },
   avatarGrid: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.base,
   },
@@ -504,59 +631,59 @@ const createStyles = (theme: any) => ({
     width: 56,
     height: 56,
     borderRadius: theme.borderRadius.lg,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     borderWidth: 2,
   },
-  avatarText: { 
-    fontSize: 26 
+  avatarText: {
+    fontSize: 26,
   },
   statsGrid: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-around' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-around" as const,
     gap: theme.spacing.sm,
   },
   statBox: {
     flex: 1,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.md,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     borderWidth: 1,
   },
   resourceRow: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.base,
-    justifyContent: 'center' as const,
+    justifyContent: "center" as const,
   },
   resourcePill: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: 20,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     gap: 6,
     borderWidth: 1,
   },
-  resourceEmoji: { 
-    fontSize: 14 
+  resourceEmoji: {
+    fontSize: 14,
   },
   xpSection: {
     marginTop: theme.spacing.sm,
   },
   xpLabelRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.xs,
   },
   xpBarBackground: {
     height: 8,
     borderRadius: 4,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
-  xpBarFill: { 
-    height: '100%' 
+  xpBarFill: {
+    height: "100%",
   },
   energyRegenSection: {
     marginTop: theme.spacing.base,
@@ -565,8 +692,8 @@ const createStyles = (theme: any) => ({
     borderTopColor: theme.colors.border,
   },
   energyRegenHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
   },
@@ -582,7 +709,7 @@ const createStyles = (theme: any) => ({
     lineHeight: 14,
   },
   toggleButton: {
-    alignSelf: 'center' as const,
+    alignSelf: "center" as const,
   },
   advancedSection: {
     marginTop: theme.spacing.base,
