@@ -657,19 +657,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   currentWord: {
-    fontSize: isSmallScreen ? 22 : isMediumScreen ? 23 : 24,
+    fontSize: isSmallScreen ? 24 : isMediumScreen ? 25 : 26,
     fontWeight: "bold",
     color: "#ffffffff",
     textAlign: "center",
     textTransform: "uppercase",
     marginBottom: isSmallScreen ? 20 : 30,
     fontFamily: "Helvetica",
+    minHeight: 70,
   },
   wheelContainer: {
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
     // borderRadius is applied dynamically inline
     overflow: "hidden",
   },
@@ -680,7 +681,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   letterText: {
-    fontSize: isSmallScreen ? 25 : isMediumScreen ? 27 : 29,
+    fontSize: isSmallScreen ? 27 : isMediumScreen ? 29 : 31,
     fontWeight: "600",
     color: "#333333",
     textAlign: "center",
