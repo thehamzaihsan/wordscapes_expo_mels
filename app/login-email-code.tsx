@@ -1,3 +1,4 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
 import { verifyLoginOtp } from "@/lib/auth";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
 
 export default function LoginEmailCode() {
   const router = useRouter();

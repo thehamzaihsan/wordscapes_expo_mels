@@ -1,9 +1,8 @@
-import { useRouter } from "expo-router";
-import React from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import BackgroundImage from "./components/common/BackgroundImage";
-import EmailConfirmationScreen from "./components/screens/EmailConfirmationScreen";
+
+import BackgroundImage from "@/components/common/BackgroundImage";
+import EmailConfirmationScreen from "@/components/screens/EmailConfirmationScreen";
 
 export default function EmailConfirmationRoute() {
   const router = useRouter();

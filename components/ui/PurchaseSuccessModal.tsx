@@ -23,7 +23,7 @@ export default function PurchaseSuccessModal({
           <ThemedText>THANK YOU!</ThemedText>
           {Platform.OS !== "web" ? (
             <LottieView
-              source={require("../../../assets/animations/level-complete.json")}
+              source={require("../../assets/animations/level-complete.json")}
               autoPlay
               loop={false}
               style={{ width: 200, height: 200 }}

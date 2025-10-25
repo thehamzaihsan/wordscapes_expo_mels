@@ -272,6 +272,7 @@ const createStyles = (theme: any) => ({
   },
   input: {
     borderRadius: theme.borderRadius.md,
+    color: theme.colors.text,
   },
   avatarLabel: {
     marginBottom: theme.spacing.base,

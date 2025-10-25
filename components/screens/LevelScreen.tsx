@@ -1,5 +1,5 @@
-import economy from "@/constants/economy.json";
 import { Difficulty } from "@/constants/difficulty";
+import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
 import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
@@ -13,13 +13,13 @@ import { getLocalSnapshot, pullRemote } from "@/lib/sync";
 import type { LocalUserSnapshot } from "@/lib/syncTypes";
 import { useFocusEffect } from "expo-router";
 import React, { useState } from "react";
-import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { StatusBar, StyleSheet, View } from "react-native";
 
 // Import the level components
+import LoadingScreen from "../common/LoadingScreen";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
 import LevelHeader from "../levels/LevelHeader";
-import LoadingScreen from "../common/LoadingScreen";
 
 interface LevelData {
   level: number;

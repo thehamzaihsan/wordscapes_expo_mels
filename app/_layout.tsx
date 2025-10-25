@@ -1,27 +1,23 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import AnimatedSplashScreen from "@/components/screens/SplashScreen";
 import { initializeGameManager } from "@/hooks/game-manager";
 import { useEnergyRegen } from "@/hooks/useEnergyRegen";
 import { cleanupOldTempProgress } from "@/hooks/useLevelProgress";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
-import * as Font from 'expo-font';
+import * as Font from "expo-font";
 import { Stack } from "expo-router";
-import * as SplashScreen from 'expo-splash-screen';
+import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import AnimatedSplashScreen from '../app/components/screens/SplashScreen';
 import useAutoSync from "../hooks/useAutoSync";
 import { updateGlobalSettings, useSettings } from "../hooks/useSettings";
-import BackgroundImage from "./components/common/BackgroundImage";
 
 // SplashScreen.preventAutoHideAsync();
 
@@ -43,14 +39,14 @@ function LayoutWithInsets() {
       try {
         // Initialize game manager
         initializeGameManager();
-        
+
         // Cleanup old temporary progress data
         await cleanupOldTempProgress();
       } catch (error) {
-        console.warn('Failed to initialize app:', error);
+        console.warn("Failed to initialize app:", error);
       }
     };
-    
+
     initializeApp();
   }, []);
 
@@ -217,18 +213,20 @@ export default function RootLayout() {
         // 1. Loading your fonts and assets.
         const assetLoadingPromise = Font.loadAsync({
           Helvetica: require("../assets/fonts/Helvetica.ttf"),
-          'Cormorant-Garamond': require('../assets/fonts/Cormorant-Garamond.ttf'),
-          'Pacifico': require('../assets/fonts/Pacifico-Regular.ttf'),
+          "Cormorant-Garamond": require("../assets/fonts/Cormorant-Garamond.ttf"),
+          Pacifico: require("../assets/fonts/Pacifico-Regular.ttf"),
         });
 
         // 2. A simple timer that waits for 3 seconds.
-        const minimumDisplayTimePromise = new Promise(resolve => setTimeout(resolve, 3000));
+        const minimumDisplayTimePromise = new Promise((resolve) =>
+          setTimeout(resolve, 3000)
+        );
 
         // `Promise.all` waits for BOTH tasks to finish.
         // If assets load in 1 second, it will wait 2 more seconds for the timer.
         // If assets take 5 seconds to load, the timer will be done, and it will proceed immediately.
         await Promise.all([assetLoadingPromise, minimumDisplayTimePromise]);
-        
+
         initializeGameManager();
       } catch (e) {
         console.warn(e);
@@ -250,7 +248,15 @@ export default function RootLayout() {
   // While the app is not ready, we show your custom splash screen.
   // This will now be visible for a minimum of 3 seconds.
   if (!appIsReady) {
-    return <AnimatedSplashScreen />;
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeProvider defaultTheme="light">
+            <AnimatedSplashScreen />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
   }
 
   // When ready, render the main app and attach the callback to hide the native splash.
@@ -258,8 +264,14 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
-          <LayoutWithInsets />
-          <ToastHost />
+          {appIsReady ? (
+            <>
+              <LayoutWithInsets />
+              <ToastHost />
+            </>
+          ) : (
+            <AnimatedSplashScreen />
+          )}
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -1,10 +1,10 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import LoginScreen from "@/components/screens/Login";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
-import LoginScreen from "./components/screens/Login";
 
 
 export default function LoginRoute() {
@@ -22,14 +22,12 @@ export default function LoginRoute() {
     }, [loading, session, router])
   );
 
-
-
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNavigate = async (screen: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800)); // Wait for loading animation
-    
+    await new Promise((resolve) => setTimeout(resolve, 800)); // Wait for loading animation
+
     if (screen === "levels") {
       await router.push("/levels");
     } else if (screen === "guest-name") {
@@ -43,7 +41,7 @@ export default function LoginRoute() {
     } else if (screen === "login-email") {
       await router.push("/login-email" as any);
     }
-    
+
     setIsLoading(false);
   };
 

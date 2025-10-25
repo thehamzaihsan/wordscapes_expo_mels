@@ -1,18 +1,13 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import WordSpringsText from "@/components/common/WordSpringsText";
+import ThemedButton from "@/components/ui/ThemedButton";
+import ThemedText from "@/components/ui/ThemedText";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
 import { Play, Settings } from "lucide-react-native";
-import {
-  ActivityIndicator,
-  Image,
-  StatusBar,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import WordSpringsText from '../app/components/common/WordSpringsText';
-import BackgroundImage from "./components/common/BackgroundImage";
-import ThemedButton from "./components/ui/ThemedButton";
-import ThemedText from "./components/ui/ThemedText";
 
 export default function Index() {
   const router = useRouter();
@@ -31,9 +26,17 @@ export default function Index() {
     return (
       <View style={styles.loadingContainer}>
         <BackgroundImage />
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor="transparent"
+          translucent
+        />
         <ActivityIndicator color={theme.colors.primary} size="large" />
-        <ThemedText variant="body1" color="textSecondary" style={{ marginTop: theme.spacing.base }}>
+        <ThemedText
+          variant="body1"
+          color="textSecondary"
+          style={{ marginTop: theme.spacing.base }}
+        >
           Loading...
         </ThemedText>
       </View>
@@ -43,26 +46,32 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <BackgroundImage />
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      <View style={[styles.safeArea, {
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }]}>
-        
-       
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
 
+      <View
+        style={[
+          styles.safeArea,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}
+      >
         {/* Logo Section */}
         <View style={styles.compactLogoContainer}>
           {/* REPLACE <Logo /> with the Image component */}
           <Image
-            source={require("../assets/images/WorldSprings_logo_1.png")} 
-            style={styles.logoImage} 
-            resizeMode="contain" 
+            source={require("../assets/images/WorldSprings_logo_1.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
           />
-          <WordSpringsText style={{ fontSize: 48, paddingTop: 20 }}> 
+          <WordSpringsText style={{ fontSize: 48, paddingTop: 20 }}>
             WORD SPRINGS
           </WordSpringsText>
         </View>
@@ -78,7 +87,7 @@ export default function Index() {
             onPress={handlePlay}
             style={styles.primaryButton}
           />
-          
+
           <ThemedButton
             title="Settings"
             variant="secondary"
@@ -104,21 +113,20 @@ export default function Index() {
 const createStyles = (theme: any) => ({
   loadingContainer: {
     flex: 1,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: 'transparent', // Remove background to show layout image
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    backgroundColor: "transparent", // Remove background to show layout image
   },
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent', // Remove background to show layout image
+    position: "relative" as const,
+    backgroundColor: "transparent", // Remove background to show layout image
   },
   safeArea: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
-    justifyContent: 'space-between', // <-- ADD THIS LINE
-    alignItems: 'center', // <-- ADD THIS LINE
-
+    justifyContent: "space-between", // <-- ADD THIS LINE
+    alignItems: "center", // <-- ADD THIS LINE
   },
   headerSection: {
     marginTop: theme.spacing.xl4,
@@ -126,16 +134,16 @@ const createStyles = (theme: any) => ({
   },
   logoContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginVertical: theme.spacing.xl4,
   },
   logoWrapper: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.lg,
   },
   actionButtonsContainer: {
-    width: '100%',
+    width: "100%",
     maxWidth: 320,
     marginBottom: theme.spacing.xl4,
     gap: theme.spacing.base,
@@ -157,13 +165,13 @@ const createStyles = (theme: any) => ({
   footerText: {
     opacity: 0.8,
   },
-   compactLogoContainer: {
-    alignItems: 'center' as const,
-   // marginBottom: theme.spacing.xl2,
+  compactLogoContainer: {
+    alignItems: "center" as const,
+    // marginBottom: theme.spacing.xl2,
     marginTop: theme.spacing.xl9,
   },
-  logoImage: {  
-    width: 200,   
-    height: 200,  
+  logoImage: {
+    width: 200,
+    height: 200,
   },
 });
