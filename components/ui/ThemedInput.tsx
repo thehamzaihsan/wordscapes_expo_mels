@@ -160,8 +160,6 @@ const Input: React.FC<InputProps> = ({
           input: {
             fontSize: theme.typography.fontSizes.sm,
             lineHeight: theme.typography.lineHeights.sm,
-            minHeight: 36,
-
           },
         };
       case 'lg':
@@ -174,7 +172,6 @@ const Input: React.FC<InputProps> = ({
           input: {
             fontSize: theme.typography.fontSizes.lg,
             lineHeight: theme.typography.lineHeights.lg,
-            minHeight: 56,
           },
         };
       default:
@@ -187,7 +184,6 @@ const Input: React.FC<InputProps> = ({
           input: {
             fontSize: theme.typography.fontSizes.base,
             lineHeight: theme.typography.lineHeights.base,
-            minHeight: 44,
           },
         };
     }
@@ -207,7 +203,7 @@ const Input: React.FC<InputProps> = ({
     ...styles.input,
     ...sizeStyles.input,
     color: theme.colors.text,
-    paddingRight: rightIcon ? 40 : 0, // Add padding when right icon is present
+    paddingRight: rightIcon ? 0 : 0, // Add padding when right icon is present
     ...(Array.isArray(inputStyle) ? StyleSheet.flatten(inputStyle) : inputStyle || {}),
   };
 
@@ -269,6 +265,7 @@ const Input: React.FC<InputProps> = ({
 const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     marginVertical: theme.spacing.xs,
+    width: '100%',
   },
   labelContainer: {
     marginBottom: theme.spacing.xs,
@@ -283,6 +280,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     color: theme.colors.error,
   },
   inputContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: theme.borderRadius.md,

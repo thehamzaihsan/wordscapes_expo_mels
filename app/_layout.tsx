@@ -264,8 +264,14 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
-          <LayoutWithInsets />
-          <ToastHost />
+          {appIsReady ? (
+            <>
+              <LayoutWithInsets />
+              <ToastHost />
+            </>
+          ) : (
+            <AnimatedSplashScreen />
+          )}
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

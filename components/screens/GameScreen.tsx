@@ -123,7 +123,9 @@ export default function GameScreen({
         bonusSoundRef.current = bonus.sound;
         wrongSoundRef.current = wrong.sound;
         completeSoundRef.current = complete.sound;
-      } catch {}
+      } catch(error){
+         console.error("Failed to load sounds", error);
+      }
     })();
     return () => {
       mounted = false;
