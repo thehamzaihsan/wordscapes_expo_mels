@@ -20,9 +20,8 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ showTitle = true }) => {
 
   const themes = [
     { name: 'light', label: '☀️ Light', description: 'Clean and bright' },
-    // Hide dark and game themes for now
-    // { name: 'dark', label: '🌙 Dark', description: 'Easy on the eyes' },
-    // { name: 'game', label: '🎮 Game', description: 'Immersive gaming' },
+    { name: 'dark', label: '🌙 Dark', description: 'Easy on the eyes' },
+    { name: 'game', label: '🎮 Game', description: 'Immersive gaming' },
   ] as const;
 
   return (
@@ -65,10 +64,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
+    gap: theme.spacing.xs,
   },
   themeButton: {
     flex: 1,
-    marginRight: theme.spacing.xs,
   },
   description: {
     marginTop: theme.spacing.xs,

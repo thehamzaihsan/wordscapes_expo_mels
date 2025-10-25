@@ -216,6 +216,49 @@ export const Shadows = {
   },
 };
 
+export const DarkThemeShadows = {
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: 1.0,
+    elevation: 1,
+  },
+  base: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  xl: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.37,
+    shadowRadius: 7.49,
+    elevation: 12,
+  },
+};
+
 // Theme definitions
 export const LightTheme = {
   name: 'light',
@@ -307,9 +350,9 @@ export const DarkTheme = {
     info: BaseColors.blue[500],
     
     // Background colors
-    background: '#121213',
-    backgroundSecondary: BaseColors.gray[900],
-    backgroundTertiary: BaseColors.gray[800],
+    background: BaseColors.gray[900],
+    backgroundSecondary: BaseColors.gray[800],
+    backgroundTertiary: BaseColors.gray[700],
     
     // Surface colors
     surface: BaseColors.gray[800],
@@ -343,18 +386,15 @@ export const DarkTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.3)',
     
     // Glassmorphism colors (theme-aware)
-    glassmorphismBackground: 'rgba(0, 0, 0, 0.97)',
-    glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
-    glassmorphismBackgroundStrong: 'rgba(0, 0, 0, 1)',
-    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
-    
-    // Status bar
-    statusBar: '#121213',
+    glassmorphismBackground: 'rgba(20, 20, 21, 0.75)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 0.3)',
+    glassmorphismBackgroundStrong: 'rgba(20, 20, 21, 0.85)',
+    statusBar: BaseColors.gray[900],
   },
   typography: Typography,
   spacing: Spacing,
   borderRadius: BorderRadius,
-  shadows: Shadows,
+  shadows: DarkThemeShadows,
 };
 
 // Game specific theme for the current game style
@@ -378,14 +418,14 @@ export const GameTheme = {
     info: BaseColors.blue[500],
     
     // Background colors - translucent for game overlay feel
-    background: 'rgba(18, 18, 19, 0.95)',
-    backgroundSecondary: 'rgba(31, 41, 55, 0.85)',
-    backgroundTertiary: 'rgba(55, 65, 81, 0.75)',
+    background: 'rgba(18, 18, 19, 0.85)',
+    backgroundSecondary: 'rgba(31, 41, 55, 0.75)',
+    backgroundTertiary: 'rgba(55, 65, 81, 0.65)',
     
     // Surface colors
-    surface: 'rgba(31, 41, 55, 0.85)',
-    surfaceSecondary: 'rgba(55, 65, 81, 0.75)',
-    surfaceTertiary: 'rgba(75, 85, 99, 0.65)',
+    surface: 'rgba(31, 41, 55, 0.75)',
+    surfaceSecondary: 'rgba(55, 65, 81, 0.65)',
+    surfaceTertiary: 'rgba(75, 85, 99, 0.55)',
     
     // Text colors
     text: '#ffffff',
@@ -399,8 +439,8 @@ export const GameTheme = {
     borderTertiary: BaseColors.gray[800],
     
     // Game specific
-    gameBackground: 'rgba(18, 18, 19, 0.95)',
-    gameGrid: 'rgba(31, 41, 55, 0.85)',
+    gameBackground: 'rgba(18, 18, 19, 0.85)',
+    gameGrid: 'rgba(31, 41, 55, 0.75)',
     gameLetter: '#ffffff',
     gameAccent: BaseColors.purple[500],
     
@@ -414,10 +454,10 @@ export const GameTheme = {
     overlayLight: 'rgba(0, 0, 0, 0.4)',
     
     // Glassmorphism colors (theme-aware)
-    glassmorphismBackground: 'rgba(255, 255, 255, 0.1)',
-    glassmorphismBorder: 'rgba(255, 255, 255, 0.2)',
-    glassmorphismBackgroundStrong: 'rgba(49, 53, 70, 0.6)',
-    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.3)',
+    glassmorphismBackground: 'rgba(30, 30, 30, 0.6)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 0.15)',
+    glassmorphismBackgroundStrong: 'rgba(30, 30, 30, 0.75)',
+    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.2)',
     
     // Status bar
     statusBar: '#121213',
@@ -425,7 +465,7 @@ export const GameTheme = {
   typography: Typography,
   spacing: Spacing,
   borderRadius: BorderRadius,
-  shadows: Shadows,
+  shadows: DarkThemeShadows,
 };
 
 export type Theme = typeof LightTheme;

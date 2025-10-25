@@ -218,6 +218,7 @@ export default function RootLayout() {
         const assetLoadingPromise = Font.loadAsync({
           Helvetica: require("../assets/fonts/Helvetica.ttf"),
           'Cormorant-Garamond': require('../assets/fonts/Cormorant-Garamond.ttf'),
+          'Pacifico': require('../assets/fonts/Pacifico-Regular.ttf'),
         });
 
         // 2. A simple timer that waits for 3 seconds.

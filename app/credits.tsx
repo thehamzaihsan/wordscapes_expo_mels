@@ -1,19 +1,18 @@
 import { useTheme, useThemedStyles } from '@/hooks/useTheme';
-import { ChevronLeft, Github, Linkedin, Mail, Code, Heart } from 'lucide-react-native';
-import React from 'react';
+import { useRouter } from 'expo-router';
+import { ChevronLeft, Code, Github, Heart, Linkedin, Mail } from 'lucide-react-native';
 import {
+  Image,
+  Linking,
   ScrollView,
   StatusBar,
-  View,
-  Image,
   TouchableOpacity,
-  Linking
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import ThemedButton from './components/ui/ThemedButton';
 import ThemedCard from './components/ui/ThemedCard';
 import ThemedText from './components/ui/ThemedText';
-import ThemedButton from './components/ui/ThemedButton';
 
 interface Developer {
   id: number;
@@ -29,13 +28,13 @@ interface Developer {
 const developers: Developer[] = [
   {
     id: 1,
-    name: "Alex Johnson",
+    name: "Hamza Ihsan",
     title: "Lead Developer & UI/UX Designer",
     image: require("../assets/images/icon.png"), // Using app icon as placeholder
     bio: "Full-stack developer with 5+ years of experience in React Native and mobile app development. Passionate about creating beautiful, user-friendly interfaces.",
-    github: "https://github.com/alexjohnson",
-    linkedin: "https://linkedin.com/in/alexjohnson",
-    email: "alex@wordscapes.app"
+    github: "https://github.com/thehamzaihsan",
+    linkedin: "https://linkedin.com/in/hamzaihsan",
+    email: "hamza@hamzaihsan.me"
   },
   {
     id: 2,

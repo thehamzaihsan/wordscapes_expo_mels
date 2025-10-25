@@ -1,9 +1,21 @@
 import economy from "@/constants/economy.json";
-import { loadGuestProgress, triggerEnergyRegenCheck, type GuestProgressPayload } from "@/hooks/guest-progress";
+import {
+  loadGuestProgress,
+  triggerEnergyRegenCheck,
+  type GuestProgressPayload,
+} from "@/hooks/guest-progress";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import { usePayPalPurchase } from "@/lib/paypal";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router"; // 1. IMPORT useRouter
-import { ChevronLeft, ChevronRight, Gift, ShoppingBag, Star, Zap } from "lucide-react-native";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Gift,
+  ShoppingBag,
+  Star,
+  Zap,
+} from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -14,10 +26,9 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { startPurchase } from "../hooks/PaypalCheckout";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
 import ThemedText from "../ui/ThemedText";
@@ -37,6 +48,7 @@ export default function CombinedStoreScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { open, Modal } = usePayPalPurchase();
   const [activeTab, setActiveTab] = useState<"shop" | "subscription">("shop");
   const [shopIndex, setShopIndex] = useState(0);
   const [subscriptionIndex, setSubscriptionIndex] = useState(0);
@@ -47,17 +59,17 @@ export default function CombinedStoreScreen() {
   const shopScrollViewRef = useRef<ScrollView>(null);
   const subscriptionScrollViewRef = useRef<ScrollView>(null);
 
-
   // Load guest progress data on component mount and when screen gains focus
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
-      
+
       const loadProgressData = async () => {
         setLoading(true);
         try {
           // Trigger energy regeneration check first
-          const gp = await triggerEnergyRegenCheck() || await loadGuestProgress();
+          const gp =
+            (await triggerEnergyRegenCheck()) || (await loadGuestProgress());
           if (isActive) {
             setProgress(gp);
           }
@@ -71,7 +83,7 @@ export default function CombinedStoreScreen() {
       };
 
       loadProgressData();
-      
+
       return () => {
         isActive = false;
       };
@@ -90,14 +102,21 @@ export default function CombinedStoreScreen() {
       ["#3b82f6", "#2563eb"], // Blue
       ["#ec4899", "#db2777"], // Pink
     ];
-    const bgColors = ["#2e1065", "#064e3b", "#78350f", "#7f1d1d", "#1e3a8a", "#831843"];
+    const bgColors = [
+      "#2e1065",
+      "#064e3b",
+      "#78350f",
+      "#7f1d1d",
+      "#1e3a8a",
+      "#831843",
+    ];
     const names = [
-      "Sack of Gems", 
-      "Box of Gems", 
-      "Chest of Gems", 
+      "Sack of Gems",
+      "Box of Gems",
+      "Chest of Gems",
       "Pile of Gems",
       "Mountain of Gems",
-      "Ocean of Gems"
+      "Ocean of Gems",
     ];
     const images = [
       require("../../../assets/images/gem1.png"),
@@ -110,6 +129,7 @@ export default function CombinedStoreScreen() {
       id: index + 1,
       name: names[index] || `Gem Package ${index + 1}`,
       gems: option.gems,
+      usd: option.usd,
       price: `$${option.usd.toFixed(2)}`,
       popular: index === 1, // Make the second option popular (best value)
       badge: index === 1 ? "BEST VALUE" : undefined,
@@ -133,7 +153,7 @@ export default function CombinedStoreScreen() {
         "5000 Weekly Gems",
         "No Ads",
         "Unlimited Energy",
-        "Exclusive Levels"
+        "Exclusive Levels",
       ],
       popular: false,
       colors: ["#8b5cf6", "#7c3aed"],
@@ -152,7 +172,7 @@ export default function CombinedStoreScreen() {
         "No Ads",
         "Unlimited Energy",
         "Exclusive Levels",
-        "Priority Support"
+        "Priority Support",
       ],
       popular: true,
       badge: "BEST VALUE",
@@ -190,7 +210,10 @@ export default function CombinedStoreScreen() {
         animated: true,
       });
     } else {
-      const newIndex = Math.min(subscriptions.length - 1, subscriptionIndex + 1);
+      const newIndex = Math.min(
+        subscriptions.length - 1,
+        subscriptionIndex + 1
+      );
       setSubscriptionIndex(newIndex);
       subscriptionScrollViewRef.current?.scrollTo({
         x: newIndex * (CARD_WIDTH + CARD_SPACING),
@@ -220,14 +243,12 @@ export default function CombinedStoreScreen() {
   }, [activeTab]);
 
   // FIX: Handle scroll events properly for both mobile and web
-  const handleScroll = Platform.OS === 'web' 
-    ? undefined // Disable animated scroll on web
-    : Animated.event(
-        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-        {
+  const handleScroll =
+    Platform.OS === "web"
+      ? undefined // Disable animated scroll on web
+      : Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
           useNativeDriver: false,
-        }
-      );
+        });
 
   // FIX: This function updates the index state when scroll ends (works on both platforms)
   const handleMomentumScrollEnd = (
@@ -251,50 +272,68 @@ export default function CombinedStoreScreen() {
   const renderShopCard = (offer: any, index: number) => {
     // For web, use simple scaling based on active index instead of scroll-based animation
     const isActive = index === shopIndex;
-    const scale = Platform.OS === 'web' 
-      ? (isActive ? 1 : SIDE_CARD_SCALE)
-      : shopScrollX.interpolate({
-          inputRange: [
-            (index - 1) * (CARD_WIDTH + CARD_SPACING),
-            index * (CARD_WIDTH + CARD_SPACING),
-            (index + 1) * (CARD_WIDTH + CARD_SPACING),
-          ],
-          outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
-          extrapolate: "clamp",
-        });
+    const scale =
+      Platform.OS === "web"
+        ? isActive
+          ? 1
+          : SIDE_CARD_SCALE
+        : shopScrollX.interpolate({
+            inputRange: [
+              (index - 1) * (CARD_WIDTH + CARD_SPACING),
+              index * (CARD_WIDTH + CARD_SPACING),
+              (index + 1) * (CARD_WIDTH + CARD_SPACING),
+            ],
+            outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
+            extrapolate: "clamp",
+          });
 
-    const opacity = Platform.OS === 'web'
-      ? (isActive ? 1 : 0.7)
-      : shopScrollX.interpolate({
-          inputRange: [
-            (index - 1) * (CARD_WIDTH + CARD_SPACING),
-            index * (CARD_WIDTH + CARD_SPACING),
-            (index + 1) * (CARD_WIDTH + CARD_SPACING),
-          ],
-          outputRange: [0.5, 1, 0.5],
-          extrapolate: "clamp",
-        });
+    const opacity =
+      Platform.OS === "web"
+        ? isActive
+          ? 1
+          : 0.7
+        : shopScrollX.interpolate({
+            inputRange: [
+              (index - 1) * (CARD_WIDTH + CARD_SPACING),
+              index * (CARD_WIDTH + CARD_SPACING),
+              (index + 1) * (CARD_WIDTH + CARD_SPACING),
+            ],
+            outputRange: [0.5, 1, 0.5],
+            extrapolate: "clamp",
+          });
 
-    const CardWrapper = Platform.OS === 'web' ? View : Animated.View;
+    const CardWrapper = Platform.OS === "web" ? View : Animated.View;
 
     return (
       <CardWrapper
         key={offer.id}
         style={[
           styles.cardWrapper,
-          Platform.OS === 'web' 
-            ? { transform: [{ scale }], opacity } 
+          Platform.OS === "web"
+            ? { transform: [{ scale }], opacity }
             : {
                 transform: [{ scale }],
                 opacity,
               },
         ]}
       >
-        <ThemedCard variant="glassStrong" padding="lg" style={[styles.offerCard, { backgroundColor: offer.bgColor }]}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="lg"
+          style={[styles.offerCard, { backgroundColor: offer.bgColor }]}
+        >
           {offer.popular && (
             <View style={[styles.popularBadge, styles.enhancedBadge]}>
-              <Star size={12} color={theme.colors.surface} style={styles.badgeIcon} />
-              <ThemedText variant="caption" weight="bold" style={styles.popularText}>
+              <Star
+                size={12}
+                color={theme.colors.surface}
+                style={styles.badgeIcon}
+              />
+              <ThemedText
+                variant="caption"
+                weight="bold"
+                style={styles.popularText}
+              >
                 BEST VALUE
               </ThemedText>
             </View>
@@ -305,16 +344,30 @@ export default function CombinedStoreScreen() {
               <View style={styles.gemIconContainer}>
                 <Gift size={20} color={theme.colors.primary} />
               </View>
-              <ThemedText variant="heading3" weight="bold" color="primary" style={styles.gemAmount}>
+              <ThemedText
+                variant="heading3"
+                weight="bold"
+                color="primary"
+                style={styles.gemAmount}
+              >
                 {offer.gems.toLocaleString()}
               </ThemedText>
-              <ThemedText variant="caption" color="textSecondary" style={styles.gemLabel}>
+              <ThemedText
+                variant="caption"
+                color="textSecondary"
+                style={styles.gemLabel}
+              >
                 Gems
               </ThemedText>
             </View>
           </View>
 
-          <ThemedText variant="body1" weight="bold" align="center" style={styles.offerName}>
+          <ThemedText
+            variant="body1"
+            weight="bold"
+            align="center"
+            style={styles.offerName}
+          >
             {offer.name}
           </ThemedText>
 
@@ -328,7 +381,11 @@ export default function CombinedStoreScreen() {
           </View>
         </ThemedCard>
 
-        <TouchableOpacity activeOpacity={0.8} disabled={index !== shopIndex} onPress={() => startPurchase(offer.usd)}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          disabled={index !== shopIndex}
+          onPress={() => open({ usd: offer.usd, gems: offer.gems })}
+        >
           <LinearGradient
             colors={offer.colors}
             start={{ x: 0, y: 0 }}
@@ -347,50 +404,71 @@ export default function CombinedStoreScreen() {
   const renderSubscriptionCard = (subscription: any, index: number) => {
     // For web, use simple scaling based on active index instead of scroll-based animation
     const isActive = index === subscriptionIndex;
-    const scale = Platform.OS === 'web' 
-      ? (isActive ? 1 : SIDE_CARD_SCALE)
-      : subscriptionScrollX.interpolate({
-          inputRange: [
-            (index - 1) * (CARD_WIDTH + CARD_SPACING),
-            index * (CARD_WIDTH + CARD_SPACING),
-            (index + 1) * (CARD_WIDTH + CARD_SPACING),
-          ],
-          outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
-          extrapolate: "clamp",
-        });
+    const scale =
+      Platform.OS === "web"
+        ? isActive
+          ? 1
+          : SIDE_CARD_SCALE
+        : subscriptionScrollX.interpolate({
+            inputRange: [
+              (index - 1) * (CARD_WIDTH + CARD_SPACING),
+              index * (CARD_WIDTH + CARD_SPACING),
+              (index + 1) * (CARD_WIDTH + CARD_SPACING),
+            ],
+            outputRange: [SIDE_CARD_SCALE, 1, SIDE_CARD_SCALE],
+            extrapolate: "clamp",
+          });
 
-    const opacity = Platform.OS === 'web'
-      ? (isActive ? 1 : 0.7)
-      : subscriptionScrollX.interpolate({
-          inputRange: [
-            (index - 1) * (CARD_WIDTH + CARD_SPACING),
-            index * (CARD_WIDTH + CARD_SPACING),
-            (index + 1) * (CARD_WIDTH + CARD_SPACING),
-          ],
-          outputRange: [0.5, 1, 0.5],
-          extrapolate: "clamp",
-        });
+    const opacity =
+      Platform.OS === "web"
+        ? isActive
+          ? 1
+          : 0.7
+        : subscriptionScrollX.interpolate({
+            inputRange: [
+              (index - 1) * (CARD_WIDTH + CARD_SPACING),
+              index * (CARD_WIDTH + CARD_SPACING),
+              (index + 1) * (CARD_WIDTH + CARD_SPACING),
+            ],
+            outputRange: [0.5, 1, 0.5],
+            extrapolate: "clamp",
+          });
 
-    const CardWrapper = Platform.OS === 'web' ? View : Animated.View;
+    const CardWrapper = Platform.OS === "web" ? View : Animated.View;
 
     return (
       <CardWrapper
         key={subscription.id}
         style={[
           styles.cardWrapper,
-          Platform.OS === 'web' 
-            ? { transform: [{ scale }], opacity } 
+          Platform.OS === "web"
+            ? { transform: [{ scale }], opacity }
             : {
                 transform: [{ scale }],
                 opacity,
               },
         ]}
       >
-        <ThemedCard variant="glassStrong" padding="lg" style={[styles.subscriptionCard, { backgroundColor: subscription.bgColor }]}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="lg"
+          style={[
+            styles.subscriptionCard,
+            { backgroundColor: subscription.bgColor },
+          ]}
+        >
           {subscription.popular && (
             <View style={[styles.popularBadge, styles.enhancedBadge]}>
-              <Star size={12} color={theme.colors.surface} style={styles.badgeIcon} />
-              <ThemedText variant="caption" weight="bold" style={styles.popularText}>
+              <Star
+                size={12}
+                color={theme.colors.surface}
+                style={styles.badgeIcon}
+              />
+              <ThemedText
+                variant="caption"
+                weight="bold"
+                style={styles.popularText}
+              >
                 {subscription.badge}
               </ThemedText>
             </View>
@@ -398,7 +476,11 @@ export default function CombinedStoreScreen() {
 
           {subscription.save && (
             <View style={[styles.saveBadge, styles.enhancedBadge]}>
-              <ThemedText variant="caption" weight="bold" style={styles.saveText}>
+              <ThemedText
+                variant="caption"
+                weight="bold"
+                style={styles.saveText}
+              >
                 SAVE {subscription.save}
               </ThemedText>
             </View>
@@ -406,18 +488,31 @@ export default function CombinedStoreScreen() {
 
           <View style={styles.iconContainer}>
             <View style={styles.subscriptionIconContainer}>
-              <Star size={isSmallScreen ? 32 : isMediumScreen ? 40 : 48} color={theme.colors.warning} />
+              <Star
+                size={isSmallScreen ? 32 : isMediumScreen ? 40 : 48}
+                color={theme.colors.warning}
+              />
             </View>
           </View>
 
-          <ThemedText variant="body1" weight="bold" align="center" style={styles.subscriptionName}>
+          <ThemedText
+            variant="body1"
+            weight="bold"
+            align="center"
+            style={styles.subscriptionName}
+          >
             {subscription.name}
           </ThemedText>
 
           <View style={styles.featuresList}>
             {subscription.features.map((feature: string, idx: number) => (
               <View key={idx} style={styles.featureItem}>
-                <ThemedText variant="body2" weight="bold" color="success" style={styles.checkmark}>
+                <ThemedText
+                  variant="body2"
+                  weight="bold"
+                  color="success"
+                  style={styles.checkmark}
+                >
                   ✓
                 </ThemedText>
                 <ThemedText variant="body2" style={styles.featureText}>
@@ -428,10 +523,19 @@ export default function CombinedStoreScreen() {
           </View>
 
           <View style={styles.priceSection}>
-            <ThemedText variant="body2" color="textSecondary" style={styles.originalPrice}>
+            <ThemedText
+              variant="body2"
+              color="textSecondary"
+              style={styles.originalPrice}
+            >
               {subscription.originalPrice}
             </ThemedText>
-            <ThemedText variant="heading3" weight="bold" color="primary" style={styles.currentPrice}>
+            <ThemedText
+              variant="heading3"
+              weight="bold"
+              color="primary"
+              style={styles.currentPrice}
+            >
               {subscription.price}
             </ThemedText>
           </View>
@@ -451,7 +555,11 @@ export default function CombinedStoreScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.subscribeButton}
           >
-            <ThemedText variant="body1" weight="bold" style={styles.subscribeText}>
+            <ThemedText
+              variant="body1"
+              weight="bold"
+              style={styles.subscribeText}
+            >
               SUBSCRIBE NOW
             </ThemedText>
           </LinearGradient>
@@ -462,17 +570,19 @@ export default function CombinedStoreScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={[styles.scrollContent, {
-          paddingTop: insets.top + theme.spacing.lg,
-          paddingBottom: insets.bottom + theme.spacing.lg,
-          paddingLeft: insets.left + theme.spacing.lg,
-          paddingRight: insets.right + theme.spacing.lg,
-        }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + theme.spacing.lg,
+            paddingBottom: insets.bottom + theme.spacing.lg,
+            paddingLeft: insets.left + theme.spacing.lg,
+            paddingRight: insets.right + theme.spacing.lg,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Header */}
         <View style={styles.header}>
           <ThemedButton
@@ -485,25 +595,41 @@ export default function CombinedStoreScreen() {
           />
 
           <View style={styles.currencyContainer}>
-            <ThemedCard variant="glassStrong" padding="sm" style={styles.currencyBadge}>
+            <ThemedCard
+              variant="glassStrong"
+              padding="sm"
+              style={styles.currencyBadge}
+            >
               <Gift size={18} color={theme.colors.primary} />
               <ThemedText variant="body1" weight="bold" color="primary">
                 {loading ? "..." : (progress?.meta.gems ?? 0).toLocaleString()}
               </ThemedText>
             </ThemedCard>
-            
-            <ThemedCard variant="glassStrong" padding="sm" style={styles.currencyBadge}>
-              <Zap 
-                size={18} 
-                color={loading ? theme.colors.text : 
-                       (progress?.meta.energy ?? 0) > 50 ? theme.colors.success : theme.colors.warning} 
+
+            <ThemedCard
+              variant="glassStrong"
+              padding="sm"
+              style={styles.currencyBadge}
+            >
+              <Zap
+                size={18}
+                color={
+                  loading
+                    ? theme.colors.text
+                    : (progress?.meta.energy ?? 0) > 50
+                    ? theme.colors.success
+                    : theme.colors.warning
+                }
               />
-              <ThemedText 
-                variant="body1" 
-                weight="bold" 
+              <ThemedText
+                variant="body1"
+                weight="bold"
                 style={{
-                  color: loading ? theme.colors.text : 
-                         (progress?.meta.energy ?? 0) > 50 ? theme.colors.success : theme.colors.warning
+                  color: loading
+                    ? theme.colors.text
+                    : (progress?.meta.energy ?? 0) > 50
+                    ? theme.colors.success
+                    : theme.colors.warning,
                 }}
               >
                 {loading ? "..." : `${progress?.meta.energy ?? 0}/100`}
@@ -513,15 +639,26 @@ export default function CombinedStoreScreen() {
         </View>
 
         {/* Tab Selector */}
-        <ThemedCard variant="glassStrong" padding="xs" style={styles.tabContainer}>
+        <ThemedCard
+          variant="glassStrong"
+          padding="xs"
+          style={styles.tabContainer}
+        >
           <View style={styles.tabSelector}>
             <ThemedButton
               title="SHOP"
               variant={activeTab === "shop" ? "primary" : "ghost"}
               size="md"
-              leftIcon={<ShoppingBag size={18} color={
-                activeTab === "shop" ? theme.colors.surface : theme.colors.textSecondary
-              } />}
+              leftIcon={
+                <ShoppingBag
+                  size={18}
+                  color={
+                    activeTab === "shop"
+                      ? theme.colors.surface
+                      : theme.colors.textSecondary
+                  }
+                />
+              }
               onPress={() => setActiveTab("shop")}
               style={[styles.tab, activeTab === "shop" && styles.activeTab]}
             />
@@ -529,11 +666,21 @@ export default function CombinedStoreScreen() {
               title="PREMIUM"
               variant={activeTab === "subscription" ? "primary" : "ghost"}
               size="md"
-              leftIcon={<Star size={18} color={
-                activeTab === "subscription" ? theme.colors.surface : theme.colors.textSecondary
-              } />}
+              leftIcon={
+                <Star
+                  size={18}
+                  color={
+                    activeTab === "subscription"
+                      ? theme.colors.surface
+                      : theme.colors.textSecondary
+                  }
+                />
+              }
               onPress={() => setActiveTab("subscription")}
-              style={[styles.tab, activeTab === "subscription" && styles.activeTab]}
+              style={[
+                styles.tab,
+                activeTab === "subscription" && styles.activeTab,
+              ]}
             />
           </View>
         </ThemedCard>
@@ -541,31 +688,47 @@ export default function CombinedStoreScreen() {
         {/* Carousel Container */}
         <View style={styles.carouselContainer}>
           {/* Web Navigation Buttons */}
-          {Platform.OS === 'web' && (
+          {Platform.OS === "web" && (
             <>
-              <TouchableOpacity 
-                style={[styles.navButton, styles.navButtonLeft, {
-                  opacity: currentIndex === 0 ? 0.5 : 1,
-                }]}
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  styles.navButtonLeft,
+                  {
+                    opacity: currentIndex === 0 ? 0.5 : 1,
+                  },
+                ]}
                 onPress={navigateLeft}
                 disabled={currentIndex === 0}
               >
-                <ChevronLeft 
-                  size={24} 
-                  color={currentIndex === 0 ? theme.colors.textTertiary : theme.colors.primary} 
+                <ChevronLeft
+                  size={24}
+                  color={
+                    currentIndex === 0
+                      ? theme.colors.textTertiary
+                      : theme.colors.primary
+                  }
                 />
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.navButton, styles.navButtonRight, {
-                  opacity: currentIndex === items.length - 1 ? 0.5 : 1,
-                }]}
+
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  styles.navButtonRight,
+                  {
+                    opacity: currentIndex === items.length - 1 ? 0.5 : 1,
+                  },
+                ]}
                 onPress={navigateRight}
                 disabled={currentIndex === items.length - 1}
               >
-                <ChevronRight 
-                  size={24} 
-                  color={currentIndex === items.length - 1 ? theme.colors.textTertiary : theme.colors.primary} 
+                <ChevronRight
+                  size={24}
+                  color={
+                    currentIndex === items.length - 1
+                      ? theme.colors.textTertiary
+                      : theme.colors.primary
+                  }
                 />
               </TouchableOpacity>
             </>
@@ -575,14 +738,16 @@ export default function CombinedStoreScreen() {
             <ScrollView
               ref={shopScrollViewRef}
               horizontal
-              snapToInterval={Platform.OS === 'web' ? undefined : CARD_WIDTH + CARD_SPACING}
-              decelerationRate={Platform.OS === 'web' ? "normal" : "fast"}
+              snapToInterval={
+                Platform.OS === "web" ? undefined : CARD_WIDTH + CARD_SPACING
+              }
+              decelerationRate={Platform.OS === "web" ? "normal" : "fast"}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carouselScrollContent}
               onScroll={handleScroll}
               onMomentumScrollEnd={handleMomentumScrollEnd}
-              scrollEventThrottle={Platform.OS === 'web' ? undefined : 16}
-              pagingEnabled={Platform.OS === 'web'}
+              scrollEventThrottle={Platform.OS === "web" ? undefined : 16}
+              pagingEnabled={Platform.OS === "web"}
             >
               {shopOffers.map(renderShopCard)}
             </ScrollView>
@@ -592,14 +757,16 @@ export default function CombinedStoreScreen() {
             <ScrollView
               ref={subscriptionScrollViewRef}
               horizontal
-              snapToInterval={Platform.OS === 'web' ? undefined : CARD_WIDTH + CARD_SPACING}
-              decelerationRate={Platform.OS === 'web' ? "normal" : "fast"}
+              snapToInterval={
+                Platform.OS === "web" ? undefined : CARD_WIDTH + CARD_SPACING
+              }
+              decelerationRate={Platform.OS === "web" ? "normal" : "fast"}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.carouselScrollContent}
               onScroll={handleScroll}
               onMomentumScrollEnd={handleMomentumScrollEnd}
-              scrollEventThrottle={Platform.OS === 'web' ? undefined : 16}
-              pagingEnabled={Platform.OS === 'web'}
+              scrollEventThrottle={Platform.OS === "web" ? undefined : 16}
+              pagingEnabled={Platform.OS === "web"}
             >
               {subscriptions.map(renderSubscriptionCard)}
             </ScrollView>
@@ -612,7 +779,7 @@ export default function CombinedStoreScreen() {
             <TouchableOpacity
               key={index}
               onPress={() => {
-                if (Platform.OS === 'web') {
+                if (Platform.OS === "web") {
                   if (activeTab === "shop") {
                     setShopIndex(index);
                     shopScrollViewRef.current?.scrollTo({
@@ -628,17 +795,15 @@ export default function CombinedStoreScreen() {
                   }
                 }
               }}
-              style={[
-                styles.dot,
-                currentIndex === index && styles.activeDot,
-              ]}
+              style={[styles.dot, currentIndex === index && styles.activeDot]}
             />
           ))}
         </View>
-        
+
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      {Modal}
     </View>
   );
 }
@@ -646,32 +811,32 @@ export default function CombinedStoreScreen() {
 const createStyles = (theme: any) => ({
   container: {
     flex: 1,
-    position: 'relative' as const,
-    backgroundColor: 'transparent',
+    position: "relative" as const,
+    backgroundColor: "transparent",
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start' as const,
+    justifyContent: "flex-start" as const,
   },
   header: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: theme.spacing.lg,
   },
   backButton: {
-    alignSelf: 'flex-start' as const,
+    alignSelf: "flex-start" as const,
   },
   currencyContainer: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: theme.spacing.sm,
   },
   currencyBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: theme.spacing.xs,
     minWidth: 80,
     shadowOpacity: 0.15,
@@ -679,13 +844,13 @@ const createStyles = (theme: any) => ({
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
     borderWidth: 1,
-    borderColor: theme.colors.border + '40',
+    borderColor: theme.colors.border + "40",
   },
   currencyIcon: {
     width: 24,
     height: 24,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   currencyEmoji: {
     fontSize: 16,
@@ -694,7 +859,7 @@ const createStyles = (theme: any) => ({
     marginBottom: theme.spacing.lg,
   },
   tabSelector: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xs,
   },
@@ -708,17 +873,17 @@ const createStyles = (theme: any) => ({
   carouselContainer: {
     height: isSmallScreen ? 380 : isMediumScreen ? 420 : 460,
     marginBottom: theme.spacing.md,
-    position: 'relative' as const,
+    position: "relative" as const,
   },
   navButton: {
-    position: 'absolute' as const,
-    top: '50%',
+    position: "absolute" as const,
+    top: "50%",
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: theme.colors.surface + 'E6', // 90% opacity
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    backgroundColor: theme.colors.surface + "E6", // 90% opacity
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     zIndex: 10,
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -735,7 +900,7 @@ const createStyles = (theme: any) => ({
   },
   carouselScrollContent: {
     paddingHorizontal: (width - CARD_WIDTH) / 2,
-    alignItems: 'flex-start' as const,
+    alignItems: "flex-start" as const,
   },
   cardWrapper: {
     width: CARD_WIDTH,
@@ -749,7 +914,7 @@ const createStyles = (theme: any) => ({
     shadowOffset: { width: 0, height: 8 },
     elevation: 16,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '20',
+    borderColor: theme.colors.primary + "20",
   },
   subscriptionCard: {
     borderRadius: theme.borderRadius.xl,
@@ -760,10 +925,10 @@ const createStyles = (theme: any) => ({
     elevation: 16,
     minHeight: isSmallScreen ? 300 : isMediumScreen ? 340 : 380,
     borderWidth: 1,
-    borderColor: theme.colors.warning + '20',
+    borderColor: theme.colors.warning + "20",
   },
   popularBadge: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: theme.spacing.sm,
     right: theme.spacing.sm,
     backgroundColor: theme.colors.warning,
@@ -773,8 +938,8 @@ const createStyles = (theme: any) => ({
     zIndex: 10,
   },
   enhancedBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 4,
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -787,10 +952,10 @@ const createStyles = (theme: any) => ({
   popularText: {
     color: theme.colors.surface,
     fontSize: 11,
-    fontWeight: 'bold' as const,
+    fontWeight: "bold" as const,
   },
   saveBadge: {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: theme.spacing.sm,
     left: theme.spacing.sm,
     backgroundColor: theme.colors.success,
@@ -802,24 +967,24 @@ const createStyles = (theme: any) => ({
   saveText: {
     color: theme.colors.surface,
     fontSize: 11,
-    fontWeight: 'bold' as const,
+    fontWeight: "bold" as const,
   },
   gemIconContainer: {
-    backgroundColor: theme.colors.primary + '20',
+    backgroundColor: theme.colors.primary + "20",
     borderRadius: 16,
     padding: 4,
     marginRight: theme.spacing.xs,
   },
   imageGlow: {
-    position: 'absolute' as const,
-    width: '120%',
-    height: '120%',
+    position: "absolute" as const,
+    width: "120%",
+    height: "120%",
     borderRadius: 1000,
-    backgroundColor: theme.colors.primary + '10',
+    backgroundColor: theme.colors.primary + "10",
     zIndex: 1,
   },
   subscriptionIconContainer: {
-    backgroundColor: theme.colors.warning + '20',
+    backgroundColor: theme.colors.warning + "20",
     borderRadius: 32,
     padding: theme.spacing.sm,
     shadowOpacity: 0.2,
@@ -828,12 +993,12 @@ const createStyles = (theme: any) => ({
     elevation: 4,
   },
   gemsHeader: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginBottom: isSmallScreen ? 8 : 12,
   },
   gemAmountBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: theme.spacing.sm,
   },
   gemEmoji: {
@@ -846,34 +1011,34 @@ const createStyles = (theme: any) => ({
     fontSize: isSmallScreen ? 12 : 14,
   },
   offerName: {
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
     marginBottom: isSmallScreen ? 12 : 16,
-    textTransform: 'uppercase' as const,
+    textTransform: "uppercase" as const,
     letterSpacing: 1,
     color: theme.colors.text,
   },
   subscriptionName: {
-    textAlign: 'center' as const,
-    textTransform: 'uppercase' as const,
+    textAlign: "center" as const,
+    textTransform: "uppercase" as const,
     letterSpacing: 1,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
   imageContainer: {
     height: isSmallScreen ? 120 : isMediumScreen ? 150 : 180,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginVertical: isSmallScreen ? 8 : 12,
-    position: 'relative' as const,
+    position: "relative" as const,
   },
   offerImage: {
     width: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
     height: isSmallScreen ? 150 : isMediumScreen ? 200 : 250,
-    resizeMode: 'contain' as const,
+    resizeMode: "contain" as const,
     zIndex: 2,
   },
   iconContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     marginTop: isSmallScreen ? 12 : 20,
     marginBottom: isSmallScreen ? 12 : 16,
   },
@@ -885,8 +1050,8 @@ const createStyles = (theme: any) => ({
     paddingHorizontal: isSmallScreen ? 5 : 10,
   },
   featureItem: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     marginBottom: 4,
   },
   checkmark: {
@@ -899,13 +1064,13 @@ const createStyles = (theme: any) => ({
     color: theme.colors.text,
   },
   priceSection: {
-    alignItems: 'center' as const,
-    marginTop: 'auto' as const,
+    alignItems: "center" as const,
+    marginTop: "auto" as const,
     paddingTop: 3,
   },
   originalPrice: {
     fontSize: isSmallScreen ? 14 : 16,
-    textDecorationLine: 'line-through' as const,
+    textDecorationLine: "line-through" as const,
     marginBottom: 4,
   },
   currentPrice: {
@@ -914,13 +1079,13 @@ const createStyles = (theme: any) => ({
   priceButton: {
     borderRadius: theme.borderRadius.xl,
     paddingVertical: isSmallScreen ? 14 : 18,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: "rgba(255,255,255,0.2)",
   },
   priceText: {
     color: theme.colors.surface,
@@ -929,13 +1094,13 @@ const createStyles = (theme: any) => ({
   subscribeButton: {
     borderRadius: theme.borderRadius.xl,
     paddingVertical: isSmallScreen ? 14 : 18,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: "rgba(255,255,255,0.2)",
   },
   subscribeText: {
     color: theme.colors.surface,
@@ -943,9 +1108,9 @@ const createStyles = (theme: any) => ({
     letterSpacing: 1,
   },
   dotsContainer: {
-    flexDirection: 'row' as const,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingVertical: isSmallScreen ? 10 : 16,
     paddingBottom: isSmallScreen ? 20 : 30,
     gap: theme.spacing.sm,
@@ -954,8 +1119,8 @@ const createStyles = (theme: any) => ({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: theme.colors.primary + '30', // 30% opacity
-    transition: 'all 0.3s ease',
+    backgroundColor: theme.colors.primary + "30", // 30% opacity
+    transition: "all 0.3s ease",
   },
   activeDot: {
     width: 28,
