@@ -5,11 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions
 } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
@@ -51,6 +51,8 @@ export default function GameScreen({
   categoryName,
   levelData,
 }: GameScreenProps) {
+  const { width } = useWindowDimensions();
+  const isBigScreen = width >= 768;
   const {
     // state
     gameGrid,
@@ -364,7 +366,7 @@ export default function GameScreen({
       ) : !gameGrid ? (
         <Text style={styles.infoText}>No grid</Text>
       ) : (
-        <>
+                <View style={[styles.wrapper, { flexDirection: isBigScreen ? 'row' : 'column' }]}>
           {/* Floating letters overlay */}
           {animatingLetters.length > 0 && (
             <View
@@ -474,7 +476,7 @@ export default function GameScreen({
               <Text style={styles.infoText}>No letters</Text>
             )}
           </View>
-        </>
+        </View>
       )}
 
       <Modal transparent visible={gameComplete} onRequestClose={() => {}}>
@@ -536,9 +538,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     alignItems: "center",
-    ...(Platform.OS === "web"
-      ? { maxWidth: 1600, alignSelf: "center" as const }
-      : {}),
+    // ...(Platform.OS === "web"
+    //   ? { maxWidth: 1600, alignSelf: "center" as const }
+    //   : {}),
   },
   header: {
     width: "100%",
@@ -570,15 +572,18 @@ const styles = StyleSheet.create({
   },
   infoText: { color: "#6B7280" },
   errorText: { color: "red" },
-  gridContainer: { marginTop: 8 },
+  gridContainer: { marginTop: 8  , flex: 1/2 , justifyContent: "center", alignItems: "center" , width: "100%" , height: "100%"  },
   row: { flexDirection: "row" },
+  wrapper:{
+    flex: 1, width: "100%" , height: "100%", justifyContent: "space-between", alignItems: "center", alignContent:"space-between"
+  },
   cell: {
     margin: 1,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 4,
-    width: 40,
-    height: 40,
+    width: 100,
+    height: 100,
   },
   emptyCell: { backgroundColor: "transparent" },
   hiddenCell: {
@@ -595,11 +600,12 @@ const styles = StyleSheet.create({
   hiddenText: { color: "transparent" },
   revealedText: { color: "#fff" },
   wheel: {
-    flex: 1,
+    flex: 1/2,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
     minHeight: 220,
+    height: "100%",
   },
   modalContainer: {
     flex: 1,
