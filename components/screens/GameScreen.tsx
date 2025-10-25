@@ -637,6 +637,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: { color: "#fff", fontWeight: "bold" },
    levelTitle: {
+    fontFamily: "Pacifico",
     position: "absolute",
     left: 0,
     right: 0,
