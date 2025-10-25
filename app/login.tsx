@@ -6,6 +6,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 
+
 export default function LoginRoute() {
   const router = useRouter();
   const { session, loading } = useSupabaseAuth();
