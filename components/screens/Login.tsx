@@ -220,7 +220,8 @@ const createStyles = (theme: any) => ({
   backButton: {
     alignSelf: 'flex-start' as const,
     marginBottom: theme.spacing.lg,
-    paddingHorizontal: 0,
+    paddingHorizontal: 12,
+    paddingRight: 15,
   },
   compactLogoContainer: {
     alignItems: 'center' as const,
