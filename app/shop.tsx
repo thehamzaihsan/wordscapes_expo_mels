@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-import React from "react";
-import { useFocusEffect, useRouter } from 'expo-router';
-import LoadingScreen from "./components/common/LoadingScreen";
-import { useCallback } from 'react';
-import { BackHandler, Platform } from 'react-native';
-import StoreScreen from './components/screens/StoreScreen'
-=======
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
 import StoreScreen from "@/components/screens/StoreScreen";
@@ -13,11 +5,23 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { BackHandler, Platform, View } from "react-native";
->>>>>>> ui-overhall
 
 export default function ShopRoute() {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  const { session, loading } = useSupabaseAuth();
+
+  // Redirect to levels only when this route is focused, to avoid stealing
+  // control during flows like password recovery on other screens.
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading && !session) {
+        router.replace("/login");
+      }
+      console.log(session);
+      return undefined;
+    }, [loading, session, router])
+  );
 
   // Handle Android back button
   useFocusEffect(
@@ -40,7 +44,7 @@ export default function ShopRoute() {
   const handleNavigate = (screen: string) => {
     setIsLoading(true);
     setTimeout(() => {
-      if (screen === 'levels') {
+      if (screen === "levels") {
         router.back();
       }
       setTimeout(() => setIsLoading(false), 100);
@@ -48,9 +52,10 @@ export default function ShopRoute() {
   };
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      <BackgroundImage />
       {isLoading && <LoadingScreen />}
       <StoreScreen onNavigate={handleNavigate} />
-    </>
+    </View>
   );
 }

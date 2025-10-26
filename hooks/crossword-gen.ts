@@ -206,7 +206,7 @@ export function generateCrossword(words: string[]): Grid | null {
   return buildGridWithPadding(gridMap);
 }
 
-// Helper function to build grid with at least 1 empty row/column padding
+// ✅ UPDATED: compresses coordinates to limit empty rows/cols to 1
 function buildGridWithPadding(gridMap: Map<string, string>): Grid {
   if (gridMap.size === 0) return [];
 
@@ -227,28 +227,40 @@ function buildGridWithPadding(gridMap: Map<string, string>): Grid {
     if (y > maxY) maxY = y;
   }
 
-  // Add padding of at least 1 empty row/column on each side
-  const paddingSize = 1;
-  const paddedMinX = minX - paddingSize;
-  const paddedMaxX = maxX + paddingSize;
-  const paddedMinY = minY - paddingSize;
-  const paddedMaxY = maxY + paddingSize;
+  const xs = Array.from(new Set(points.map(p => p.x))).sort((a, b) => a - b);
+  const ys = Array.from(new Set(points.map(p => p.y))).sort((a, b) => a - b);
 
-  const width = paddedMaxX - paddedMinX + 1;
-  const height = paddedMaxY - paddedMinY + 1;
-  
-  // Create grid filled with null values
-  const out: Grid = Array.from({ length: height }, () => 
+  const xMap = new Map<number, number>();
+  const yMap = new Map<number, number>();
+
+  let compressedX = 0;
+  for (let i = 0; i < xs.length; i++) {
+    xMap.set(xs[i], compressedX);
+    if (i < xs.length - 1) {
+      const gap = xs[i + 1] - xs[i];
+      compressedX += Math.min(gap, 2); // at most 1 empty column
+    }
+  }
+
+  let compressedY = 0;
+  for (let i = 0; i < ys.length; i++) {
+    yMap.set(ys[i], compressedY);
+    if (i < ys.length - 1) {
+      const gap = ys[i + 1] - ys[i];
+      compressedY += Math.min(gap, 2); // at most 1 empty row
+    }
+  }
+
+  const width = Math.max(...Array.from(xMap.values())) + 2; // +1 for last +1 padding
+  const height = Math.max(...Array.from(yMap.values())) + 2;
+
+  const out: Grid = Array.from({ length: height }, () =>
     Array.from({ length: width }, () => null)
   );
 
-  // Place the letters in the padded grid
-  for (const [k, ch] of gridMap.entries()) {
-    const [xStr, yStr] = k.split(",");
-    const x = parseInt(xStr, 10);
-    const y = parseInt(yStr, 10);
-    const gridX = x - paddedMinX;
-    const gridY = y - paddedMinY;
+  for (const { x, y, ch } of points) {
+    const gridX = (xMap.get(x) ?? 0) + 1;
+    const gridY = (yMap.get(y) ?? 0) + 1;
     out[gridY][gridX] = ch;
   }
 

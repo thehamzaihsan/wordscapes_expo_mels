@@ -54,6 +54,7 @@ function LayoutWithInsets() {
   return (
     <View style={styles.container}>
       {/* Background: for web this sets document.body background; for native uses Image */}
+      <BackgroundImage />
 
       {/* App content always on top */}
       <View

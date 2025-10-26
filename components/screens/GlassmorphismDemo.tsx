@@ -175,11 +175,6 @@ const GlassmorphismDemo: React.FC = () => {
         </ThemedText>
 
         <View style={styles.cardGrid}>
-          <ThemedCard variant="default" padding="md" style={styles.demoCard}>
-            <ThemedText variant="body2" weight="medium">Default Card</ThemedText>
-            <ThemedText variant="caption" color="textSecondary">Now with glassmorphism!</ThemedText>
-          </ThemedCard>
-          
           <ThemedCard variant="glass" padding="md" style={styles.demoCard}>
             <ThemedText variant="body2" weight="medium">
               Glass Card
@@ -215,23 +210,6 @@ const GlassmorphismDemo: React.FC = () => {
         </ThemedText>
 
         <ThemedText variant="body2" style={styles.usageText}>
-<<<<<<< HEAD:app/components/screens/GlassmorphismDemo.tsx
-          <ThemedText variant="body2" weight="bold">Button Variants:</ThemedText>
-          {'\n'}• secondary - Enhanced glassmorphism that adapts perfectly to all themes
-          {'\n'}• glass - Light glassmorphism effect with subtle shadows
-          {'\n'}• glassStrong - Enhanced glassmorphism with stronger blur and depth
-          {'\n'}• glassPremium - Premium glassmorphism with colored borders and glow
-          {'\n\n'}
-          <ThemedText variant="body2" weight="bold">Card Variants:</ThemedText>
-          {'\n'}• default - Default glassmorphism background (NEW!)
-          {'\n'}• glass - Light glassmorphism background
-          {'\n'}• glassStrong - Enhanced glassmorphism with better visibility
-          {'\n\n'}
-          <ThemedText variant="body2" weight="bold">Light Mode Fix:</ThemedText>
-          {'\n'}• Now uses dark transparency (rgba(0,0,0,0.08)) for perfect visibility
-          {'\n'}• Subtle shadows enhance the glassmorphism effect
-          {'\n'}• Beautiful contrast on light backgrounds
-=======
           <ThemedText variant="body2" weight="bold">
             Button Variants:
           </ThemedText>
@@ -256,7 +234,6 @@ const GlassmorphismDemo: React.FC = () => {
           visibility
           {"\n"}• Subtle shadows enhance the glassmorphism effect
           {"\n"}• Beautiful contrast on light backgrounds
->>>>>>> ui-overhall:components/screens/GlassmorphismDemo.tsx
         </ThemedText>
 
         <ThemedCard
@@ -277,60 +254,6 @@ const GlassmorphismDemo: React.FC = () => {
   );
 };
 
-<<<<<<< HEAD:app/components/screens/GlassmorphismDemo.tsx
-const createStyles = (theme: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  contentContainer: {
-    padding: theme.spacing.lg,
-  },
-  headerCard: {
-    marginBottom: theme.spacing.lg,
-  },
-  title: {
-    marginBottom: theme.spacing.sm,
-  },
-  sectionCard: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    marginBottom: theme.spacing.lg,
-  },
-  buttonSpacing: {
-    marginBottom: theme.spacing.md,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.md,
-    gap: theme.spacing.sm,
-  },
-  buttonHalf: {
-    flex: 1,
-  },
-  buttonThird: {
-    flex: 1,
-  },
-  cardGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.md,
-  },
-  demoCard: {
-    flex: 1,
-    minWidth: '30%',
-    alignItems: 'center',
-  },
-  usageText: {
-    lineHeight: 20,
-  },
-  bottomSpacing: {
-    height: theme.spacing.xl4,
-  },
-});
-=======
 const createStyles = (theme: any) =>
   StyleSheet.create({
     container: {
@@ -385,6 +308,5 @@ const createStyles = (theme: any) =>
       height: theme.spacing.xl4,
     },
   });
->>>>>>> ui-overhall:components/screens/GlassmorphismDemo.tsx
 
 export default GlassmorphismDemo;

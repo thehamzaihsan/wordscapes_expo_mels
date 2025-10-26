@@ -254,12 +254,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#121213" />
-        <Text style={styles.loadingText}>Loading levels...</Text>
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -306,19 +301,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
-    backgroundColor: "#121213",
-  },
-  loadingText: {
-    color: "#8B5CF6",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
+  // Loading styles removed - now using LoadingScreen component
 });
 
 export default LevelScreen;

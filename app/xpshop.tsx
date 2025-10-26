@@ -1,25 +1,16 @@
-<<<<<<< HEAD
-import { useRouter } from "expo-router";
-<<<<<<< HEAD
-=======
-import { View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
->>>>>>> ui-overhall
-import XPShopScreen from "./components/screens/XPShopScreen";
-=======
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
 import XPShopScreen from "@/components/screens/XPShopScreen";
 import { useRouter } from "expo-router";
 import React from "react";
 import { View } from "react-native";
->>>>>>> ui-overhall
 
 export default function XPShopRoute() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleNavigate = (screen: string) => {
+    setIsLoading(true);
     if (screen === "levels") {
       router.back();
     } else if (screen === "profile") {
@@ -27,11 +18,9 @@ export default function XPShopRoute() {
     } else if (screen === "shop") {
       router.push("/shop");
     }
+    setTimeout(() => setIsLoading(false), 600);
   };
 
-<<<<<<< HEAD
-  return <XPShopScreen onNavigate={handleNavigate} />;
-=======
   return (
     <View style={{ flex: 1 }}>
       <BackgroundImage />
@@ -39,9 +28,4 @@ export default function XPShopRoute() {
       <XPShopScreen onNavigate={handleNavigate} />
     </View>
   );
-<<<<<<< HEAD
->>>>>>> ui-overhall
 }
-=======
-}
->>>>>>> ui-overhall

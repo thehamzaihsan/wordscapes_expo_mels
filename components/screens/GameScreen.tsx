@@ -68,16 +68,8 @@ export default function GameScreen({
     cellSize,
     globalHints,
 
-<<<<<<< HEAD
-  // --- MAIN STATE ---
-  const [gameGrid, setGameGrid] = useState<GridCell[][] | null>(null);
-  const [letters, setLetters] = useState<string[]>([]);
-  const [sound, setSound] = useState(true);
-  const [crosswordWords, setCrosswordWords] = useState<string[]>([]);
-=======
     // refs
     // gameCompleteRef,
->>>>>>> ui-overhall
 
     // actions
     handleWordSubmit,
@@ -146,185 +138,6 @@ export default function GameScreen({
     };
   }, []);
 
-<<<<<<< HEAD
-  // Save sound preference when it changes
-  const handleSoundToggle = useCallback(async () => {
-    const newSoundValue = !sound;
-    setSound(newSoundValue);
-    try {
-      await AsyncStorage.setItem('@game_sound_enabled', JSON.stringify(newSoundValue));
-    } catch (error) {
-      console.warn('Failed to save sound preference:', error);
-    }
-  }, [sound]);
-  
-  const [allValidWords, setAllValidWords] = useState<string[]>([]); // All words for bonus checking
-  const [wordPlacements, setWordPlacements] = useState<WordPlacement[]>([]);
-  const [foundCrosswordWords, setFoundCrosswordWords] = useState<string[]>([]);
-  const [foundBonusWords, setFoundBonusWords] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [attempts] = useState(0); // placeholder for future attempt tracking
-  const [score, setScore] = useState(0);
-  const [gameComplete, setGameComplete] = useState(false);
-  const gameCompleteRef = useRef(false); // track transition
-  const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>([]);
-  const gridCellRefs = useRef<{ [key: string]: View }>({});
-  const letterWheelRef = useRef<View>(null);
-  const containerRef = useRef<View>(null);
-  const scoreScaleAnim = useRef(new Animated.Value(1)).current;
-  const [cellSize, setCellSize] = useState(40);
-
-  // --- HINT STATE ---
-  const [hintAnim, setHintAnim] = useState<
-    | { row: number; col: number; anim: Animated.Value }
-    | null
-  >(null);
-  const [hintsLeft, setHintsLeft] = useState(1); // Only 1 hint per game
-  const [hintedWordss, setHintedWords] = useState<string[]>([]);
-
-  // Handle word hint from LetterWheel
-  const handleWordHint = useCallback((hintedWord: string) => {
-    if (hintsLeft <= 0) return;
-    
-    // Add to hinted words to track what was hinted
-    setHintedWords(prev => [...prev, hintedWord]);
-    setHintsLeft(prev => prev - 1);
-    
-    // Could add visual feedback here if needed
-  }, [hintsLeft]);
-
-  // --- SOUND STATES (REFACTORED) ---
-  const [sounds, setSounds] = useState<{ [key: string]: Audio.Sound | null }>({
-    rightWordSound: null,
-    wrongWordSound: null,
-    bonusWordSound: null,
-    levelCompleteSound: null,
-  });
-  const isUnmounting = useRef(false);
-
-  const diff = getDifficultyConfig(difficulty);
-
-  // --- LOAD AND UNLOAD SOUNDS (REFACTORED) ---
-  useEffect(() => {
-    isUnmounting.current = false;
-    let mounted = true;
-
-    const loadSounds = async () => {
-      try {
-        const [rightRes, wrongRes, bonusRes, levelRes] = await Promise.all([
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/correct-word.mp3")
-          ),
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/wrong-word.mp3")
-          ),
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/bonus-word.mp3")
-          ),
-          Audio.Sound.createAsync(
-            require("../../../assets/sounds/level-complete.mp3")
-          ),
-        ]);
-
-        if (mounted) {
-          setSounds({
-            rightWordSound: rightRes.sound,
-            wrongWordSound: wrongRes.sound,
-            bonusWordSound: bonusRes.sound,
-            levelCompleteSound: levelRes.sound,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load sounds", error);
-      }
-    };
-
-    loadSounds();
-
-    return () => {
-      mounted = false;
-      isUnmounting.current = true; // Signal that the component is unmounting
-      // Unload all sounds
-      for (const soundKey in sounds) {
-        if (sounds[soundKey]) {
-          sounds[soundKey]?.unloadAsync();
-        }
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // empty deps so we don't recreate/unload repeatedly
-
-  // Helper function to play sounds (FIXED WITH CALLBACK)
-  const playSound = useCallback(async (soundObject: Audio.Sound | null) => {
-    if (!sound) return; // Use the sound state variable
-    
-    // Prevent playing sound if the component is unmounting
-    if (isUnmounting.current) {
-      return;
-    }
-    try {
-      if (soundObject) {
-        await soundObject.replayAsync();
-      }
-    } catch (e) {
-      // This error might still happen in a rare edge case, but the check above should prevent most cases.
-      if (!e.message.includes("Player is not loaded")) {
-        console.error("Failed to play sound", e);
-      }
-    }
-  }, [sound]); // Add sound as dependency
-
-  useEffect(() => {
-    if (score === 0) return;
-    Animated.sequence([
-      Animated.timing(scoreScaleAnim, {
-        toValue: 1.5,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scoreScaleAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [score, scoreScaleAnim]);
-
-
-  const createGameGrid = useCallback(
-    (basicGrid: string[][], placements: WordPlacement[]): GridCell[][] => {
-      const rows = basicGrid.length;
-      const cols = basicGrid[0]?.length || 0;
-
-      const gameGrid: GridCell[][] = Array(rows)
-        .fill(null)
-        .map(() =>
-          Array(cols)
-            .fill(null)
-            .map(() => ({
-              letter: null,
-              isRevealed: false,
-              isActive: false,
-              belongsToWords: [],
-            }))
-        );
-
-      placements.forEach((placement) => {
-        const { word, startRow, startCol, direction } = placement;
-        for (let i = 0; i < word.length; i++) {
-          const row = direction === "horizontal" ? startRow : startRow + i;
-          const col = direction === "horizontal" ? startCol + i : startCol;
-          if (row >= 0 && row < rows && col >= 0 && col < cols) {
-            gameGrid[row][col].letter = word[i].toUpperCase();
-            gameGrid[row][col].isActive = true;
-            gameGrid[row][col].belongsToWords.push(word);
-          }
-        }
-      });
-      return gameGrid;
-    },
-=======
   // --- Flying letter animation setup ---
   type AnimatingLetter = {
     id: string;
@@ -332,7 +145,6 @@ export default function GameScreen({
     position: Animated.ValueXY;
   };
   const [animatingLetters, setAnimatingLetters] = useState<AnimatingLetter[]>(
->>>>>>> ui-overhall
     []
   );
   const gridCellRefs = useRef<Record<string, View | null>>({});
@@ -440,288 +252,6 @@ export default function GameScreen({
             })
           );
         }
-<<<<<<< HEAD
-      }
-
-      setAnimatingLetters(lettersToAnimate);
-
-      Animated.stagger(100, animations).start(() => {
-        revealWordInGrid(word);
-        setAnimatingLetters([]);
-      });
-    },
-    [wordPlacements, revealWordInGrid]
-  );
-
-  const handleLetterSelect = useCallback((letter: string, index: number) => {
-    // ...
-  }, []);
-
-  const handleWordComplete = useCallback(
-    async (word: string) => {
-      const normalizedWord = word.toLowerCase().trim();
-      if (normalizedWord.length < 2) {
-        return;
-      }
-      if (
-        foundCrosswordWords.includes(normalizedWord) ||
-        foundBonusWords.includes(normalizedWord)
-      ) {
-        await playSound(sounds.wrongWordSound);
-        return;
-      }
-
-      if (crosswordWords.includes(normalizedWord)) {
-        await playSound(sounds.rightWordSound);
-        setFoundCrosswordWords((prev) => [...prev, normalizedWord]);
-        const points = normalizedWord.length * 100;
-        setScore((prev) => prev + points);
-
-        startFloatingLetterAnimation(normalizedWord);
-
-        if (foundCrosswordWords.length + 1 === crosswordWords.length) {
-          setGameComplete(true);
-          setTimeout(() => {
-            playSound(sounds.levelCompleteSound);
-          }, 1000);
-        }
-      } else {
-        const isValidBonus = allValidWords.some(
-          (w) => w.toLowerCase() === normalizedWord
-        );
-        if (isValidBonus) {
-          await playSound(sounds.bonusWordSound);
-          setFoundBonusWords((prev) => [...prev, normalizedWord]);
-          const points = normalizedWord.length * 10;
-          setScore((prev) => prev + points);
-        } else {
-          await playSound(sounds.wrongWordSound);
-        }
-      }
-    },
-    [
-      crosswordWords,
-      foundCrosswordWords,
-      foundBonusWords,
-      allValidWords,
-      startFloatingLetterAnimation,
-      sounds, // Depend on the sounds object
-      playSound, // Add playSound dependency
-    ]
-  );
-
-  const extractWordPlacements = useCallback(
-    (grid: string[][], words: string[]): WordPlacement[] => {
-      const placements: WordPlacement[] = [];
-      const rows = grid.length;
-      const cols = grid[0]?.length || 0;
-
-      const isBoundary = (r: number, c: number) => {
-        if (r < 0 || r >= rows || c < 0 || c >= cols) return true;
-        return grid[r][c] === "";
-      };
-
-      words.forEach((word) => {
-        const upperWord = word.toUpperCase();
-
-        // Horizontal placements
-        for (let row = 0; row < rows; row++) {
-          for (let col = 0; col <= cols - word.length; col++) {
-            let isSubstringMatch = true;
-            for (let i = 0; i < word.length; i++) {
-              if (grid[row][col + i] !== upperWord[i]) {
-                isSubstringMatch = false;
-                break;
-              }
-            }
-            if (isSubstringMatch) {
-              const isProperWord =
-                isBoundary(row, col - 1) && isBoundary(row, col + word.length);
-              if (isProperWord) {
-                placements.push({
-                  word: word.toLowerCase(),
-                  startRow: row,
-                  startCol: col,
-                  direction: "horizontal",
-                  isFound: false,
-                });
-              }
-            }
-          }
-        }
-
-        // Vertical placements
-        for (let row = 0; row <= rows - word.length; row++) {
-          for (let col = 0; col < cols; col++) {
-            let isSubstringMatch = true;
-            for (let i = 0; i < word.length; i++) {
-              if (grid[row + i][col] !== upperWord[i]) {
-                isSubstringMatch = false;
-                break;
-              }
-            }
-            if (isSubstringMatch) {
-              const isProperWord =
-                isBoundary(row - 1, col) && isBoundary(row + word.length, col);
-              if (isProperWord) {
-                placements.push({
-                  word: word.toLowerCase(),
-                  startRow: row,
-                  startCol: col,
-                  direction: "vertical",
-                  isFound: false,
-                });
-              }
-            }
-          }
-        }
-      });
-      return placements;
-    },
-    []
-  );
-
-  const getManualBonusWords = useCallback(
-    (baseWord: string, excludeWords: string[]): string[] => {
-      return [];
-    },
-    []
-  );
-
-  const init = useCallback(() => {
-    initializeGameManager();
-    setLoading(true);
-
-    let success = false;
-    let currentAttempts = 0;
-
-    while (!success && currentAttempts < 5) {
-      try {
-        let levelDataToUse =
-          levelData || generateLevelFromJSON(baseWord, difficulty);
-        const availableWords = levelDataToUse.crosswordWords.map((w) =>
-          w.toLowerCase()
-        );
-        const wordsForGrid = availableWords.slice(
-          0,
-          Math.min(availableWords.length, diff.minWords + 3)
-        );
-
-        if (wordsForGrid.length < 3) throw new Error("Not enough words");
-
-        const grid = generateCrossword(wordsForGrid);
-        if (grid) {
-          const crosswordGrid = grid.map((row) =>
-            row.map((cell) => cell || "")
-          );
-          const placements = extractWordPlacements(crosswordGrid, wordsForGrid);
-
-          if (placements.length > 0) {
-            const gameGrid = createGameGrid(crosswordGrid, placements);
-
-            const numRows = gameGrid.length;
-            const numCols = gameGrid[0].length;
-            const sizeByWidth = GRID_AREA_WIDTH / numCols;
-            const sizeByHeight = GRID_AREA_HEIGHT / numRows;
-            const newCellSize = Math.min(sizeByWidth, sizeByHeight) - 2; // Subtract margin
-            setCellSize(newCellSize);
-
-            const bonusWords = generateBonusWords(
-              levelDataToUse.baseWord,
-              availableWords,
-              difficulty
-            );
-            const manualBonusWords = getManualBonusWords(
-              levelDataToUse.baseWord,
-              availableWords
-            );
-            const allBonusWords = [
-              ...new Set([...bonusWords, ...manualBonusWords]),
-            ];
-            const allWords = [...availableWords, ...allBonusWords];
-
-            setLetters(levelDataToUse.letters.map((l) => l.toLowerCase()));
-            setCrosswordWords(availableWords);
-            setAllValidWords(allWords);
-            setWordPlacements(placements);
-            setGameGrid(gameGrid);
-            success = true;
-          }
-        }
-      } catch {
-        setError("Failed to generate level. Please try again.");
-      }
-      currentAttempts++;
-    }
-    setLoading(false);
-  }, [
-    difficulty,
-    baseWord,
-    levelData,
-    diff.minWords,
-    extractWordPlacements,
-    createGameGrid,
-    getManualBonusWords,
-  ]);
-
-  useEffect(() => {
-    init();
-  }, [init]);
-
-  // Debug: log incoming levelData once on mount
-  useEffect(() => {
-    if (levelData) {
-      console.log("[INIT] GameScreen received levelData:", levelData);
-      console.log(
-        "[INIT] Letters length:",
-        levelData.letters?.length,
-        "Crossword words length:",
-        levelData.crosswordWords?.length
-      );
-    }
-  }, [levelData]);
-
-  // Persist completion when it first toggles to true
-  useEffect(() => {
-    if (gameComplete && !gameCompleteRef.current) {
-      gameCompleteRef.current = true;
-      // Lazy import to avoid circular issues
-      (async () => {
-        const levelNumber = levelData?.level || 1;
-        const category = categoryName || "Forest";
-
-        // Check if this is a first completion before updating progress
-        const guestMod = await import("@/hooks/guest-progress");
-        const levelProgress = await guestMod.loadGuestProgress();
-        const categoryLevels = levelProgress?.categories[category];
-        const currentLevel = categoryLevels?.find(l => l.level === levelNumber);
-        const isFirstCompletion = !currentLevel?.isCompleted;
-
-        // 1. Update legacy guest progress store (kept temporarily for UI relying on it)
-        const updated = await guestMod
-          .completeLevelAndPersist({
-            category,
-            levelNumber,
-            score,
-            bonusWords: foundBonusWords.length,
-            crosswordWords: foundCrosswordWords.length, // Add crossword words count
-            attempts: attempts + 1,
-            levelDefs: undefined,
-          })
-          .catch((err) => {
-            console.warn("Failed legacy persist", err);
-            return null;
-          });
-
-        // 2. Mutate unified snapshot (offline-first) regardless of legacy success
-        await upsertLocalLevel({
-          user_id: (updated as any)?._snapshotUserId || "guest-temp", // will be remapped later if guest
-          level: levelNumber,
-          theme: category,
-          completed: true,
-          first_completed_at: new Date().toISOString(),
-          last_completed_at: new Date().toISOString(),
-=======
         if (!letters.length) {
           resolve();
           return;
@@ -730,7 +260,6 @@ export default function GameScreen({
         Animated.stagger(90, animations).start(() => {
           setAnimatingLetters([]);
           resolve();
->>>>>>> ui-overhall
         });
       }),
     [gameGrid, animationsEnabled]
@@ -810,22 +339,6 @@ export default function GameScreen({
     score,
   ]);
 
-<<<<<<< HEAD
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.loadingText}>Generating crossword...</Text>
-      </View>
-    );
-  }
-
-  // const handleBackPress = (): void => {
-  //   router.back();
-  // };
-
-=======
->>>>>>> ui-overhall
   return (
     <View style={styles.container} ref={containerRef}>
       <View style={styles.header}>
@@ -873,19 +386,9 @@ export default function GameScreen({
               ]}
               pointerEvents="none"
             >
-<<<<<<< HEAD
-              <ChevronLeft size={16} color={"white"} />
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-
-            <View style={styles.levelTitleContainer}>
-              <View style={styles.scoreContainer}>
-                <Animated.Text
-=======
               {animatingLetters.map((it) => (
                 <Animated.View
                   key={it.id}
->>>>>>> ui-overhall
                   style={[
                     styles.cell,
                     styles.revealedCell,
@@ -899,105 +402,12 @@ export default function GameScreen({
                     },
                   ]}
                 >
-<<<<<<< HEAD
-                  Score: {score}
-                </Animated.Text>
-                
-                <TouchableOpacity
-                  onPress={handleSoundToggle}
-                  style={styles.soundToggleButton}
-                  activeOpacity={0.7}
-                >
-                  {sound ? (
-                    <Volume2 size={20} color="#8B5CF6" />
-                  ) : (
-                    <VolumeX size={20} color="#6B7280" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.gridContainer}>
-            <View style={styles.grid}>
-              {gameGrid.map((row, rowIndex) => (
-                <View key={rowIndex} style={styles.row}>
-                  {row.map((cell, colIndex) => {
-                    if (!cell.isActive) {
-                      return (
-                        <View
-                          key={colIndex}
-                          style={[
-                            styles.emptyCell,
-                            { width: cellSize, height: cellSize },
-                          ]}
-                        />
-                      );
-                    }
-                    // Animate the cell if it's the one revealed by hint
-                    const isHinted =
-                      hintAnim &&
-                      hintAnim.row === rowIndex &&
-                      hintAnim.col === colIndex;
-                    const animatedStyle = isHinted
-                      ? {
-                          transform: [
-                            {
-                              scale: hintAnim.anim.interpolate({
-                                inputRange: [0, 0.5, 1],
-                                outputRange: [1, 1.5, 1],
-                              }),
-                            },
-                          ],
-                          backgroundColor: hintAnim.anim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [
-                              styles.revealedCell.backgroundColor,
-                              '#ffe066',
-                            ],
-                          }),
-                        }
-                      : {};
-                    return (
-                      <Animated.View
-                        key={colIndex}
-                        ref={(el) => {
-                          if (el)
-                            gridCellRefs.current[`${rowIndex}-${colIndex}`] =
-                              el as View;
-                        }}
-                        style={[
-                          styles.cell,
-                          { width: cellSize, height: cellSize },
-                          cell.isRevealed
-                            ? styles.revealedCell
-                            : styles.hiddenCell,
-                          animatedStyle,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.cellText,
-                            { fontSize: cellSize * 0.5 },
-                            cell.isRevealed
-                              ? styles.revealedCellText
-                              : styles.hiddenCellText,
-                          ]}
-                        >
-                          {cell.isRevealed ? cell.letter : ""}
-                        </Text>
-                      </Animated.View>
-                    );
-                  })}
-                </View>
-=======
                   <Text
                     style={[styles.revealedText, { fontSize: cellSize * 0.5 }]}
                   >
                     {it.letter}
                   </Text>
                 </Animated.View>
->>>>>>> ui-overhall
               ))}
             </View>
           )}
@@ -1079,36 +489,8 @@ export default function GameScreen({
         </View>
       )}
 
-<<<<<<< HEAD
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={gameComplete}
-        onRequestClose={() => {
-          setGameComplete(false);
-        }}
-      >
-=======
       <Modal transparent visible={gameComplete} onRequestClose={() => {}}>
->>>>>>> ui-overhall
         <View style={styles.modalContainer}>
-<<<<<<< HEAD:app/components/screens/GameScreen.tsx
-          <ThemedCard style={styles.modalCard} variant="glassStrong" padding="lg">
-            <ThemedText >LEVEL COMPLETED</ThemedText>
-            <LottieView
-              source={require("../../../assets/animations/level-complete.json")}
-              autoPlay
-              loop={false}
-<<<<<<< HEAD
-              style={styles.lottieAnimation}
-            />
-            <TouchableOpacity
-              style={styles.nextLevelButton}
-              onPress={() => onNavigate?.("levels")}
-=======
-              style={{ width: 200, height: 200 }}
-            />
-=======
           <ThemedCard
             style={styles.modalCard}
             variant="glassStrong"
@@ -1135,7 +517,6 @@ export default function GameScreen({
                 <Text style={{ fontSize: 60 }}>🎉</Text>
               </View>
             )}
->>>>>>> ui-overhall:components/screens/GameScreen.tsx
             {/* Play complete sound once when modal opens */}
             {gameComplete && (
               <View style={{ height: 0, width: 0 }}>
@@ -1154,13 +535,7 @@ export default function GameScreen({
               onPress={() => {
                 onNavigate?.("levels");
               }}
-<<<<<<< HEAD:app/components/screens/GameScreen.tsx
->>>>>>> ui-overhall
-            >
-            </ThemedButton>
-=======
             ></ThemedButton>
->>>>>>> ui-overhall:components/screens/GameScreen.tsx
           </ThemedCard>
         </View>
       </Modal>
@@ -1169,37 +544,6 @@ export default function GameScreen({
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD:app/components/screens/GameScreen.tsx
-<<<<<<< HEAD
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    padding: 20,
-    // backgroundColor: "#121213",
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#121213",
-  },
-  loadingText: {
-    marginTop: 10,
-    color: "#AAA",
-  },
-  levelHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    marginBottom: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-    flex: 0,
-=======
-  container: { flex: 1, padding: 16, alignItems: "center" },
-=======
   container: {
     flex: 1,
     padding: 16,
@@ -1208,55 +552,10 @@ const styles = StyleSheet.create({
     //   ? { maxWidth: 1600, alignSelf: "center" as const }
     //   : {}),
   },
->>>>>>> ui-overhall:components/screens/GameScreen.tsx
   header: {
->>>>>>> ui-overhall
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-<<<<<<< HEAD
-    gap: 12,
-  },
-  scoreText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#00ff33ff",
-    textAlign: "center",
-  },
-  soundToggleButton: {
-    padding: 8,
-    backgroundColor: "rgba(55,65,81,0.8)",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#374151",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  gridContainer: {
-    width: GRID_AREA_WIDTH,
-    height: GRID_AREA_HEIGHT,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  grid: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  row: {
-    flexDirection: "row",
-  },
-  emptyCell: {
-    margin: 1,
-=======
     justifyContent: "space-between",
     marginBottom: 12,
   },
@@ -1280,7 +579,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 16,
->>>>>>> ui-overhall
   },
   infoText: { color: "#6B7280" },
   errorText: { color: "red" },
@@ -1316,9 +614,9 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
   },
   revealedCell: {
-    backgroundColor: "#8B5CF6",
+    backgroundColor: "#22C55E",
     borderWidth: 2,
-    borderColor: "#7C3AED",
+    borderColor: "#16A34A",
   },
   cellText: { fontWeight: "bold" },
   hiddenText: { color: "transparent" },
@@ -1349,25 +647,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 12,
   },
-<<<<<<< HEAD
-  backButton: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#374151",
-    paddingEnd: 16,
-  },
-  backButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
-=======
   nextButton: {
     marginTop: 12,
     backgroundColor: "#8B5CF6",
@@ -1389,4 +668,3 @@ const styles = StyleSheet.create({
     zIndex: -1, // Ensures the title is behind the buttons and doesn't block presses
   },
 });
->>>>>>> ui-overhall

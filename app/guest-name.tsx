@@ -32,14 +32,24 @@ export default function GuestNameRoute() {
     })();
   }, [router]);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleNavigate = (screen: string) => {
-    if (screen === "levels") {
-      router.replace("/levels");
-    }
+    setIsLoading(true);
+    setTimeout(() => {
+      if (screen === "levels") {
+        router.replace("/levels");
+      }
+      setIsLoading(false);
+    }, 600);
   };
 
   const handleCancel = () => {
-    router.back();
+    setIsLoading(true);
+    setTimeout(() => {
+      router.back();
+      setIsLoading(false);
+    }, 600);
   };
 
   if (checking)
@@ -53,7 +63,7 @@ export default function GuestNameRoute() {
   return (
     <View style={{ flex: 1 }}>
       <BackgroundImage />
-      {/* {isLoading && <LoadingScreen />} */}
+      {isLoading && <LoadingScreen />}
       <GuestNameScreen onNavigate={handleNavigate} onCancel={handleCancel} />
     </View>
   );
