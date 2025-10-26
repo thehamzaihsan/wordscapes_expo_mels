@@ -12,7 +12,7 @@ export default function XPShopRoute() {
   const handleNavigate = (screen: string) => {
     setIsLoading(true);
     if (screen === "levels") {
-      router.back();
+      router.push("/levels");
     } else if (screen === "profile") {
       router.push("/profile");
     } else if (screen === "shop") {

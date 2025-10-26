@@ -33,7 +33,7 @@ export default function GameRoute() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        router.back(); // Navigate back to levels
+        router.push("/levels"); // Navigate back to levels
         return true; // Prevent default behavior
       };
 
@@ -49,7 +49,7 @@ export default function GameRoute() {
 
   const handleNavigate = (screen: string) => {
     if (screen === "levels") {
-      router.back(); // Use back() to return to levels
+      router.push("/levels");
     } else if (screen === "xpshop") {
       router.push("/xpshop"); // Navigate to XP Shop
     }

@@ -8,7 +8,7 @@ export default function GlassmorphismDemoRoute() {
 
   const handleNavigate = (screen: string) => {
     if (screen === "back") {
-      router.back();
+      router.push("/");
     }
   };
 

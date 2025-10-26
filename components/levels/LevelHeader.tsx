@@ -88,7 +88,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
           {displayName}
         </ThemedText>
         <ThemedText variant="body1" weight="semibold" color="primary" style={styles.levelText}>
-          Level {guestMeta?.playerLevel ?? 0}
+          XP Level {guestMeta?.playerLevel ?? 0}
         </ThemedText>
         
         {/* XP Progress Bar */}
@@ -114,7 +114,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
               <View style={styles.xpLabelContainer}>
                 <View style={styles.xpInfoContainer}>
                   <ThemedText variant="caption" color="textSecondary" style={styles.xpLabel}>
-                    Level {currentLevel} Progress
+                    XP Level {currentLevel} Progress
                   </ThemedText>
                   <ThemedText variant="caption" color="textTertiary" style={styles.xpNumbers}>
                     {progressInCurrentLevel} / {xpNeededForNextLevel} XP
@@ -135,7 +135,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
                   <View style={[styles.xpBar, { backgroundColor: theme.colors.primary, width: `${progressPercentage}%` }]} />
                 </View>
                 <ThemedText variant="caption" color="primary" weight="medium" style={styles.progressText}>
-                  {Math.round(progressPercentage)}% to Level {currentLevel + 1}
+                  {Math.round(progressPercentage)}% to XP Level {currentLevel + 1}
                 </ThemedText>
               </View>
               

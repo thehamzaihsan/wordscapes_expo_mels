@@ -610,7 +610,7 @@ export default function CombinedStoreScreen() {
             variant="glass"
             size="sm"
             leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
-            onPress={() => router.back()}
+            onPress={() => router.push('/levels')}
             style={styles.backButton}
           />
           <View style={styles.currencyContainer}>

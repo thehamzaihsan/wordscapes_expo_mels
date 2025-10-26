@@ -27,7 +27,7 @@ export default function ShopRoute() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        router.back(); // Navigate back to levels
+        router.push("/levels"); // Navigate back to levels
         return true; // Prevent default behavior
       };
 
@@ -45,7 +45,7 @@ export default function ShopRoute() {
     setIsLoading(true);
     setTimeout(() => {
       if (screen === "levels") {
-        router.back();
+        router.push("/levels");
       }
       setTimeout(() => setIsLoading(false), 100);
     }, 600);

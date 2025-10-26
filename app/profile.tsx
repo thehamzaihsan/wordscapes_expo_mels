@@ -14,7 +14,7 @@ export default function ProfileRoute() {
     setIsLoading(true);
     setTimeout(() => {
       if (screen === "levels") {
-        router.back();
+        router.push("/levels");
       } else if (screen === "xpshop") {
         router.push("/xpshop");
       }

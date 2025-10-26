@@ -29,7 +29,7 @@ export default function LevelsRoute() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        router.back(); // Navigate back to login
+        router.push("/login"); // Navigate back to login
         return true; // Prevent default behavior
       };
 
@@ -47,7 +47,7 @@ export default function LevelsRoute() {
     setIsLoading(true);
     setTimeout(() => {
       if (screen === "login") {
-        router.back(); // Use back() for going back to login
+        router.push("/login"); // Use back() for going back to login
       } else if (screen === "index") {
         // Return to opening screen
         router.replace("/");

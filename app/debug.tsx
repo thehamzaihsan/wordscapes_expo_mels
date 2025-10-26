@@ -12,7 +12,7 @@ export default function DebugRoute() {
   const handleNavigate = (screen: string) => {
     setIsLoading(true);
     if (screen === "levels") {
-      router.back();
+      router.push("/");
     } else if (screen === "profile") {
       router.push("/profile");
     } else if (screen === "shop") {

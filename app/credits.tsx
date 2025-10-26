@@ -182,7 +182,7 @@ export default function CreditsScreen() {
           variant="glass"
           size="sm"
           leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
-          onPress={() => router.back()}
+          onPress={() => router.push("/settings")}
           style={styles.backButton}
         />
 

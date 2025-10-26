@@ -14,7 +14,7 @@ export default function SettingsRoute() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        router.back(); // Navigate back to previous screen
+        router.push("/"); // Navigate back to previous screen
         return true; // Prevent default behavior
       };
 
@@ -32,7 +32,7 @@ export default function SettingsRoute() {
     setIsLoading(true);
     setTimeout(() => {
       if (screen === "back") {
-        router.back();
+        router.push("/");
       } else if (screen === "credits") {
         router.push("/credits");
       } else if (screen === "debug") {

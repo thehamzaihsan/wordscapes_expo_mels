@@ -1,6 +1,6 @@
+import { useTheme } from '@/hooks/useTheme';
 import React from 'react';
 import { StyleProp, StyleSheet, Text, TextStyle } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
 
 type WordSpringsTextProps = {
   children: React.ReactNode;          
@@ -34,7 +34,7 @@ const WordSpringsText = ({ children, style }: WordSpringsTextProps) => {
 const styles = StyleSheet.create({
   text: {
     fontFamily: 'Pacifico',
-    color: '#EAE0C8',
+    color: '#ffffffff',
   },
 });
 
