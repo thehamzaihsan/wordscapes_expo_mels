@@ -60,7 +60,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   onLetterSelect,
   validWords = [],
   foundWords = [],
-  crosswordWords = [], 
+  crosswordWords = [],
   onHint,
   hintsLeft = 1,
   canUsePaidHints = true,
@@ -77,7 +77,9 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [hintMessage, setHintMessage] = useState("");
   const [purchaseHintModal, setPurchaseHintModal] = useState(false);
   const letterPositions = useRef<LetterPosition[]>([]);
-  const [submissionTimer, setSubmissionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [submissionTimer, setSubmissionTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
   const hexagonSize = isSmallScreen ? 28 : isMediumScreen ? 32 : 35;
@@ -130,12 +132,12 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       const y = centerY + size * Math.sin(angle);
       points.push({ x, y });
     }
-    
+
     let path = `M ${points[0].x} ${points[0].y}`;
     for (let i = 1; i < points.length; i++) {
       path += ` L ${points[i].x} ${points[i].y}`;
     }
-    path += ' Z'; // Close the path
+    path += " Z"; // Close the path
     return path;
   };
 
@@ -173,34 +175,33 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   }, [shuffledLetters, wheelSize, radius, wheelCenter]);
 
   useEffect(() => {
-  // Clear any existing timer when a new letter is selected
-  if (submissionTimer) {
-    clearTimeout(submissionTimer);
-  }
-
-  // Only set a new timer if there's a word of at least 2 letters
-  if (currentWord.length >= 2) {
-    const newTimer = setTimeout(() => {
-      // When the timer runs out, submit the word regardless of correctness
-      if (onWordComplete) {
-        onWordComplete(currentWord.toLowerCase());
-      }
-      // Reset the wheel for the next word
-      // A small delay gives visual feedback before clearing
-      setTimeout(() => resetSelection(), 100);
-    }, 600); // 1-second delay before submission. You can adjust this value.
-
-    setSubmissionTimer(newTimer);
-  }
-
-  // Cleanup function to clear the timer if the component unmounts
-  return () => {
+    // Clear any existing timer when a new letter is selected
     if (submissionTimer) {
       clearTimeout(submissionTimer);
     }
-  };
-}, [currentWord, onWordComplete, resetSelection]);
 
+    // Only set a new timer if there's a word of at least 2 letters
+    if (currentWord.length >= 2) {
+      const newTimer = setTimeout(() => {
+        // When the timer runs out, submit the word regardless of correctness
+        if (onWordComplete) {
+          onWordComplete(currentWord.toLowerCase());
+        }
+        // Reset the wheel for the next word
+        // A small delay gives visual feedback before clearing
+        setTimeout(() => resetSelection(), 100);
+      }, 600); // 1-second delay before submission. You can adjust this value.
+
+      setSubmissionTimer(newTimer);
+    }
+
+    // Cleanup function to clear the timer if the component unmounts
+    return () => {
+      if (submissionTimer) {
+        clearTimeout(submissionTimer);
+      }
+    };
+  }, [currentWord, onWordComplete, resetSelection]);
 
   const updateConnectionPath = useCallback((indices: number[]): void => {
     if (indices.length === 0) {
@@ -240,7 +241,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       setSelectedLetters(newLetters);
       setCurrentWord(newLetters.join(""));
       updateConnectionPath(newIndices);
-      
+
       if (!isAlreadySelected) {
         onLetterSelect?.(letter, index);
       }
@@ -320,7 +321,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
   const handleHint = useCallback(async (): Promise<void> => {
     const noHints = hintsLeft <= 0;
-    
+
     // If no hints available, show purchase modal
     if (noHints) {
       setPurchaseHintModal(true);
@@ -358,7 +359,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
         setPurchaseHintModal(true);
         return;
       }
-      
+
       setHintMessage(`Try the word: ${hintWord.toUpperCase()}`);
       setHintModalVisible(true);
     } catch {
@@ -563,7 +564,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                 No Hints Available
               </ThemedText>
               <ThemedText style={styles.hintModalText}>
-                You're out of hints! Purchase hint packs from the XP Shop to continue getting help with difficult words.
+                You're out of hints! Purchase hint packs from the XP Shop to
+                continue getting help with difficult words.
               </ThemedText>
               <View style={styles.hintModalButtons}>
                 <ThemedButton
@@ -581,7 +583,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                     // Add slight delay to ensure modal closes before navigation
                     setTimeout(() => {
                       if (onNavigate) {
-                        onNavigate('xpshop');
+                        onNavigate("xpshop");
                       }
                     }, 100);
                   }}
@@ -623,6 +625,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: isSmallScreen ? 4 : 6,
     minWidth: isSmallScreen ? 50 : 60,
+    minHeight: isSmallScreen ? 50 : 60,
+    borderRadius: 99999,
   },
   hintCountText: {
     color: "#fffbe6",
@@ -736,6 +740,9 @@ const styles = StyleSheet.create({
   },
   shuffleButton: {
     backgroundColor: "#F59E0B", // solid orange
+    minWidth: isSmallScreen ? 50 : 60,
+    minHeight: isSmallScreen ? 50 : 60,
+    borderRadius: 99999,
   },
   submitCenterButton: {
     backgroundColor: "#10B981", // solid green
