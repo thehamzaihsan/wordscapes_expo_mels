@@ -3,8 +3,8 @@ import "dotenv/config";
 // Convert existing app.json to a dynamic config so we can inject env-backed values.
 export default ({ config }: any) => ({
   expo: {
-    name: "wordscapes-expo",
-    slug: "wordscapes-expo",
+    name: "WordSpring",
+    slug: "WordSpring",
     version: "1.0.0",
     orientation: "portrait",
     scheme: "com.hexadevs.word",

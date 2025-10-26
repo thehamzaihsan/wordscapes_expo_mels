@@ -8,6 +8,7 @@ import { isSupabaseEnabled } from "@/lib/supabase";
 import { ToastHost } from "@/lib/toast";
 import * as Font from "expo-font";
 import { Stack } from "expo-router";
+import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -264,6 +265,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
+          <Head>
+            <title>WordSpring</title>
+          </Head>
           {appIsReady ? (
             <>
               <LayoutWithInsets />
