@@ -266,7 +266,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
           <Head>
-            <title>WordSpring</title>
+            <title>WordSprings</title>
           </Head>
           {appIsReady ? (
             <>

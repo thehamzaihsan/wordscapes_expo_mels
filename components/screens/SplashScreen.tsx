@@ -1,8 +1,8 @@
 // app/components/SplashScreen.js
 import { useEffect, useRef } from "react";
 import { Animated, Image, StyleSheet, View } from "react-native";
+import BackgroundImage from "../common/BackgroundImage";
 import WordSpringsText from "../common/WordSpringsText"; // Make sure this path is correct
-
 export default function AnimatedSplashScreen() {
   // Create an animated value to track the loading progress
   const progress = useRef(new Animated.Value(0)).current;
@@ -24,6 +24,7 @@ export default function AnimatedSplashScreen() {
 
   return (
     <View style={styles.container}>
+      <BackgroundImage />
       <Image
         style={styles.logo}
         source={require("../../assets/images/WorldSprings_logo_1.png")}
@@ -31,7 +32,7 @@ export default function AnimatedSplashScreen() {
       />
       <View>
         <WordSpringsText
-          style={{ fontFamily: "Pacifico", fontSize: 48, paddingTop: 20 }}
+          style={{ fontFamily: "Pacifico", fontSize: 38, paddingTop: 20 }}
         >
           WORD SPRINGS
         </WordSpringsText>
@@ -50,7 +51,7 @@ export default function AnimatedSplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ebc365ff", // Your desired background color
+    backgroundColor: "#6757F7", // Your desired background color
     alignItems: "center",
     justifyContent: "center",
   },
