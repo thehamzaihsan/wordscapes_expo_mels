@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "wordscapes-expo",
-    "slug": "wordscapes-expo",
+    "name": "WordSprings",
+    "slug": "wordsprings",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "com.hexadevs.word",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.wordscapesexpo"
+      "bundleIdentifier": "com.hexadevs.word"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,24 +25,24 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      "@react-native-google-signin/google-signin"
-    ],
+   "plugins": [
+  "expo-router",
+  [
+    "expo-splash-screen",
+    {
+     
+      "resizeMode": "cover",                       // <-- Change to "cover"
+      "backgroundColor": "#6757f7",                 // <-- A dark fallback color from your image
+      "dark": {
+        "backgroundColor": "#6757f7"               // <-- Same dark fallback color
+      }
+    }
+  ],
+  "@react-native-google-signin/google-signin"
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

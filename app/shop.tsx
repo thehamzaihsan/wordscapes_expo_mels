@@ -1,9 +1,19 @@
+<<<<<<< HEAD
 import React from "react";
 import { useFocusEffect, useRouter } from 'expo-router';
 import LoadingScreen from "./components/common/LoadingScreen";
 import { useCallback } from 'react';
 import { BackHandler, Platform } from 'react-native';
 import StoreScreen from './components/screens/StoreScreen'
+=======
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import StoreScreen from "@/components/screens/StoreScreen";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback } from "react";
+import { BackHandler, Platform, View } from "react-native";
+>>>>>>> ui-overhall
 
 export default function ShopRoute() {
   const router = useRouter();

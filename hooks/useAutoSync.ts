@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
-import { syncUser } from "@/lib/sync";
 import { supabase } from "@/lib/supabase";
+import { requestSync } from "@/lib/sync";
+import { useEffect, useRef } from "react";
+import { AppState, AppStateStatus, Platform } from "react-native";
 
 /**
  * Lightweight auto-sync effect:
@@ -23,7 +23,9 @@ export default function useAutoSync() {
       } = await supabase.auth.getSession();
       const uid = session?.user?.id;
       if (!uid) return;
-      await syncUser(uid);
+      // Use the coordinated requestSync which will debounce/dedupe frequent
+      // calls and avoid concurrent sync storms.
+      await requestSync(uid);
       lastSyncRef.current = Date.now();
     } catch {
       // Silent; network may be offline
@@ -41,6 +43,16 @@ export default function useAutoSync() {
     }
     const sub = AppState.addEventListener("change", handleAppState);
 
+    // Web-specific listener for tab visibility
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        attemptSync("visibilitychange");
+      }
+    };
+    if (Platform.OS === "web") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
     intervalRef.current = setInterval(
       () => attemptSync("interval"),
       5 * 60 * 1000
@@ -49,6 +61,12 @@ export default function useAutoSync() {
     return () => {
       sub.remove();
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (Platform.OS === "web") {
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+      }
     };
   }, []);
 }

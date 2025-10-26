@@ -1,9 +1,9 @@
+import BackgroundImage from "@/components/common/BackgroundImage";
+import GameScreen from "@/components/screens/GameScreen";
 import { Difficulty } from "@/constants/difficulty";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback } from "react";
 import { BackHandler, Platform, View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import GameScreen from "./components/screens/GameScreen";
 
 export default function GameRoute() {
   const router = useRouter();
@@ -50,6 +50,8 @@ export default function GameRoute() {
   const handleNavigate = (screen: string) => {
     if (screen === "levels") {
       router.back(); // Use back() to return to levels
+    } else if (screen === "xpshop") {
+      router.push("/xpshop"); // Navigate to XP Shop
     }
   };
 

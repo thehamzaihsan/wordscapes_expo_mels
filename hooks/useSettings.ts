@@ -3,19 +3,35 @@ import { useEffect, useState } from 'react';
 
 export interface AppSettings {
   animationsEnabled: boolean;
-  backgroundAnimationsEnabled: boolean;
   soundEnabled: boolean;
   hapticFeedbackEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   animationsEnabled: true,
-  backgroundAnimationsEnabled: true,
   soundEnabled: true,
   hapticFeedbackEnabled: true,
 };
 
 const SETTINGS_STORAGE_KEY = '@app_settings';
+
+// Global settings instance for easy access
+let globalSettings: AppSettings = DEFAULT_SETTINGS;
+let globalSettingsListeners: ((settings: AppSettings) => void)[] = [];
+
+export const getGlobalSettings = () => globalSettings;
+
+export const updateGlobalSettings = (settings: AppSettings) => {
+  globalSettings = settings;
+  globalSettingsListeners.forEach(listener => listener(settings));
+};
+
+export const subscribeToGlobalSettings = (listener: (settings: AppSettings) => void) => {
+  globalSettingsListeners.push(listener);
+  return () => {
+    globalSettingsListeners = globalSettingsListeners.filter(l => l !== listener);
+  };
+};
 
 export const useSettings = () => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -45,6 +61,7 @@ export const useSettings = () => {
       const updatedSettings = { ...settings, ...newSettings };
       await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
       setSettings(updatedSettings);
+      updateGlobalSettings(updatedSettings);
     } catch (error) {
       console.error('Failed to save settings:', error);
     }
@@ -57,9 +74,20 @@ export const useSettings = () => {
     saveSettings({ [key]: value });
   };
 
-  const resetSettings = () => {
-    saveSettings(DEFAULT_SETTINGS);
+  const resetSettings = async () => {
+    try {
+      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+      setSettings(DEFAULT_SETTINGS);
+      updateGlobalSettings(DEFAULT_SETTINGS);
+    } catch (error) {
+      console.error('Failed to reset settings:', error);
+    }
   };
+
+  // Update global settings when local settings change
+  useEffect(() => {
+    updateGlobalSettings(settings);
+  }, [settings]);
 
   return {
     settings,
@@ -68,13 +96,4 @@ export const useSettings = () => {
     saveSettings,
     resetSettings,
   };
-};
-
-// Global settings instance for easy access
-let globalSettings: AppSettings = DEFAULT_SETTINGS;
-
-export const getGlobalSettings = () => globalSettings;
-
-export const updateGlobalSettings = (settings: AppSettings) => {
-  globalSettings = settings;
 };

@@ -1,12 +1,11 @@
 import { Difficulty } from "@/constants/difficulty";
 import { useFocusEffect, useRouter } from "expo-router";
 // Guest progress handled inside LevelScreen; this wrapper only passes params.
-import { useCallback } from "react";
+import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import LevelScreen from "@/components/screens/LevelScreen";
+import { useCallback, useState } from "react";
 import { BackHandler, Platform, View } from "react-native";
-import BackgroundImage from "./components/common/BackgroundImage";
-import LoadingScreen from "./components/common/LoadingScreen";
-import LevelScreen from "./components/screens/LevelScreen";
-import React, { useState } from "react";
 
 interface LevelData {
   baseWord: string;
@@ -24,7 +23,11 @@ interface LevelData {
 
 export default function LevelsRoute() {
   const router = useRouter();
+<<<<<<< HEAD
   // removed unused selectedLevel state
+=======
+  const [isLoading, setIsLoading] = useState(false);
+>>>>>>> ui-overhall
 
   // Handle Android back button
   useFocusEffect(
