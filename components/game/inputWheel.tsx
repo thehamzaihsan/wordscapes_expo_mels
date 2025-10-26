@@ -209,9 +209,20 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       return;
     }
 
-    const positions = indices
-      .map((idx) => letterPositions.current[idx])
-      .filter(Boolean);
+    if (shuffledLetters.length === 0) return;
+
+    // Calculate the actual center positions of the hexagons
+    const positions = indices.map((idx) => {
+      const angle = (idx * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      // Return the center of the hexagon (same as rendering logic)
+      return {
+        x: wheelCenter + x,
+        y: wheelCenter + y,
+      };
+    });
+
     if (positions.length === 0) return;
 
     let path = `M ${positions[0].x} ${positions[0].y}`;
@@ -219,7 +230,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       path += ` L ${positions[i].x} ${positions[i].y}`;
     }
     setConnectionPath(path);
-  }, []);
+  }, [shuffledLetters.length, radius, wheelCenter]);
 
   const handleLetterPress = useCallback(
     (letter: string, index: number): void => {
@@ -406,7 +417,13 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             { width: wheelSize, height: wheelSize, borderRadius: wheelCenter },
           ]}
         >
-          <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Svg 
+            style={StyleSheet.absoluteFill} 
+            pointerEvents="none"
+            width={wheelSize}
+            height={wheelSize}
+            viewBox={`0 0 ${wheelSize} ${wheelSize}`}
+          >
             <Path
               d={connectionPath}
               stroke="#4CAF50"
@@ -420,17 +437,25 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             {shuffledLetters.map((letter, index) => {
               const angle =
                 (index * 2 * Math.PI) / shuffledLetters.length - Math.PI / 2;
-              const x = Math.cos(angle) * radius + wheelCenter;
-              const y = Math.sin(angle) * radius + wheelCenter;
+              const x = Math.cos(angle) * radius;
+              const y = Math.sin(angle) * radius;
               const isSelected = selectedIndices.includes(index);
 
               // Only render hexagon if letter is selected
               if (!isSelected) return null;
 
+              // Use the exact same coordinates as the letter positioning
+              // Letter is positioned at: left: wheelCenter + x - hexagonSize, top: wheelCenter + y - hexagonSize
+              // Letter container size: width: hexagonSize * 2, height: hexagonSize * 2
+              // So letter center is at: (wheelCenter + x - hexagonSize + hexagonSize, wheelCenter + y - hexagonSize + hexagonSize)
+              // Which simplifies to: (wheelCenter + x, wheelCenter + y)
+              const hexagonCenterX = wheelCenter + x;
+              const hexagonCenterY = wheelCenter + y;
+
               return (
                 <Path
                   key={`hexagon-${index}`}
-                  d={createHexagonSVGPath(x, y, hexagonSize)}
+                  d={createHexagonSVGPath(hexagonCenterX, hexagonCenterY, hexagonSize)}
                   fill="#4CAF50"
                   stroke="#43A047"
                   strokeWidth={1.5}

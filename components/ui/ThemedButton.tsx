@@ -327,6 +327,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     fontFamily: theme.typography.fontFamilies.medium,
     fontWeight: theme.typography.fontWeights.semibold,
     textAlign: 'center',
+   
   },
   leftIcon: {
     marginRight: theme.spacing.sm,
