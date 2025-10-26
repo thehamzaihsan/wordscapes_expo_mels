@@ -1,7 +1,7 @@
+import { CategoryType, useCurrentCategory } from "@/hooks/useCurrentCategory";
 import { useTheme } from "@/hooks/useTheme";
-import { useCurrentCategory, CategoryType } from "@/hooks/useCurrentCategory";
+import { useEffect, useState } from "react";
 import { ImageBackground, Platform, View } from "react-native";
-import { useState, useEffect } from "react";
 
 // Map category names to their corresponding image files
 const getCategoryImage = (category: CategoryType) => {
@@ -51,7 +51,7 @@ export default function BackgroundImage() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.14)",
       }}
     />
   ) : null;
