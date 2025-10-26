@@ -75,6 +75,8 @@ export default function LevelsRoute() {
         router.push("/profile");
       } else if (screen === "settings") {
         router.push("/settings");
+      } else if (screen === "backgrounds") {
+        router.push("/backgrounds");
       }
       setTimeout(() => setIsLoading(false), 100);
     }, 600);

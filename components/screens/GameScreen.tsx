@@ -53,6 +53,8 @@ export default function GameScreen({
 }: GameScreenProps) {
   const { width } = useWindowDimensions();
   const isBigScreen = width >= 768;
+  const [modalVisible, setModalVisible] = useState(false);
+  
   const {
     // state
     gameGrid,
@@ -83,6 +85,11 @@ export default function GameScreen({
     categoryName,
     onNavigate,
   });
+
+  // Update modal visibility when gameComplete changes
+  useEffect(() => {
+    setModalVisible(gameComplete);
+  }, [gameComplete]);
 
   const { settings, updateSetting } = useSettings();
   const soundEnabled = settings.soundEnabled;
@@ -489,7 +496,7 @@ export default function GameScreen({
         </View>
       )}
 
-      <Modal transparent visible={gameComplete} onRequestClose={() => {}}>
+      <Modal transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
           <ThemedCard
             style={styles.modalCard}
@@ -533,6 +540,7 @@ export default function GameScreen({
               title="Back to Levels"
               style={styles.nextButton}
               onPress={() => {
+                setModalVisible(false);
                 onNavigate?.("levels");
               }}
             ></ThemedButton>

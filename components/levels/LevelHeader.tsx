@@ -87,9 +87,17 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
         <ThemedText variant="heading3" weight="bold" style={styles.playerName}>
           {displayName}
         </ThemedText>
+        <View style={styles.levelContainer}>
         <ThemedText variant="body1" weight="semibold" color="primary" style={styles.levelText}>
           XP Level {guestMeta?.playerLevel ?? 0}
         </ThemedText>
+        <ThemedButton
+          title="Change Background"
+          variant="ghost"
+          size="sm"
+          onPress={() => onNavigate('backgrounds')}
+        />
+      </View>
         
         {/* XP Progress Bar */}
         {(() => {
@@ -209,6 +217,11 @@ const createStyles = (theme: any) => ({
   },
   playerName: {
     fontSize: 20,
+  },
+  levelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
   },
   levelText: {
     fontSize: 16,

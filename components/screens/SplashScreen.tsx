@@ -24,7 +24,7 @@ export default function AnimatedSplashScreen() {
 
   return (
     <View style={styles.container}>
-      <BackgroundImage />
+      <BackgroundImage useProfiledBackground={false} />
       <Image
         style={styles.logo}
         source={require("../../assets/images/WorldSprings_logo_1.png")}

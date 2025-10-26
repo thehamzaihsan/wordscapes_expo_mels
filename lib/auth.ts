@@ -227,6 +227,10 @@ export async function signOutSupabase(): Promise<AuthResult> {
     await clearAllLocalProgressForActiveUser();
     const { clearLocalSnapshot } = await import("./sync");
     await clearLocalSnapshot();
+    
+    // Clear user-specific settings like background selection
+    await AsyncStorage.removeItem("selectedBackground");
+    console.log("[auth] Cleared background selection on sign out");
   } catch (e) {
     console.warn("[auth] Failed to clear local data on sign out", e);
   }

@@ -1,7 +1,10 @@
 import { CategoryType, useCurrentCategory } from "@/hooks/useCurrentCategory";
 import { useTheme } from "@/hooks/useTheme";
-import { useEffect, useState } from "react";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useBackgroundSelection } from "@/contexts/BackgroundContext";
+import { useEffect, useCallback, useRef } from "react";
 import { ImageBackground, Platform, View } from "react-native";
+import { useFocusEffect } from "expo-router";
 
 // Map category names to their corresponding image files
 const getCategoryImage = (category: CategoryType) => {
@@ -31,21 +34,43 @@ const getCategoryWebImagePath = (category: CategoryType) => {
   }
 };
 
-export default function BackgroundImage() {
+interface BackgroundImageProps {
+  useProfiledBackground?: boolean;
+}
+
+export default function BackgroundImage({ useProfiledBackground = true }: BackgroundImageProps) {
   const { themeName } = useTheme();
   const { currentCategory, isLoading } = useCurrentCategory();
-  const [displayCategory, setDisplayCategory] = useState<CategoryType>('Mountain');
+  const { user } = useSupabaseAuth();
+  const { selectedBackground, clearBackground, refreshBackground } = useProfiledBackground ? useBackgroundSelection() : { selectedBackground: null, clearBackground: () => {}, refreshBackground: () => {} };
   const isDark = themeName === "dark" || themeName === "game";
+  const prevUserRef = useRef(user);
 
-  // Update display category with a smooth transition
+  // Reset background when user signs out
   useEffect(() => {
-    if (!isLoading) {
-      if (currentCategory !== displayCategory) {
-        console.log(`[BackgroundImage] Switching from ${displayCategory} to ${currentCategory}`);
-      }
-      setDisplayCategory(currentCategory);
+    if (useProfiledBackground && prevUserRef.current && !user) {
+      console.log(`[BackgroundImage] User signed out, clearing background`);
+      clearBackground();
     }
-  }, [currentCategory, isLoading, displayCategory]);
+    prevUserRef.current = user;
+  }, [user, clearBackground, useProfiledBackground]);
+
+  // Refresh background when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (useProfiledBackground) {
+        console.log(`[BackgroundImage] Screen focused, refreshing background`);
+        refreshBackground();
+      }
+    }, [refreshBackground, useProfiledBackground])
+  );
+
+  let displayCategory: CategoryType = 'Mountain';
+  if (useProfiledBackground && selectedBackground) {
+    displayCategory = selectedBackground;
+  } else if (useProfiledBackground && !isLoading && currentCategory) {
+    displayCategory = currentCategory;
+  }
 
   const overlay = isDark ? (
     <View

@@ -1,0 +1,22 @@
+{
+  "backgrounds": [
+    {
+      "name": "Mountain",
+      "category": "Mountain",
+      "image": "mountain.jpg",
+      "xpNeeded": 0
+    },
+    {
+      "name": "Ocean",
+      "category": "Ocean",
+      "image": "ocean.jpg",
+      "xpNeeded": 1000
+    },
+    {
+      "name": "Forest",
+      "category": "Forest",
+      "image": "forest.png",
+      "xpNeeded": 2000
+    }
+  ]
+}

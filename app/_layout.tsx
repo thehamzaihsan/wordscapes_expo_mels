@@ -1,5 +1,6 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import AnimatedSplashScreen from "@/components/screens/SplashScreen";
+import { BackgroundProvider } from "@/contexts/BackgroundContext";
 import { initializeGameManager } from "@/hooks/game-manager";
 import { useEnergyRegen } from "@/hooks/useEnergyRegen";
 import { cleanupOldTempProgress } from "@/hooks/useLevelProgress";
@@ -265,17 +266,19 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider defaultTheme="light">
-          <Head>
-            <title>WordSprings</title>
-          </Head>
-          {appIsReady ? (
-            <>
-              <LayoutWithInsets />
-              <ToastHost />
-            </>
-          ) : (
-            <AnimatedSplashScreen />
-          )}
+          <BackgroundProvider>
+            <Head>
+              <title>WordSprings</title>
+            </Head>
+            {appIsReady ? (
+              <>
+                <LayoutWithInsets />
+                <ToastHost />
+              </>
+            ) : (
+              <AnimatedSplashScreen />
+            )}
+          </BackgroundProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
