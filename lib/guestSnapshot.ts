@@ -49,97 +49,70 @@ async function saveSnapshot(s: LocalUserSnapshot) {
 export async function updateGuestSnapshotFromProgress(
   progress: GuestProgressPayload
 ) {
-  const existing = await loadSnapshot();
+  const existingSnapshot = await loadSnapshot();
   const now = new Date().toISOString();
-  if (existing && !existing.profile.is_guest) {
-    let changed = false;
-    const desiredName = progress.meta.playerName || existing.profile.username;
-    if (desiredName && desiredName !== existing.profile.username) {
-      existing.profile.username = desiredName;
-      changed = true;
-    }
-    if (
-      progress.meta.avatar &&
-      progress.meta.avatar !== existing.profile.avatar
-    ) {
-      existing.profile.avatar = progress.meta.avatar;
-      changed = true;
-    }
-    if (changed) {
-      existing.profile.updated_at = now;
-      existing.local_revision = (existing.local_revision || 0) + 1;
-      await saveSnapshot(existing);
-    }
+
+  // If there's no snapshot, we can't proceed (should be created on login)
+  if (!existingSnapshot) {
+    console.warn("[guestSnapshot] updateGuestSnapshotFromProgress called without an existing snapshot.");
     return;
   }
 
-  const guestId = await getOrCreateGuestId();
+  const snapshot = existingSnapshot; // Work with the existing snapshot
 
-  // Profile row (guest). Keep prior created_at if exists for continuity.
-  const profile: ProfileRow = {
-    id: guestId,
-    username: progress.meta.playerName || "Guest",
-    avatar: progress.meta.avatar,
-    status: "guest",
-    is_guest: true,
-    created_at: existing?.profile.created_at || now,
-    updated_at: now,
-  };
+  // --- Update Profile ---
+  let profileChanged = false;
+  const desiredName = progress.meta.playerName || snapshot.profile.username;
+  if (desiredName && desiredName !== snapshot.profile.username) {
+    snapshot.profile.username = desiredName;
+    profileChanged = true;
+  }
+  if (progress.meta.avatar && progress.meta.avatar !== snapshot.profile.avatar) {
+    snapshot.profile.avatar = progress.meta.avatar;
+    profileChanged = true;
+  }
+  if (profileChanged) {
+    snapshot.profile.updated_at = now;
+  }
 
-  const stats: UserStatsRow = {
-    user_id: guestId,
-    xp: progress.meta.xp,
-    gems: progress.meta.gems,
-    energy: clampEnergy(progress.meta.energy ?? 0),
-    last_streak_date: null,
-    updated_at: now,
-  };
+  // --- Update Stats ---
+  snapshot.stats.xp = progress.meta.xp;
+  snapshot.stats.gems = progress.meta.gems;
+  snapshot.stats.energy = clampEnergy(progress.meta.energy ?? 0);
+  snapshot.stats.updated_at = now; // Always mark stats as updated
 
-  // Flatten categories -> levels. Use category name as theme.
-  const levels: LevelProgressRow[] = [];
+  // --- Update Levels ---
+  const newLevels: LevelProgressRow[] = [];
   Object.entries(progress.categories).forEach(([category, levelArr]) => {
     levelArr.forEach((lvl) => {
-      if (!lvl.isUnlocked && !lvl.isCompleted) return; // ignore unreachable
-      levels.push({
-        user_id: guestId,
+      if (!lvl.isUnlocked && !lvl.isCompleted) return;
+      newLevels.push({
+        user_id: snapshot.profile.id, // Use the real user ID
         level: lvl.level,
-        theme: category, // category name as theme value
+        theme: category,
         completed: !!lvl.isCompleted,
-        first_completed_at: lvl.isCompleted
-          ? lvl.lastCompletedAt || progress.updatedAt
-          : null,
-        last_completed_at: lvl.isCompleted
-          ? lvl.lastCompletedAt || progress.updatedAt
-          : null,
+        first_completed_at: lvl.isCompleted ? lvl.lastCompletedAt || progress.updatedAt : null,
+        last_completed_at: lvl.isCompleted ? lvl.lastCompletedAt || progress.updatedAt : null,
         last_client_update_at: progress.updatedAt,
         updated_at: progress.updatedAt,
       });
     });
   });
 
-  // Merge levels keeping latest updated_at by level if snapshot exists.
-  let mergedLevels = levels;
-  if (existing) {
-    const map = new Map<number, LevelProgressRow>();
-    existing.levels.forEach((r) => map.set(r.level, r));
-    levels.forEach((r) => {
-      const prev = map.get(r.level);
-      if (!prev || new Date(r.updated_at) > new Date(prev.updated_at)) {
-        map.set(r.level, r);
-      }
-    });
-    mergedLevels = Array.from(map.values());
-  }
+  // Merge new level data with existing level data in the snapshot
+  const levelMap = new Map<number, LevelProgressRow>();
+  snapshot.levels.forEach((r) => levelMap.set(r.level, r));
+  newLevels.forEach((r) => {
+    const prev = levelMap.get(r.level);
+    // Always take the new level data from progress, as it's the source of truth from the game session
+    if (!prev || new Date(r.updated_at) >= new Date(prev.updated_at || 0)) {
+        levelMap.set(r.level, r);
+    }
+  });
+  snapshot.levels = Array.from(levelMap.values());
 
-  const snapshot: LocalUserSnapshot = {
-    profile,
-    stats,
-    levels: mergedLevels,
-    local_revision: (existing?.local_revision || 0) + 1,
-    last_pulled_at: existing?.last_pulled_at,
-    last_pushed_at: existing?.last_pushed_at,
-  };
-
+  // --- Finalize and Save ---
+  snapshot.local_revision = (snapshot.local_revision || 0) + 1;
   await saveSnapshot(snapshot);
 }
 

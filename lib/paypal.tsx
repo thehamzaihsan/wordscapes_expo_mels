@@ -2,7 +2,7 @@ import PayPalModal from "@/app/lib/PayPalModal";
 import PurchaseSuccessModal from "@/components/ui/PurchaseSuccessModal";
 import { loadGuestProgress, saveGuestProgress } from "@/hooks/guest-progress";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
-import { mutateLocalStats, syncUser } from "@/lib/sync";
+import { mutateLocalStats } from "@/lib/sync";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 
@@ -63,7 +63,8 @@ export function usePayPalPurchase() {
             await mutateLocalStats((s: any) => {
               s.gems = (s.gems || 0) + opt.gems;
             });
-            await syncUser(uid);
+            const { requestSync } = await import("@/lib/sync");
+            await requestSync(uid, { immediate: true });
           }
         } catch (e) {
           // Non-fatal

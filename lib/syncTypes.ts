@@ -23,6 +23,8 @@ export interface UserStatsRow {
   xp: number;
   gems: number; // using gems as the single currency
   energy: number; // player energy/stamina pool
+  hints?: number;
+  last_energy_update?: string | null;
   last_streak_date?: string | null; // ISO date (YYYY-MM-DD)
   updated_at: string; // ISO
 }

@@ -9,7 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions
+  useWindowDimensions,
 } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
@@ -21,7 +21,7 @@ import {
 import { useSettings } from "@/hooks/useSettings";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 import { supabase } from "@/lib/supabase";
-import { syncUser } from "@/lib/sync";
+import { requestSync } from "@/lib/sync";
 import LetterWheel from "../game/inputWheel";
 import { useGameLogic } from "../game/useGameLogic";
 import ThemedButton from "../ui/ThemedButton";
@@ -125,8 +125,8 @@ export default function GameScreen({
         bonusSoundRef.current = bonus.sound;
         wrongSoundRef.current = wrong.sound;
         completeSoundRef.current = complete.sound;
-      } catch(error){
-         console.error("Failed to load sounds", error);
+      } catch (error) {
+        console.error("Failed to load sounds", error);
       }
     })();
     return () => {
@@ -321,9 +321,11 @@ export default function GameScreen({
             console.info(
               "[COMPLETE] Syncing level completion to remote for logged-in user"
             );
-            await syncUser(session.user.id).catch((syncErr) => {
-              console.warn("[COMPLETE] Sync failed but continuing", syncErr);
-            });
+            await requestSync(session.user.id, { immediate: true }).catch(
+              (syncErr) => {
+                console.warn("[COMPLETE] Sync failed but continuing", syncErr);
+              }
+            );
           }
         } catch {}
       }
@@ -369,7 +371,12 @@ export default function GameScreen({
       ) : !gameGrid ? (
         <Text style={styles.infoText}>No grid</Text>
       ) : (
-                <View style={[styles.wrapper, { flexDirection: isBigScreen ? 'row' : 'column' }]}>
+        <View
+          style={[
+            styles.wrapper,
+            { flexDirection: isBigScreen ? "row" : "column" },
+          ]}
+        >
           {/* Floating letters overlay */}
           {animatingLetters.length > 0 && (
             <View
@@ -575,10 +582,22 @@ const styles = StyleSheet.create({
   },
   infoText: { color: "#6B7280" },
   errorText: { color: "red" },
-  gridContainer: { marginTop: 8  , flex: 1/2 , justifyContent: "center", alignItems: "center" , width: "100%" , height: "100%"  },
+  gridContainer: {
+    marginTop: 8,
+    flex: 1 / 2,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    height: "100%",
+  },
   row: { flexDirection: "row" },
-  wrapper:{
-    flex: 1, width: "100%" , height: "100%", justifyContent: "space-between", alignItems: "center", alignContent:"space-between"
+  wrapper: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignContent: "space-between",
   },
   cell: {
     margin: 1,
@@ -603,7 +622,7 @@ const styles = StyleSheet.create({
   hiddenText: { color: "transparent" },
   revealedText: { color: "#fff" },
   wheel: {
-    flex: 1/2,
+    flex: 1 / 2,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -636,7 +655,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   nextButtonText: { color: "#fff", fontWeight: "bold" },
-   levelTitle: {
+  levelTitle: {
     fontFamily: "Pacifico",
     position: "absolute",
     left: 0,
