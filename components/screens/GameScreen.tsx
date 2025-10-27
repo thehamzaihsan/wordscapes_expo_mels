@@ -27,6 +27,7 @@ import { useGameLogic } from "../game/useGameLogic";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
 import ThemedText from "../ui/ThemedText";
+import AdComponent from "../common/AdComponent";
 
 interface GameScreenProps {
   onNavigate?: (screen: string) => void;
@@ -495,6 +496,8 @@ export default function GameScreen({
           </View>
         </View>
       )}
+
+      <AdComponent />
 
       <Modal transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>

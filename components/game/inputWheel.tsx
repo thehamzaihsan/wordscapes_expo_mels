@@ -649,8 +649,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: isSmallScreen ? 4 : 6,
-    minWidth: isSmallScreen ? 50 : 60,
-    minHeight: isSmallScreen ? 50 : 60,
+    minWidth: isSmallScreen ? 40 : 50,
+    minHeight: isSmallScreen ? 40 : 50,
     borderRadius: 99999,
   },
   hintCountText: {
@@ -686,14 +686,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   currentWord: {
-    fontSize: isSmallScreen ? 24 : isMediumScreen ? 25 : 26,
+    fontSize: isSmallScreen ? 20 : isMediumScreen ? 22 : 24,
     fontWeight: "bold",
     color: "#ffffffff",
     textAlign: "center",
     textTransform: "uppercase",
     marginBottom: isSmallScreen ? 20 : 30,
     fontFamily: "Helvetica",
-    minHeight: 70,
   },
   wheelContainer: {
     position: "relative",
@@ -765,8 +764,8 @@ const styles = StyleSheet.create({
   },
   shuffleButton: {
     backgroundColor: "#F59E0B", // solid orange
-    minWidth: isSmallScreen ? 50 : 60,
-    minHeight: isSmallScreen ? 50 : 60,
+    minWidth: isSmallScreen ? 40 : 50,
+    minHeight: isSmallScreen ? 40 : 50,
     borderRadius: 99999,
   },
   submitCenterButton: {

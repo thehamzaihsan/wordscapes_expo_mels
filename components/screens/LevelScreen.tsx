@@ -18,6 +18,7 @@ import { Platform, StatusBar, StyleSheet, View } from "react-native";
 
 // Import the level components
 import LoadingScreen from "../common/LoadingScreen";
+import AdComponent from "../common/AdComponent";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
 import LevelHeader from "../levels/LevelHeader";
@@ -282,6 +283,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         guestMeta={guestMeta}
         onLevelPress={handleLevelPress}
       />
+      <AdComponent />
     </View>
   );
 };
