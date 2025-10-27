@@ -71,8 +71,8 @@ export default function Index() {
             style={styles.logoImage}
             resizeMode="contain"
           />
-          <WordSpringsText style={{ fontSize: 38, paddingTop: 20 }}>
-            WORD SPRINGS
+          <WordSpringsText style={{ fontSize: 40, paddingTop: 20 }}>
+            Word Springs
           </WordSpringsText>
         </View>
 
