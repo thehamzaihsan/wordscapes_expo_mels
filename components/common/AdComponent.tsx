@@ -13,7 +13,7 @@ const AdComponent = () => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 50,
+    height: 100,
     maxWidth: 500,
     width: '90%',
     alignSelf: 'center',
