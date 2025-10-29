@@ -1,10 +1,10 @@
 import "dotenv/config";
 
-// Convert existing app.json to a dynamic config so we can inject env-backed values.
+// This is now your one and only config file.
 export default ({ config }: any) => ({
   expo: {
     name: "WordSprings",
-    slug: "WordSprings",
+    slug: "wordsprings", // <--- FIX #1: Matched this to your EAS project
     version: "1.0.0",
     orientation: "portrait",
     scheme: "com.hexadevs.word",
@@ -13,7 +13,7 @@ export default ({ config }: any) => ({
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.anonymous.wordscapesexpo",
+      bundleIdentifier: "com.hexadevs.word", // <--- FIX #2: Matched this to your Android package
     },
     android: {
       adaptiveIcon: {
@@ -29,13 +29,14 @@ export default ({ config }: any) => ({
     web: {
       output: "static",
       favicon: "./assets/images/favicon.png",
+      bundler: "metro" // <-- I added this back from your app.json, as it was missing
     },
     plugins: [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          image: "assets/images/WorldSprings_logo_1.png",
+          image: "assets/images/WorldSprings_logo_1.png", // This was missing from your app.json plugins, good.
           resizeMode: "cover",
           backgroundColor: "#6757f7",
           dark: { backgroundColor: "#6757f7" },
@@ -50,9 +51,8 @@ export default ({ config }: any) => ({
     extra: {
       router: {},
       eas: {
-        projectId: "5a93eb4b-90fb-41d2-9f27-5eb2cfd1a6ab",
+        "projectId": "110cce74-943b-4f02-9aff-3715dfe84f34" // <--- ADD THIS LINE
       },
-      // Inject PayPal client id to be available at runtime
       paypalClientId:
         process.env.EXPO_PUBLIC_PAYPAL_CLIENT_ID ||
         process.env.EXPO_PAYPAL_CLIENT_ID ||

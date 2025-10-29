@@ -1,21 +1,21 @@
 // BackgroundSelectionScreen.tsx
 import backgroundsData from "@/constants/backgrounds.json";
+import { useBackgroundSelection } from "@/contexts/BackgroundContext";
 import { loadGuestProgress } from "@/hooks/guest-progress";
 import { useTheme } from "@/hooks/useTheme";
-import { useBackgroundSelection } from "@/contexts/BackgroundContext";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { CheckCircle2, ChevronLeft, Lock, Star } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  Animated,
-  FlatList,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
+    Animated,
+    FlatList,
+    Platform,
+    Pressable,
+    StyleSheet,
+    View,
+    useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ThemedButton from "../ui/ThemedButton";
@@ -24,7 +24,7 @@ import ThemedText from "../ui/ThemedText";
 
 // === Import images at top (web-safe)
 import defaultImg from "../../images/default_background.jpg";
-import forestImg from "../../images/forest.png";
+import forestImg from "../../images/forest.jpg";
 import mountainImg from "../../images/mountain.jpg";
 import oceanImg from "../../images/ocean.jpg";
 
@@ -33,7 +33,7 @@ const { backgrounds } = backgroundsData;
 const IMAGES: Record<string, any> = {
   "mountain.jpg": mountainImg,
   "ocean.jpg": oceanImg,
-  "forest.png": forestImg,
+  "forest.jpg": forestImg,
   default: defaultImg,
 };
 

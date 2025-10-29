@@ -1,10 +1,10 @@
-import { CategoryType, useCurrentCategory } from "@/hooks/useCurrentCategory";
-import { useTheme } from "@/hooks/useTheme";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useBackgroundSelection } from "@/contexts/BackgroundContext";
-import { useEffect, useCallback, useRef } from "react";
-import { ImageBackground, Platform, View } from "react-native";
+import { CategoryType, useCurrentCategory } from "@/hooks/useCurrentCategory";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef } from "react";
+import { ImageBackground, Platform, View } from "react-native";
 
 // Map category names to their corresponding image files
 const getCategoryImage = (category: CategoryType) => {
@@ -14,7 +14,7 @@ const getCategoryImage = (category: CategoryType) => {
     case 'Ocean':
       return require("../../images/ocean.jpg");
     case 'Forest':
-      return require("../../images/forest.png");
+      return require("../../images/forest.jpg");
     default:
       return require("../../images/default_background.jpg");
   }
@@ -28,7 +28,7 @@ const getCategoryWebImagePath = (category: CategoryType) => {
     case 'Ocean':
       return "/images/ocean.jpg";
     case 'Forest':
-      return "/images/forest.png";
+      return "/images/forest.jpg";
     default:
       return "/images/default_background.jpg";
   }
