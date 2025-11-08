@@ -14,13 +14,13 @@ export default ({ config }: any) => ({
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.hexadevs.word", // <--- FIX #2: Matched this to your Android package
+      icon: "./assets/ios/iTunesArtwork@3x.png",
     },
     android: {
+      icon: "./assets/android/ic_launcher-web.png",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png",
+        foregroundImage: "./assets/android/mipmap-xxxhdpi/ic_launcher_foreground.webp",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
