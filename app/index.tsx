@@ -5,8 +5,8 @@ import ThemedText from "@/components/ui/ThemedText";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
-import { Play, Settings } from "lucide-react-native";
-import { ActivityIndicator, Image, StatusBar, View } from "react-native";
+import { Play, Settings, Users } from "lucide-react-native";
+import { ActivityIndicator, Image, ScrollView, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
@@ -52,60 +52,80 @@ export default function Index() {
         translucent
       />
 
-      <View
-        style={[
-          styles.safeArea,
-          {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            paddingLeft: insets.left,
-            paddingRight: insets.right,
-          },
-        ]}
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
-        {/* Logo Section */}
-        <View style={styles.compactLogoContainer}>
-          {/* REPLACE <Logo /> with the Image component */}
-          <Image
-            source={require("../assets/images/WorldSprings_logo_1.png")}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <WordSpringsText style={{ fontSize: 40, paddingTop: 20 }}>
-            Word Springs
-          </WordSpringsText>
-        </View>
+        <View
+          style={[
+            styles.safeArea,
+            {
+              paddingTop: insets.top,
+              paddingBottom: insets.bottom,
+              paddingLeft: insets.left,
+              paddingRight: insets.right,
+            },
+          ]}
+        >
+          {/* Logo Section */}
+          <View style={styles.compactLogoContainer}>
+            {/* REPLACE <Logo /> with the Image component */}
+            <Image
+              source={require("../assets/images/WorldSprings_logo_1.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <WordSpringsText style={{ fontSize: 40, paddingTop: 15, paddingBottom: 15 }}>
+              Word Springs
+            </WordSpringsText>
+          </View>
 
-        {/* Main Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
-          <ThemedButton
-            title="Start Playing"
-            variant="primary"
-            size="xl"
-            fullWidth
-            leftIcon={<Play size={20} color="white" />}
-            onPress={handlePlay}
-            style={styles.primaryButton}
-          />
+          {/* Main Action Buttons */}
+          <View style={styles.actionButtonsContainer}>
+            <ThemedButton
+              title="Multiplayer"
+              variant="primary"
+              size="xl"
+              fullWidth
+              leftIcon={<Users size={20} color="white" />}
+              onPress={() => {
+                router.push("/matchfinding");
+              }}
+              style={styles.primaryButton}
+            />
 
-          <ThemedButton
-            title="Settings"
-            variant="secondary"
-            size="xl"
-            fullWidth
-            leftIcon={<Settings size={20} color={theme.colors.text} />}
-            onPress={handleSettings}
-            style={styles.secondaryButton}
-          />
-        </View>
+            <ThemedButton
+              title="Start Playing"
+              variant="primary"
+              size="xl"
+              fullWidth
+              leftIcon={<Play size={20} color="white" />}
+              onPress={handlePlay}
+              style={styles.primaryButton}
+            />
 
-        {/* Quick Access Footer */}
-        {/* <View style={styles.footerSection}>
+            <ThemedButton
+              title="Settings"
+              variant="secondary"
+              size="xl"
+              fullWidth
+              leftIcon={<Settings size={20} color={theme.colors.text} />}
+              onPress={handleSettings}
+              style={styles.secondaryButton}
+            />
+          </View>
+
+          {/* Quick Access Footer */}
+          {/* <View style={styles.footerSection}>
           <ThemedText variant="caption" align="center"  style={styles.footerText}>
             Play thousands of word puzzles
           </ThemedText>
         </View> */}
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -124,9 +144,10 @@ const createStyles = (theme: any) => ({
   },
   safeArea: {
     flex: 1,
+    width: "100%",
     paddingHorizontal: theme.spacing.lg,
-    justifyContent: "space-between", // <-- ADD THIS LINE
-    alignItems: "center", // <-- ADD THIS LINE
+    justifyContent: "space-around", // To provide space around content
+    alignItems: "center",
   },
   headerSection: {
     marginTop: theme.spacing.xl4,
@@ -168,7 +189,7 @@ const createStyles = (theme: any) => ({
   compactLogoContainer: {
     alignItems: "center" as const,
     // marginBottom: theme.spacing.xl2,
-    marginTop: theme.spacing.xl9,
+    marginTop: theme.spacing.xl2,
   },
   logoImage: {
     width: 200,
