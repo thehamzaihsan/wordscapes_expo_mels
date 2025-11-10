@@ -9,7 +9,7 @@ import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { supabase } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "expo-router";
-import { Search, Trophy } from "lucide-react-native";
+import { Search, Trophy, Users, Swords, ArrowLeft, UserPlus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,8 +18,11 @@ import {
   StyleSheet,
   TextInput,
   View,
+  Animated,
+  TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface ProfileRow {
   id: string;
@@ -42,14 +45,29 @@ export default function MultiplayerHubScreen() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
-  // Keep minimal tracking of accepted friends (used for potential future challenge modal)
-  // Currently not referenced; suppress lint by conditional dev-only log.
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<null | { mode: "find" | "friend" }>(null);
-  // Simplified hub: friendProfiles and selectedFriend removed
+  
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(30)).current;
 
-  // Presence tracking removed for simplified hub
+  // Animate on mount
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -289,11 +307,19 @@ export default function MultiplayerHubScreen() {
     <View style={styles.container}>
       <BackgroundImage />
       <StatusBar barStyle="light-content" translucent />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View
           style={[
             styles.safeArea,
-            { paddingTop: insets.top, paddingBottom: insets.bottom },
+            { 
+              paddingTop: insets.top, 
+              paddingBottom: insets.bottom,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
           ]}
         >
           {process.env.EXPO_PUBLIC_ENV === "dev" && friends.length === -1 && (
@@ -301,64 +327,173 @@ export default function MultiplayerHubScreen() {
               friends: {friends.length}
             </ThemedText>
           )}
-          {/* Top bar: back | Profile | friend */}
-          <View
-            style={{
-              flexDirection: "row",
-              gap: theme.spacing.sm,
-              alignItems: "center",
-            }}
-          >
-            <ThemedButton
-              title="back"
-              size="sm"
-              variant="glass"
+          
+          {/* Header with back button */}
+          <View style={styles.headerContainer}>
+            <TouchableOpacity 
               onPress={() => router.push("/")}
-            />
-            <ThemedButton
-              title="Profile button"
-              size="sm"
-              variant="secondary"
-              onPress={() => router.push("/profile")}
-            />
-            <ThemedButton
-              title="friend"
-              size="sm"
-              variant="secondary"
-              onPress={() => router.push("/friends")}
-            />
+              style={styles.backButton}
+            >
+              <ArrowLeft size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <WordSpringsText variant="h1" style={styles.headerTitle}>
+                Multiplayer Hub
+              </WordSpringsText>
+              <ThemedText variant="body2" color="textSecondary" style={styles.subtitle}>
+                Challenge players worldwide
+              </ThemedText>
+            </View>
           </View>
 
-          {/* Large card: search for the match */}
-          <Card
-            variant="glassStrong"
-            padding="xl"
-            style={{ marginTop: theme.spacing.xl }}
-          >
-            <ThemedButton
-              title="search for the match"
-              variant="primary"
-              fullWidth
-              leftIcon={<Search size={18} color="white" />}
-              onPress={() => router.push("/matchfinding")}
-            />
-          </Card>
+          {/* Stats Card */}
+          {profile && (
+            <Card variant="glassStrong" padding="lg" style={styles.statsCard}>
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Users size={20} color={theme.colors.primary} />
+                  <ThemedText variant="h3" style={styles.statValue}>
+                    {friends.length}
+                  </ThemedText>
+                  <ThemedText variant="caption" color="textSecondary">
+                    Friends
+                  </ThemedText>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Trophy size={20} color={theme.colors.warning} />
+                  <ThemedText variant="h3" style={styles.statValue}>
+                    {profile.username || 'Player'}
+                  </ThemedText>
+                  <ThemedText variant="caption" color="textSecondary">
+                    Username
+                  </ThemedText>
+                </View>
+              </View>
+            </Card>
+          )}
 
-          {/* Large card: leaderboard button */}
-          <Card
-            variant="glassStrong"
-            padding="xl"
-            style={{ marginTop: theme.spacing.xl }}
-          >
-            <ThemedButton
-              title="leaderboard button"
-              variant="secondary"
-              fullWidth
-              leftIcon={<Trophy size={18} color={theme.colors.text} />}
-              onPress={() => router.push("/leaderboard")}
-            />
-          </Card>
-        </View>
+          {/* Quick Actions */}
+          <View style={styles.quickActionsContainer}>
+            <ThemedText variant="h3" style={styles.sectionTitle}>
+              Quick Actions
+            </ThemedText>
+            <View style={styles.quickActionsGrid}>
+              <Card 
+                variant="glassStrong" 
+                padding="lg" 
+                style={styles.quickActionCard}
+                touchable
+                onPress={() => router.push("/profile")}
+              >
+                <View style={styles.quickActionContent}>
+                  <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary + '20' }]}>
+                    <Users size={24} color={theme.colors.primary} />
+                  </View>
+                  <ThemedText variant="body1" style={styles.quickActionText}>
+                    Profile
+                  </ThemedText>
+                </View>
+              </Card>
+              
+              <Card 
+                variant="glassStrong" 
+                padding="lg" 
+                style={styles.quickActionCard}
+                touchable
+                onPress={() => router.push("/friends")}
+              >
+                <View style={styles.quickActionContent}>
+                  <View style={[styles.iconCircle, { backgroundColor: theme.colors.success + '20' }]}>
+                    <UserPlus size={24} color={theme.colors.success} />
+                  </View>
+                  <ThemedText variant="body1" style={styles.quickActionText}>
+                    Friends
+                  </ThemedText>
+                </View>
+              </Card>
+            </View>
+          </View>
+
+          {/* Main Actions */}
+          <View style={styles.mainActionsContainer}>
+            <ThemedText variant="h3" style={styles.sectionTitle}>
+              Game Modes
+            </ThemedText>
+            
+            {/* Find Match Card */}
+            <Card
+              variant="glassStrong"
+              padding="none"
+              style={styles.actionCard}
+            >
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.primary + 'CC']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientCard}
+              >
+                <View style={styles.actionCardContent}>
+                  <View style={styles.actionCardIcon}>
+                    <Swords size={32} color="white" />
+                  </View>
+                  <View style={styles.actionCardTextContainer}>
+                    <ThemedText variant="h3" style={styles.actionCardTitle}>
+                      Find a Match
+                    </ThemedText>
+                    <ThemedText variant="body2" style={styles.actionCardSubtitle}>
+                      Battle random opponents online
+                    </ThemedText>
+                  </View>
+                </View>
+                <ThemedButton
+                  title="Search Now"
+                  variant="glass"
+                  size="lg"
+                  leftIcon={<Search size={20} color="white" />}
+                  onPress={() => router.push("/matchfinding")}
+                  style={styles.actionButton}
+                />
+              </LinearGradient>
+            </Card>
+
+            {/* Leaderboard Card */}
+            <Card
+              variant="glassStrong"
+              padding="none"
+              style={styles.actionCard}
+            >
+              <LinearGradient
+                colors={[theme.colors.warning, theme.colors.warning + 'CC']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientCard}
+              >
+                <View style={styles.actionCardContent}>
+                  <View style={styles.actionCardIcon}>
+                    <Trophy size={32} color="white" />
+                  </View>
+                  <View style={styles.actionCardTextContainer}>
+                    <ThemedText variant="h3" style={styles.actionCardTitle}>
+                      Leaderboard
+                    </ThemedText>
+                    <ThemedText variant="body2" style={styles.actionCardSubtitle}>
+                      See top players and your rank
+                    </ThemedText>
+                  </View>
+                </View>
+                <ThemedButton
+                  title="View Rankings"
+                  variant="glass"
+                  size="lg"
+                  leftIcon={<Trophy size={20} color="white" />}
+                  onPress={() => router.push("/leaderboard")}
+                  style={styles.actionButton}
+                />
+              </LinearGradient>
+            </Card>
+          </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Quick Add Friend modal (optional) */}
@@ -376,8 +511,6 @@ export default function MultiplayerHubScreen() {
           mode={modal?.mode || "friend"}
         />
       </Modal>
-
-      {/* Friend profile modal removed */}
     </View>
   );
 }
@@ -441,26 +574,143 @@ const createStyles = (theme: any) =>
       justifyContent: "center",
       backgroundColor: "transparent",
     },
-    container: { flex: 1, backgroundColor: "transparent" },
+    container: { 
+      flex: 1, 
+      backgroundColor: "transparent" 
+    },
     safeArea: {
       width: "100%",
       maxWidth: 560,
       alignSelf: "center",
-      gap: theme.spacing.xl2,
+      paddingHorizontal: theme.spacing.lg,
     },
     scrollContent: {
       flexGrow: 1,
-      justifyContent: "flex-start",
-      paddingHorizontal: theme.spacing.lg,
       paddingBottom: theme.spacing.xl4,
     },
-    header: {
-      alignItems: "flex-start",
-      gap: theme.spacing.xs,
-      marginBottom: theme.spacing.sm,
+    headerContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: theme.spacing.xl,
+      gap: theme.spacing.md,
     },
-    section: { marginBottom: theme.spacing.xl, gap: theme.spacing.sm },
-    sectionTitle: { fontSize: 24 },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: theme.colors.surfaceVariant + '40',
+      justifyContent: "center",
+      alignItems: "center",
+      backdropFilter: "blur(10px)",
+    },
+    headerTextContainer: {
+      flex: 1,
+    },
+    headerTitle: {
+      fontSize: 28,
+      marginBottom: theme.spacing.xs,
+    },
+    subtitle: {
+      fontSize: 14,
+      opacity: 0.8,
+    },
+    statsCard: {
+      marginBottom: theme.spacing.lg,
+    },
+    statsContainer: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+    },
+    statItem: {
+      flex: 1,
+      alignItems: "center",
+      gap: theme.spacing.xs,
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: "bold",
+    },
+    statDivider: {
+      width: 1,
+      height: 40,
+      backgroundColor: theme.colors.border,
+      opacity: 0.3,
+    },
+    quickActionsContainer: {
+      marginBottom: theme.spacing.xl,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      marginBottom: theme.spacing.md,
+      fontWeight: "600",
+    },
+    quickActionsGrid: {
+      flexDirection: "row",
+      gap: theme.spacing.md,
+    },
+    quickActionCard: {
+      flex: 1,
+    },
+    quickActionContent: {
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    iconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    quickActionText: {
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    mainActionsContainer: {
+      gap: theme.spacing.lg,
+    },
+    actionCard: {
+      marginBottom: theme.spacing.md,
+      overflow: "hidden",
+    },
+    gradientCard: {
+      padding: theme.spacing.xl,
+      gap: theme.spacing.lg,
+    },
+    actionCardContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.md,
+    },
+    actionCardIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    actionCardTextContainer: {
+      flex: 1,
+      gap: theme.spacing.xs,
+    },
+    actionCardTitle: {
+      fontSize: 22,
+      fontWeight: "bold",
+      color: "white",
+    },
+    actionCardSubtitle: {
+      fontSize: 13,
+      color: "rgba(255, 255, 255, 0.9)",
+    },
+    actionButton: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
     requestRow: {
       flexDirection: "row",
       alignItems: "center",
