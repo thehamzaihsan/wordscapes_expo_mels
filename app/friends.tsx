@@ -1,4 +1,5 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
 import WordSpringsText from "@/components/common/WordSpringsText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
@@ -10,20 +11,23 @@ import { supabase } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "expo-router";
 import {
+  ArrowLeft,
   CheckCircle,
   Gamepad2,
   Info,
   Search,
   UserMinus,
   UserPlus,
+  Users,
   XCircle,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  Animated,
   ScrollView,
   StyleSheet,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -67,6 +71,17 @@ export default function FriendsRoute() {
   >(null);
   const presenceChannelRef = useRef<any>(null);
   const [onlineMap, setOnlineMap] = useState<Record<string, boolean>>({});
+  
+  // Animation
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   // Initial load & realtime subscription
   useEffect(() => {
@@ -349,19 +364,7 @@ export default function FriendsRoute() {
   };
 
   if (authLoading || loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <BackgroundImage />
-        <ActivityIndicator color={theme.colors.primary} size="large" />
-        <ThemedText
-          variant="body2"
-          color="textSecondary"
-          style={{ marginTop: theme.spacing.base }}
-        >
-          Loading friends...
-        </ThemedText>
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   if (!session?.user?.id) {
@@ -384,214 +387,321 @@ export default function FriendsRoute() {
   return (
     <View style={styles.container}>
       <BackgroundImage />
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + theme.spacing.md,
-            paddingBottom: insets.bottom + theme.spacing.xl2,
-          },
-        ]}
-      >
-        <View style={styles.headerRow}>
-          <ThemedButton
-            title="Back"
-            size="sm"
-            variant="glass"
-            onPress={() => router.back()}
-          />
-          <WordSpringsText style={styles.title}>Friends</WordSpringsText>
-        </View>
-        {/* Tabs */}
-        <View style={styles.tabs}>
-          <ThemedButton
-            title="friends"
-            size="sm"
-            variant={tab === "friends" ? "primary" : "secondary"}
-            onPress={() => setTab("friends")}
-          />
-          <ThemedButton
-            title="request"
-            size="sm"
-            variant={tab === "requests" ? "primary" : "secondary"}
-            onPress={() => setTab("requests")}
-          />
-          <ThemedButton
-            title="search player"
-            size="sm"
-            variant={tab === "search" ? "primary" : "secondary"}
-            onPress={() => setTab("search")}
-            leftIcon={<Search size={14} color={theme.colors.text} />}
-          />
-        </View>
-        {/* Content */}
-        {tab === "friends" && (
-          <Card variant="glassStrong" padding="lg" style={styles.panel}>
-            <ThemedText variant="body2" color="textSecondary">
-              {sortedProfiles.length} friends •{" "}
-              {Array.from(onlineFriendIds).length} online
-            </ThemedText>
-            <View style={styles.listContainer}>
-              {sortedProfiles.map((fp) => (
-                <View key={fp.id} style={styles.friendRow}>
-                  <View style={styles.friendLeft}>
-                    <View
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 5,
-                        backgroundColor: onlineFriendIds.has(fp.id)
-                          ? theme.colors.success
-                          : theme.colors.textSecondary,
-                      }}
-                    />
-                    <ThemedText variant="body2" weight="semibold">
-                      {fp.username || fp.id.slice(0, 6)}
-                    </ThemedText>
-                    {typeof fp.ranking_points === "number" && (
-                      <ThemedText variant="caption" color="textSecondary">
-                        {fp.ranking_points} RP
-                      </ThemedText>
-                    )}
-                  </View>
-                  <ThemedButton
-                    title="Actions"
-                    size="sm"
-                    variant="secondary"
-                    onPress={() => setActionTarget(fp)}
-                  />
-                </View>
-              ))}
-              {sortedProfiles.length === 0 && (
-                <ThemedText
-                  variant="body2"
-                  color="textSecondary"
-                  style={{ textAlign: "center", marginTop: theme.spacing.base }}
-                >
-                  No friends yet.
-                </ThemedText>
-              )}
-            </View>
-          </Card>
-        )}
-        {tab === "requests" && (
-          <Card variant="glassStrong" padding="lg" style={styles.panel}>
-            <ThemedText variant="body2" color="textSecondary">
-              Incoming requests: {requestRows.length}
-            </ThemedText>
-            <View style={styles.listContainer}>
-              {requestRows.map((r) => (
-                <View key={r.id} style={styles.requestRow}>
-                  <ThemedText variant="body2">
-                    {r.requester.slice(0, 8)}...
-                  </ThemedText>
-                  <View style={{ flexDirection: "row", gap: theme.spacing.xs }}>
-                    <ThemedButton
-                      title="Accept"
-                      size="sm"
-                      variant="primary"
-                      leftIcon={<CheckCircle size={14} color="white" />}
-                      onPress={() => acceptRequest(r)}
-                    />
-                    <ThemedButton
-                      title="Decline"
-                      size="sm"
-                      variant="secondary"
-                      leftIcon={<XCircle size={14} color={theme.colors.text} />}
-                      onPress={() => declineRequest(r)}
-                    />
-                  </View>
-                </View>
-              ))}
-              {requestRows.length === 0 && (
-                <ThemedText
-                  variant="body2"
-                  color="textSecondary"
-                  style={{ textAlign: "center", marginTop: theme.spacing.base }}
-                >
-                  No pending requests.
-                </ThemedText>
-              )}
-            </View>
-          </Card>
-        )}
-        {tab === "search" && (
-          <Card variant="glassStrong" padding="lg" style={styles.panel}>
-            <ThemedText variant="body2" color="textSecondary">
-              Search by username, email, or ID
-            </ThemedText>
-            <View
-              style={{ marginTop: theme.spacing.sm, gap: theme.spacing.sm }}
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + theme.spacing.xl,
+              paddingBottom: insets.bottom + theme.spacing.xl2,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backButton}
             >
-              <TextInput
-                value={searchValue}
-                onChangeText={setSearchValue}
-                placeholder="e.g. playername or email"
-                placeholderTextColor={theme.colors.textSecondary}
-                style={{
-                  color: theme.colors.text,
-                  fontSize: 16,
-                  paddingVertical: 8,
-                }}
-                autoCapitalize="none"
-              />
-              <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
-                <ThemedButton
-                  title="Search"
-                  variant="primary"
-                  size="sm"
-                  onPress={runSearch}
-                />
-                <ThemedButton
-                  title="Clear"
-                  variant="secondary"
-                  size="sm"
-                  onPress={() => {
-                    setSearchValue("");
-                    setSearchResult(null);
-                  }}
-                />
+              <ArrowLeft size={24} color="white" />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <WordSpringsText variant="h1" style={[styles.title, { color: 'white' }]}>
+                Friends
+              </WordSpringsText>
+              <ThemedText variant="body2" style={[styles.subtitle, { color: 'white' }]}>
+                Connect and compete
+              </ThemedText>
+            </View>
+          </View>
+
+          {/* Tabs */}
+          <View style={styles.tabs}>
+            <ThemedButton
+              title="Friends"
+              size="md"
+              variant={tab === "friends" ? "primary" : "glass"}
+              onPress={() => setTab("friends")}
+              leftIcon={<Users size={16} color={tab === "friends" ? "white" : theme.colors.text} />}
+              style={styles.tabButton}
+            />
+            <ThemedButton
+              title={`Requests${requestRows.length > 0 ? ` (${requestRows.length})` : ''}`}
+              size="md"
+              variant={tab === "requests" ? "primary" : "glass"}
+              onPress={() => setTab("requests")}
+              style={styles.tabButton}
+            />
+            <ThemedButton
+              title="Search"
+              size="md"
+              variant={tab === "search" ? "primary" : "glass"}
+              onPress={() => setTab("search")}
+              leftIcon={<Search size={16} color={tab === "search" ? "white" : theme.colors.text} />}
+              style={styles.tabButton}
+            />
+          </View>
+          {/* Content */}
+          {tab === "friends" && (
+            <View style={styles.panel}>
+              {/* Stats Card */}
+              <Card variant="glassStrong" padding="lg" style={styles.statsCard}>
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Users size={20} color={theme.colors.primary} />
+                    <ThemedText variant="h3">{sortedProfiles.length}</ThemedText>
+                    <ThemedText variant="caption" color="textSecondary">
+                      Total Friends
+                    </ThemedText>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <View style={[styles.onlineDot, { backgroundColor: theme.colors.success, width: 12, height: 12 }]} />
+                    <ThemedText variant="h3">{Array.from(onlineFriendIds).length}</ThemedText>
+                    <ThemedText variant="caption" color="textSecondary">
+                      Online Now
+                    </ThemedText>
+                  </View>
+                </View>
+              </Card>
+
+              {/* Friends List */}
+              <ThemedText variant="h3" style={[styles.sectionTitle, { color: 'white' }]}>
+                Your Friends
+              </ThemedText>
+              
+              <View style={styles.listContainer}>
+                {sortedProfiles.map((fp) => (
+                  <Card
+                    key={fp.id}
+                    variant="glassStrong"
+                    padding="md"
+                    style={styles.friendCard}
+                    touchable
+                    onPress={() => setActionTarget(fp)}
+                  >
+                    <View style={styles.friendRow}>
+                      <View style={styles.friendLeft}>
+                        <View
+                          style={[
+                            styles.onlineDot,
+                            {
+                              backgroundColor: onlineFriendIds.has(fp.id)
+                                ? theme.colors.success
+                                : theme.colors.textSecondary,
+                            },
+                          ]}
+                        />
+                        <View style={styles.friendInfo}>
+                          <ThemedText variant="body1" weight="semibold">
+                            {fp.username || fp.id.slice(0, 8)}
+                          </ThemedText>
+                          {typeof fp.ranking_points === "number" && (
+                            <ThemedText variant="caption" color="textSecondary">
+                              {fp.ranking_points} Ranking Points
+                            </ThemedText>
+                          )}
+                        </View>
+                      </View>
+                      <View style={styles.friendRight}>
+                        {onlineFriendIds.has(fp.id) && (
+                          <View style={styles.onlineBadge}>
+                            <ThemedText variant="caption" style={{ color: theme.colors.success, fontWeight: '600' }}>
+                              Online
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </Card>
+                ))}
+                {sortedProfiles.length === 0 && (
+                  <Card variant="glassStrong" padding="xl" style={styles.emptyCard}>
+                    <Users size={48} color={theme.colors.textSecondary} />
+                    <ThemedText
+                      variant="body1"
+                      color="textSecondary"
+                      style={{ textAlign: "center", marginTop: theme.spacing.md }}
+                    >
+                      No friends yet
+                    </ThemedText>
+                    <ThemedText
+                      variant="body2"
+                      color="textSecondary"
+                      style={{ textAlign: "center" }}
+                    >
+                      Search for players to add
+                    </ThemedText>
+                  </Card>
+                )}
               </View>
             </View>
-            {searchResult && (
-              <View
-                style={{ marginTop: theme.spacing.md, gap: theme.spacing.xs }}
-              >
-                <ThemedText variant="body2">
-                  Found: {searchResult.username || searchResult.id.slice(0, 8)}
+          )}
+          {tab === "requests" && (
+            <View style={styles.panel}>
+              <ThemedText variant="h3" style={[styles.sectionTitle, { color: 'white' }]}>
+                Friend Requests
+              </ThemedText>
+              
+              <View style={styles.listContainer}>
+                {requestRows.map((r) => (
+                  <Card
+                    key={r.id}
+                    variant="glassStrong"
+                    padding="md"
+                    style={styles.requestCard}
+                  >
+                    <View style={styles.requestRow}>
+                      <View style={styles.requestLeft}>
+                        <UserPlus size={20} color={theme.colors.primary} />
+                        <ThemedText variant="body1" weight="semibold">
+                          {r.requester.slice(0, 8)}...
+                        </ThemedText>
+                      </View>
+                      <View style={styles.requestActions}>
+                        <ThemedButton
+                          title="Accept"
+                          size="sm"
+                          variant="primary"
+                          leftIcon={<CheckCircle size={14} color="white" />}
+                          onPress={() => acceptRequest(r)}
+                        />
+                        <ThemedButton
+                          title="Decline"
+                          size="sm"
+                          variant="secondary"
+                          leftIcon={<XCircle size={14} color={theme.colors.text} />}
+                          onPress={() => declineRequest(r)}
+                        />
+                      </View>
+                    </View>
+                  </Card>
+                ))}
+                {requestRows.length === 0 && (
+                  <Card variant="glassStrong" padding="xl" style={styles.emptyCard}>
+                    <UserPlus size={48} color={theme.colors.textSecondary} />
+                    <ThemedText
+                      variant="body1"
+                      color="textSecondary"
+                      style={{ textAlign: "center", marginTop: theme.spacing.md }}
+                    >
+                      No pending requests
+                    </ThemedText>
+                    <ThemedText
+                      variant="body2"
+                      color="textSecondary"
+                      style={{ textAlign: "center" }}
+                    >
+                      Friend requests will appear here
+                    </ThemedText>
+                  </Card>
+                )}
+              </View>
+            </View>
+          )}
+          {tab === "search" && (
+            <View style={styles.panel}>
+              <ThemedText variant="h3" style={[styles.sectionTitle, { color: 'white' }]}>
+                Find Players
+              </ThemedText>
+              
+              <Card variant="glassStrong" padding="lg" style={styles.searchCard}>
+                <ThemedText variant="body2" color="textSecondary" style={{ marginBottom: theme.spacing.sm }}>
+                  Search by username, email, or player ID
                 </ThemedText>
-                <ThemedText variant="caption" color="textSecondary">
-                  Ranking: {searchResult.ranking_points ?? 200} • XP:{" "}
-                  {searchResult.xp ?? 0}
-                </ThemedText>
-                <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
-                  <ThemedButton
-                    title="Add Friend"
-                    size="sm"
-                    variant="primary"
-                    leftIcon={<UserPlus size={14} color="white" />}
-                    onPress={() => sendFriendRequest(searchResult.id)}
-                  />
-                  <ThemedButton
-                    title="Game"
-                    size="sm"
-                    variant="secondary"
-                    leftIcon={<Gamepad2 size={14} color={theme.colors.text} />}
-                    onPress={() => sendGameRequest(searchResult)}
-                  />
-                  <ThemedButton
-                    title="Profile"
-                    size="sm"
-                    variant="ghost"
-                    leftIcon={<Info size={14} color={theme.colors.text} />}
-                    onPress={() => setSelectedFriend(searchResult)}
+                <View style={styles.searchInputContainer}>
+                  <Search size={20} color={theme.colors.textSecondary} />
+                  <TextInput
+                    value={searchValue}
+                    onChangeText={setSearchValue}
+                    placeholder="Enter username or email..."
+                    placeholderTextColor={theme.colors.textSecondary}
+                    style={[styles.searchInput, { color: theme.colors.text }]}
+                    autoCapitalize="none"
                   />
                 </View>
-              </View>
-            )}
-          </Card>
-        )}
-      </ScrollView>
+                <View style={styles.searchActions}>
+                  <ThemedButton
+                    title="Search"
+                    variant="primary"
+                    size="md"
+                    onPress={runSearch}
+                    fullWidth
+                  />
+                  <ThemedButton
+                    title="Clear"
+                    variant="secondary"
+                    size="md"
+                    onPress={() => {
+                      setSearchValue("");
+                      setSearchResult(null);
+                    }}
+                    fullWidth
+                  />
+                </View>
+              </Card>
+
+              {searchResult && (
+                <Card variant="glassStrong" padding="lg" style={styles.resultCard}>
+                  <View style={styles.resultHeader}>
+                    <ThemedText variant="h3">
+                      {searchResult.username || searchResult.id.slice(0, 8)}
+                    </ThemedText>
+                    <ThemedText variant="caption" color="textSecondary">
+                      ID: {searchResult.id.slice(0, 8)}...
+                    </ThemedText>
+                  </View>
+                  <View style={styles.resultStats}>
+                    <View style={styles.resultStatItem}>
+                      <ThemedText variant="body2" color="textSecondary">
+                        Ranking
+                      </ThemedText>
+                      <ThemedText variant="body1" weight="bold">
+                        {searchResult.ranking_points ?? 200}
+                      </ThemedText>
+                    </View>
+                    <View style={styles.resultStatItem}>
+                      <ThemedText variant="body2" color="textSecondary">
+                        XP
+                      </ThemedText>
+                      <ThemedText variant="body1" weight="bold">
+                        {searchResult.xp ?? 0}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={styles.resultActions}>
+                    <ThemedButton
+                      title="Add Friend"
+                      size="md"
+                      variant="primary"
+                      leftIcon={<UserPlus size={16} color="white" />}
+                      onPress={() => sendFriendRequest(searchResult.id)}
+                      fullWidth
+                    />
+                    <ThemedButton
+                      title="Challenge"
+                      size="md"
+                      variant="secondary"
+                      leftIcon={<Gamepad2 size={16} color={theme.colors.text} />}
+                      onPress={() => sendGameRequest(searchResult)}
+                      fullWidth
+                    />
+                    <ThemedButton
+                      title="View Profile"
+                      size="md"
+                      variant="ghost"
+                      leftIcon={<Info size={16} color={theme.colors.text} />}
+                      onPress={() => setSelectedFriend(searchResult)}
+                      fullWidth
+                    />
+                  </View>
+                </Card>
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </Animated.View>
 
       {/* Profile Modal */}
       <FriendProfileModal
@@ -711,35 +821,183 @@ const createStyles = (theme: any) =>
       justifyContent: "center",
     },
     container: { flex: 1 },
-    scrollContent: { flexGrow: 1, paddingHorizontal: theme.spacing.lg },
-    headerRow: {
+    scrollContent: { 
+      flexGrow: 1, 
+      paddingHorizontal: theme.spacing.lg,
+      width: "100%",
+      maxWidth: 560,
+      alignSelf: "center",
+    },
+    header: {
       flexDirection: "row",
       alignItems: "center",
+      marginBottom: theme.spacing.xl,
       gap: theme.spacing.md,
     },
-    title: { fontSize: 32, flex: 1 },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: theme.colors.surfaceVariant + '40',
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    headerTextContainer: {
+      flex: 1,
+    },
+    title: { 
+      fontSize: 32,
+      marginBottom: theme.spacing.xs,
+    },
+    subtitle: {
+      fontSize: 14,
+      opacity: 0.8,
+    },
     tabs: {
       flexDirection: "row",
       gap: theme.spacing.sm,
-      marginTop: theme.spacing.md,
+      marginBottom: theme.spacing.lg,
     },
-    panel: { marginTop: theme.spacing.lg, gap: theme.spacing.sm },
-    listContainer: { marginTop: theme.spacing.md },
+    tabButton: {
+      flex: 1,
+    },
+    panel: { 
+      gap: theme.spacing.md 
+    },
+    statsCard: {
+      marginBottom: theme.spacing.md,
+    },
+    statsRow: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+    },
+    statItem: {
+      flex: 1,
+      alignItems: "center",
+      gap: theme.spacing.xs,
+    },
+    statDivider: {
+      width: 1,
+      height: 40,
+      backgroundColor: theme.colors.border,
+      opacity: 0.3,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      marginBottom: theme.spacing.sm,
+    },
+    listContainer: { 
+      gap: theme.spacing.sm 
+    },
+    friendCard: {
+      marginBottom: theme.spacing.xs,
+    },
     friendRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: theme.spacing.xs,
     },
     friendLeft: {
       flexDirection: "row",
       alignItems: "center",
+      gap: theme.spacing.sm,
+      flex: 1,
+    },
+    friendInfo: {
+      flex: 1,
+      gap: theme.spacing.xs / 2,
+    },
+    friendRight: {
+      flexDirection: "row",
+      alignItems: "center",
       gap: theme.spacing.xs,
+    },
+    onlineDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      borderWidth: 2,
+      borderColor: "white",
+    },
+    onlineBadge: {
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs / 2,
+      borderRadius: theme.borderRadius.full,
+      backgroundColor: theme.colors.success + '20',
+    },
+    requestCard: {
+      marginBottom: theme.spacing.xs,
     },
     requestRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: theme.spacing.xs,
+      gap: theme.spacing.sm,
+    },
+    requestLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      flex: 1,
+    },
+    requestActions: {
+      flexDirection: "row",
+      gap: theme.spacing.xs,
+    },
+    searchCard: {
+      marginBottom: theme.spacing.md,
+    },
+    searchInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      backgroundColor: theme.colors.surfaceVariant + '40',
+      borderRadius: theme.borderRadius.md,
+      paddingHorizontal: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      paddingVertical: theme.spacing.sm,
+    },
+    searchActions: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    resultCard: {
+      gap: theme.spacing.md,
+    },
+    resultHeader: {
+      gap: theme.spacing.xs / 2,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border + '40',
+      paddingBottom: theme.spacing.sm,
+    },
+    resultStats: {
+      flexDirection: "row",
+      gap: theme.spacing.md,
+    },
+    resultStatItem: {
+      flex: 1,
+      alignItems: "center",
+      gap: theme.spacing.xs / 2,
+      padding: theme.spacing.sm,
+      backgroundColor: theme.colors.surfaceVariant + '20',
+      borderRadius: theme.borderRadius.md,
+    },
+    resultActions: {
+      gap: theme.spacing.sm,
+    },
+    emptyCard: {
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.md,
     },
   });
