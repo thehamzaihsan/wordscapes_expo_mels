@@ -371,7 +371,7 @@ export default function MultiplayerHubScreen() {
                 padding="lg" 
                 style={styles.quickActionCard}
                 touchable
-                onPress={() => router.push("/profile")}
+                onPress={() => router.push("/multiplayer-profile")}
               >
                 <View style={styles.quickActionContent}>
                   <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary + '20' }]}>
