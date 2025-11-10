@@ -40,6 +40,8 @@ export default function LoginRoute() {
       await router.push("/forgot-password-email" as any);
     } else if (screen === "login-email") {
       await router.push("/login-email" as any);
+    } else if (screen === "back") {
+      await router.push("/");
     }
 
     setIsLoading(false);

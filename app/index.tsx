@@ -226,7 +226,7 @@ export default function Index() {
         </View> */}
         </View>
       </ScrollView>
-      {/* Pretty error modal */}
+      {/* Enhanced error modal */}
       <Modal
         isVisible={!!errorModal}
         onClose={() => setErrorModal(null)}
@@ -236,30 +236,54 @@ export default function Index() {
         showCloseButton
         size="small"
       >
-        <View style={{ gap: theme.spacing.base }}>
-          {errorModal?.primary && (
-            <ThemedButton
-              title={errorModal.primary.label}
-              variant="primary"
-              onPress={errorModal.primary.action}
-              leftIcon={
-                errorModal.icon === "offline" ? (
-                  <WifiOff size={18} color="white" />
+        <View style={{ gap: theme.spacing.lg, paddingTop: theme.spacing.md }}>
+          {/* Icon Display */}
+          {errorModal?.icon && (
+            <View style={{
+              alignItems: "center",
+              paddingVertical: theme.spacing.md,
+            }}>
+              <View style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: errorModal.icon === "offline" 
+                  ? theme.colors.error + '20' 
+                  : theme.colors.warning + '20',
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: theme.spacing.sm,
+              }}>
+                {errorModal.icon === "offline" ? (
+                  <WifiOff size={40} color={theme.colors.error} />
                 ) : errorModal.icon === "guest" ? (
-                  <UserX size={18} color="white" />
-                ) : undefined
-              }
-              fullWidth
-            />
+                  <UserX size={40} color={theme.colors.warning} />
+                ) : null}
+              </View>
+            </View>
           )}
-          {errorModal?.secondary && (
-            <ThemedButton
-              title={errorModal.secondary.label}
-              variant="secondary"
-              onPress={errorModal.secondary.action}
-              fullWidth
-            />
-          )}
+
+          {/* Action Buttons */}
+          <View style={{ gap: theme.spacing.sm }}>
+            {errorModal?.primary && (
+              <ThemedButton
+                title={errorModal.primary.label}
+                variant="primary"
+                size="lg"
+                onPress={errorModal.primary.action}
+                fullWidth
+              />
+            )}
+            {errorModal?.secondary && (
+              <ThemedButton
+                title={errorModal.secondary.label}
+                variant="ghost"
+                size="md"
+                onPress={errorModal.secondary.action}
+                fullWidth
+              />
+            )}
+          </View>
         </View>
       </Modal>
     </View>

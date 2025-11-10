@@ -20,6 +20,7 @@ import { BlurView } from 'expo-blur';
 import { useTheme, Theme } from '@/hooks/useTheme';
 import ThemedText from './ThemedText';
 import ThemedButton from './ThemedButton';
+import { X } from 'lucide-react-native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -178,10 +179,11 @@ const Modal: React.FC<ModalProps> = ({
             </View>
             {showCloseButton && onClose && (
               <ThemedButton
-                title="✕"
+                title=""
                 variant="ghost"
                 size="sm"
                 onPress={onClose}
+                leftIcon={<X size={20} color={theme.colors.text} />}
                 style={styles.closeButton}
               />
             )}
