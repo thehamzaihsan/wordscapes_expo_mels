@@ -313,7 +313,7 @@ export default function MultiplayerHubScreen() {
               title="back"
               size="sm"
               variant="glass"
-              onPress={() => router.back()}
+              onPress={() => router.push("/")}
             />
             <ThemedButton
               title="Profile button"

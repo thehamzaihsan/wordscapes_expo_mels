@@ -20,7 +20,7 @@ export default ({ config }: any) => ({
       icon: "./assets/android/ic_launcher-web.png",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/android/mipmap-xxxhdpi/ic_launcher_foreground.webp",
+        foregroundImage: "./assets/android/ic_launcher_foreground.png",
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
