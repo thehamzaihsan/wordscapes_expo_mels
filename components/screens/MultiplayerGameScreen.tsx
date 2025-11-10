@@ -5,6 +5,7 @@ import WordSpringsText from "@/components/common/WordSpringsText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Modal from "@/components/ui/ThemedModal";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
+import { useMatchPuzzle } from "@/hooks/useMatchPuzzle";
 import { useMultiplayerGameLogic } from "@/hooks/useMultiplayerGameLogic";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import {
@@ -36,19 +37,17 @@ export default function MultiplayerGameScreen({
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const {
-    timeLeft,
-    // Keep local logic for validation/timer only
-    letters,
-    allValidWords,
-    gameActive,
-    startGame,
-    handleWordSubmit,
-  } = useMultiplayerGameLogic();
+  const { timeLeft, gameActive, startGame, stopGame } =
+    useMultiplayerGameLogic();
 
   // Live match hooks
   const { session } = useSupabaseAuth();
   const playerId = session?.user?.id ?? null;
+  const {
+    letters: puzzleLetters,
+    words: puzzleWords,
+    ready: puzzleReady,
+  } = useMatchPuzzle(matchId, playerId);
   const {
     wordsFound,
     opponentWords,
@@ -75,10 +74,36 @@ export default function MultiplayerGameScreen({
   const [leftName, setLeftName] = useState<string>("Player 1");
   const [rightName, setRightName] = useState<string>("Player 2");
 
+  // Add a short synchronization delay once the puzzle is ready so both clients render letters/words together
+  const [syncDelayDone, setSyncDelayDone] = useState(false);
   useEffect(() => {
-    startGame();
-    if (playerId) dequeueForMatch(playerId);
-  }, [startGame, playerId]);
+    if (!puzzleReady) {
+      setSyncDelayDone(false);
+      return;
+    }
+    const t = setTimeout(() => setSyncDelayDone(true), 1200); // ~1.2s grace period
+    return () => clearTimeout(t);
+  }, [puzzleReady]);
+
+  useEffect(() => {
+    // Start timer only after puzzle is ready and grace period is complete and non-empty content exists
+    if (
+      puzzleReady &&
+      syncDelayDone &&
+      puzzleLetters.length &&
+      puzzleWords.length
+    ) {
+      startGame();
+      if (playerId) dequeueForMatch(playerId);
+    }
+  }, [
+    startGame,
+    playerId,
+    puzzleReady,
+    syncDelayDone,
+    puzzleLetters.length,
+    puzzleWords.length,
+  ]);
 
   // Load human-readable names for both players
   useEffect(() => {
@@ -126,13 +151,26 @@ export default function MultiplayerGameScreen({
     }
   }, [status, lastReason, gameOver, initiatedWithdraw, endAck]);
 
+  // Stop the local timer as soon as gameOver is set, or when we navigate away
+  useEffect(() => {
+    if (gameOver) stopGame();
+  }, [gameOver, stopGame]);
+
+  useEffect(() => {
+    return () => {
+      // Ensure intervals are cleared if the screen unmounts for any reason
+      stopGame();
+    };
+  }, [stopGame]);
+
   // End game conditions: time up or all words found
   useEffect(() => {
     if (gameOver || endAck) return;
-    if (
-      timeLeft <= 0 ||
-      wordsFound.length + opponentWords.length >= allValidWords.length
-    ) {
+    // Guard: don't evaluate completion until puzzle loaded and has at least one word
+    if (!puzzleReady || puzzleWords.length === 0) return;
+    const totalFound = wordsFound.length + opponentWords.length;
+    const allWordsCount = puzzleWords.length;
+    if (timeLeft <= 0 || totalFound >= allWordsCount) {
       const my = wordsFound.length;
       const opp = opponentWords.length;
       if (my > opp) setResultText("You win! Congratulations");
@@ -144,7 +182,8 @@ export default function MultiplayerGameScreen({
     timeLeft,
     wordsFound.length,
     opponentWords.length,
-    allValidWords.length,
+    puzzleWords.length,
+    puzzleReady,
     gameOver,
     endAck,
   ]);
@@ -181,17 +220,25 @@ export default function MultiplayerGameScreen({
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
-  // For now, we'll assume player 1 is submitting words.
-  // In a real scenario, you'd have a way to distinguish players.
   const onWordComplete = async (word: string) => {
-    // local validation first
-    const res = handleWordSubmit(word, 1);
-    if (res?.success) {
-      await submitWord(word);
-    }
+    const w = (word || "").toUpperCase();
+    // validate against synchronized puzzle and ensure uniqueness across both players
+    if (!puzzleWords.includes(w)) return;
+    if (wordsFound.includes(w) || opponentWords.includes(w)) return;
+    await submitWord(w);
   };
 
-  if (!gameActive) {
+  // While waiting for synchronized puzzle or the grace delay, show a loading screen
+  // unless the match is already over — if gameOver is true we must render the
+  // Game Over modal so the player sees win/lose/tie instead of the loading UI.
+  if (
+    !gameOver &&
+    (!gameActive ||
+      !puzzleReady ||
+      !syncDelayDone ||
+      !puzzleLetters.length ||
+      !puzzleWords.length)
+  ) {
     return <LoadingScreen />;
   }
 
@@ -214,14 +261,16 @@ export default function MultiplayerGameScreen({
             title="Back"
             variant="glass"
             size="sm"
-            onPress={() => setShowWithdraw(true)}
+            onPress={() => {
+              setShowWithdraw(true);
+            }}
           />
           <View style={styles.playerInfo}>
             <WordSpringsText style={styles.playerName}>
               {leftName}
             </WordSpringsText>
             <WordSpringsText style={styles.playerScore}>
-              Words: {wordsFound.length}/{allValidWords.length}
+              Words: {wordsFound.length}/{puzzleWords.length}
             </WordSpringsText>
           </View>
           <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
@@ -230,23 +279,52 @@ export default function MultiplayerGameScreen({
               {rightName}
             </WordSpringsText>
             <WordSpringsText style={styles.playerScore}>
-              Words: {opponentWords.length}/{allValidWords.length}
+              Words: {opponentWords.length}/{puzzleWords.length}
             </WordSpringsText>
           </View>
         </View>
 
         <View style={styles.wheelContainer}>
-          {letters.length ? (
-            <LetterWheel
-              letters={letters}
-              onWordComplete={onWordComplete}
-              validWords={allValidWords}
-              foundWords={[...wordsFound, ...opponentWords]}
-              onNavigate={onNavigate}
-            />
-          ) : (
-            <Text style={styles.infoText}>No letters</Text>
-          )}
+          <LetterWheel
+            letters={puzzleLetters}
+            onWordComplete={onWordComplete}
+            validWords={puzzleWords}
+            foundWords={[...wordsFound, ...opponentWords]}
+            onNavigate={onNavigate}
+          />
+        </View>
+        {/* Word lists */}
+        <View style={styles.wordLists}>
+          <View style={styles.wordColumn}>
+            <Text style={styles.wordHeader}>
+              Your Words ({wordsFound.length})
+            </Text>
+            <View style={styles.wordListBox}>
+              {wordsFound.map((w) => (
+                <Text key={w} style={styles.wordItem}>
+                  {w}
+                </Text>
+              ))}
+              {wordsFound.length === 0 && (
+                <Text style={styles.wordEmpty}>None yet</Text>
+              )}
+            </View>
+          </View>
+          <View style={styles.wordColumn}>
+            <Text style={styles.wordHeader}>
+              Opponent ({opponentWords.length})
+            </Text>
+            <View style={styles.wordListBox}>
+              {opponentWords.map((w) => (
+                <Text key={w} style={styles.wordItem}>
+                  {w}
+                </Text>
+              ))}
+              {opponentWords.length === 0 && (
+                <Text style={styles.wordEmpty}>None yet</Text>
+              )}
+            </View>
+          </View>
         </View>
 
         <AdComponent />
@@ -269,6 +347,7 @@ export default function MultiplayerGameScreen({
             if (!matchId || !playerId) return;
             setShowWithdraw(false);
             setInitiatedWithdraw(true);
+            stopGame();
             // Navigate away immediately; don't show modal or wait on network
             if (onNavigate) onNavigate("multiplayer");
             else router.replace("/multiplayer");
@@ -302,6 +381,7 @@ export default function MultiplayerGameScreen({
           setEndAck(true);
           setGameOver(false);
           if (playerId) await dequeueForMatch(playerId);
+          stopGame();
         }}
         title="Match Finished"
         showCloseButton
@@ -317,6 +397,7 @@ export default function MultiplayerGameScreen({
             setEndAck(true);
             setGameOver(false);
             if (playerId) await dequeueForMatch(playerId);
+            stopGame();
             onNavigate?.("multiplayer");
           }}
         />
@@ -488,5 +569,43 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 110,
+  },
+  wordLists: {
+    flexDirection: "row",
+    width: "100%",
+    paddingHorizontal: 16,
+    gap: 12,
+    marginTop: 24,
+  },
+  wordColumn: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 12,
+    padding: 12,
+  },
+  wordHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "white",
+    marginBottom: 6,
+  },
+  wordListBox: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  wordItem: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    color: "white",
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  wordEmpty: {
+    color: "#888",
+    fontSize: 14,
+    fontStyle: "italic",
   },
 });
