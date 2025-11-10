@@ -3,11 +3,14 @@ import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import WordSpringsText from "@/components/common/WordSpringsText";
 import ThemedButton from "@/components/ui/ThemedButton";
+import ThemedText from "@/components/ui/ThemedText";
+import Card from "@/components/ui/ThemedCard";
 import Modal from "@/components/ui/ThemedModal";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
 import { useMatchPuzzle } from "@/hooks/useMatchPuzzle";
 import { useMultiplayerGameLogic } from "@/hooks/useMultiplayerGameLogic";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useTheme } from "@/hooks/useTheme";
 import {
   adjustRankingOnFinish,
   createMatch,
@@ -19,10 +22,12 @@ import { supabase } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ArrowLeft, Clock, Trophy, User, Zap } from "lucide-react-native";
 import AdComponent from "../common/AdComponent";
 import BackgroundImage from "../common/BackgroundImage";
 import LoadingScreen from "../common/LoadingScreen";
-import LetterWheel from "../game/inputWheel";
+import MultiplayerWheel from "../game/MultiplayerWheel";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface MultiplayerGameScreenProps {
   onNavigate?: (screen: string) => void;
@@ -33,9 +38,10 @@ export default function MultiplayerGameScreen({
   onNavigate,
   matchId,
 }: MultiplayerGameScreenProps) {
-  useWindowDimensions(); // currently unused but keeps responsive capability; placeholder
+  useWindowDimensions(); // Keep for responsive capability
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { theme } = useTheme();
 
   const { timeLeft, gameActive, startGame, stopGame } =
     useMultiplayerGameLogic();
@@ -253,39 +259,90 @@ export default function MultiplayerGameScreen({
             paddingBottom: insets.bottom,
             paddingLeft: insets.left,
             paddingRight: insets.right,
+            alignSelf: "center",
           },
         ]}
       >
+        {/* Header */}
         <View style={styles.header}>
           <ThemedButton
-            title="Back"
+            title=""
             variant="glass"
             size="sm"
+            leftIcon={<ArrowLeft size={20} color={theme.colors.text} />}
             onPress={() => {
               setShowWithdraw(true);
             }}
+            style={styles.backButton}
           />
-          <View style={styles.playerInfo}>
-            <WordSpringsText style={styles.playerName}>
-              {leftName}
-            </WordSpringsText>
-            <WordSpringsText style={styles.playerScore}>
-              Words: {wordsFound.length}/{puzzleWords.length}
-            </WordSpringsText>
+          
+          {/* Timer Card */}
+          <Card variant="glassStrong" padding="md" style={styles.timerCard}>
+            <Clock size={20} color={theme.colors.primary} />
+            <ThemedText variant="h2" weight="bold" style={styles.timerText}>
+              {formatTime(timeLeft)}
+            </ThemedText>
+          </Card>
+        </View>
+
+        {/* Players Info */}
+        <View style={styles.playersContainer}>
+          {/* Player 1 */}
+          <Card variant="glassStrong" padding="md" style={styles.playerCard}>
+            <LinearGradient
+              colors={[theme.colors.primary + '40', theme.colors.primary + '20']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.playerGradient}
+            >
+              <View style={styles.playerHeader}>
+                <User size={16} color={theme.colors.primary} />
+                <ThemedText variant="body2" weight="semibold" numberOfLines={1}>
+                  {leftName}
+                </ThemedText>
+              </View>
+              <View style={styles.playerStats}>
+                <Trophy size={14} color={theme.colors.warning} />
+                <ThemedText variant="caption" color="textSecondary">
+                  {wordsFound.length}/{puzzleWords.length}
+                </ThemedText>
+              </View>
+            </LinearGradient>
+          </Card>
+
+          {/* VS Divider */}
+          <View style={styles.vsDivider}>
+            <ThemedText variant="caption" weight="bold" style={{ color: theme.colors.primary }}>
+              VS
+            </ThemedText>
           </View>
-          <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
-          <View style={styles.playerInfo}>
-            <WordSpringsText style={styles.playerName}>
-              {rightName}
-            </WordSpringsText>
-            <WordSpringsText style={styles.playerScore}>
-              Words: {opponentWords.length}/{puzzleWords.length}
-            </WordSpringsText>
-          </View>
+
+          {/* Player 2 */}
+          <Card variant="glassStrong" padding="md" style={styles.playerCard}>
+            <LinearGradient
+              colors={[theme.colors.warning + '40', theme.colors.warning + '20']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.playerGradient}
+            >
+              <View style={styles.playerHeader}>
+                <User size={16} color={theme.colors.warning} />
+                <ThemedText variant="body2" weight="semibold" numberOfLines={1}>
+                  {rightName}
+                </ThemedText>
+              </View>
+              <View style={styles.playerStats}>
+                <Trophy size={14} color={theme.colors.warning} />
+                <ThemedText variant="caption" color="textSecondary">
+                  {opponentWords.length}/{puzzleWords.length}
+                </ThemedText>
+              </View>
+            </LinearGradient>
+          </Card>
         </View>
 
         <View style={styles.wheelContainer}>
-          <LetterWheel
+          <MultiplayerWheel
             letters={puzzleLetters}
             onWordComplete={onWordComplete}
             validWords={puzzleWords}
@@ -293,37 +350,55 @@ export default function MultiplayerGameScreen({
             onNavigate={onNavigate}
           />
         </View>
+
         {/* Word lists */}
         <View style={styles.wordLists}>
+          {/* Your Words */}
           <View style={styles.wordColumn}>
-            <Text style={styles.wordHeader}>
-              Your Words ({wordsFound.length})
-            </Text>
-            <View style={styles.wordListBox}>
-              {wordsFound.map((w) => (
-                <Text key={w} style={styles.wordItem}>
-                  {w}
-                </Text>
-              ))}
-              {wordsFound.length === 0 && (
-                <Text style={styles.wordEmpty}>None yet</Text>
-              )}
-            </View>
+            <Card variant="glassStrong" padding="md" style={styles.wordListCard}>
+              <View style={styles.wordListHeader}>
+                <Zap size={16} color={theme.colors.primary} />
+                <ThemedText variant="body2" weight="bold">
+                  Your Words ({wordsFound.length})
+                </ThemedText>
+              </View>
+              <View style={styles.wordListBox}>
+                {wordsFound.slice(-4).map((w) => (
+                  <View key={w} style={[styles.wordChip, { backgroundColor: theme.colors.primary + '30' }]}>
+                    <ThemedText variant="caption">{w}</ThemedText>
+                  </View>
+                ))}
+                {wordsFound.length === 0 && (
+                  <ThemedText variant="caption" color="textSecondary" style={styles.wordEmpty}>
+                    No words yet
+                  </ThemedText>
+                )}
+              </View>
+            </Card>
           </View>
+
+          {/* Opponent Words */}
           <View style={styles.wordColumn}>
-            <Text style={styles.wordHeader}>
-              Opponent ({opponentWords.length})
-            </Text>
-            <View style={styles.wordListBox}>
-              {opponentWords.map((w) => (
-                <Text key={w} style={styles.wordItem}>
-                  {w}
-                </Text>
-              ))}
-              {opponentWords.length === 0 && (
-                <Text style={styles.wordEmpty}>None yet</Text>
-              )}
-            </View>
+            <Card variant="glassStrong" padding="md" style={styles.wordListCard}>
+              <View style={styles.wordListHeader}>
+                <Zap size={16} color={theme.colors.warning} />
+                <ThemedText variant="body2" weight="bold">
+                  Opponent ({opponentWords.length})
+                </ThemedText>
+              </View>
+              <View style={styles.wordListBox}>
+                {opponentWords.slice(-4).map((w) => (
+                  <View key={w} style={[styles.wordChip, { backgroundColor: theme.colors.warning + '30' }]}>
+                    <ThemedText variant="caption">{w}</ThemedText>
+                  </View>
+                ))}
+                {opponentWords.length === 0 && (
+                  <ThemedText variant="caption" color="textSecondary" style={styles.wordEmpty}>
+                    No words yet
+                  </ThemedText>
+                )}
+              </View>
+            </Card>
           </View>
         </View>
 
@@ -333,45 +408,50 @@ export default function MultiplayerGameScreen({
       <Modal
         isVisible={showWithdraw}
         onClose={() => setShowWithdraw(false)}
-        title="Withdraw?"
+        title="Withdraw from Match?"
+        subtitle="You will lose 10 ranking points and your opponent gains 10."
         showCloseButton
+        backdrop="blur"
+        size="small"
       >
-        <Text style={{ color: "white", marginBottom: 12 }}>
-          Do you want to withdraw? You will lose 10 ranking points and your
-          opponent gains 10.
-        </Text>
-        <ThemedButton
-          title="Confirm Withdraw"
-          variant="primary"
-          onPress={async () => {
-            if (!matchId || !playerId) return;
-            setShowWithdraw(false);
-            setInitiatedWithdraw(true);
-            stopGame();
-            // Navigate away immediately; don't show modal or wait on network
-            if (onNavigate) onNavigate("multiplayer");
-            else router.replace("/multiplayer");
+        <View style={{ gap: 12 }}>
+          <ThemedButton
+            title="Confirm Withdraw"
+            variant="secondary"
+            size="lg"
+            onPress={async () => {
+              if (!matchId || !playerId) return;
+              setShowWithdraw(false);
+              setInitiatedWithdraw(true);
+              stopGame();
+              // Navigate away immediately; don't show modal or wait on network
+              if (onNavigate) onNavigate("multiplayer");
+              else router.replace("/multiplayer");
 
-            // Fire-and-forget server-side completion so opponent gets event
-            const players = await getMatchPlayers(matchId);
-            if (!players) return;
-            const opp = playerId === players.p1 ? players.p2 : players.p1;
-            const outcome =
-              playerId === players.p1 ? "withdraw_p1" : "withdraw_p2";
-            adjustRankingOnFinish(
-              matchId,
-              players.p1,
-              players.p2,
-              outcome as any
-            ).catch(() => {});
-            finishMatch(matchId, opp, "withdraw").catch(() => {});
-          }}
-        />
-        <ThemedButton
-          title="Cancel"
-          variant="secondary"
-          onPress={() => setShowWithdraw(false)}
-        />
+              // Fire-and-forget server-side completion so opponent gets event
+              const players = await getMatchPlayers(matchId);
+              if (!players) return;
+              const opp = playerId === players.p1 ? players.p2 : players.p1;
+              const outcome =
+                playerId === players.p1 ? "withdraw_p1" : "withdraw_p2";
+              adjustRankingOnFinish(
+                matchId,
+                players.p1,
+                players.p2,
+                outcome as any
+              ).catch(() => {});
+              finishMatch(matchId, opp, "withdraw").catch(() => {});
+            }}
+            fullWidth
+          />
+          <ThemedButton
+            title="Continue Playing"
+            variant="primary"
+            size="lg"
+            onPress={() => setShowWithdraw(false)}
+            fullWidth
+          />
+        </View>
       </Modal>
       {/* withdrawing overlay removed since we navigate instantly */}
       {/* Game over modal */}
@@ -536,6 +616,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     width: "100%",
+    maxWidth: 560,
   },
   header: {
     width: "100%",
@@ -543,69 +624,100 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    gap: 12,
   },
-  playerInfo: {
+  backButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
     alignItems: "center",
   },
-  playerName: {
-    fontSize: 30,
-
-    color: "white",
+  timerCard: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  playerScore: {
-    fontSize: 22,
-    color: "white",
+  timerText: {
+    fontSize: 28,
   },
-  timer: {
-    fontSize: 40,
-    fontWeight: "bold",
-    color: "white",
+  playersContainer: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    gap: 8,
+    marginBottom: 8,
   },
-  infoText: { color: "#6B7280" },
+  playerCard: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  playerGradient: {
+    padding: 12,
+    gap: 8,
+  },
+  playerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  playerStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  vsDivider: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   wheelContainer: {
-    flex: 2,
+    flex: 1,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 110,
+    marginTop: 20,
+    marginBottom: 12,
   },
   wordLists: {
     flexDirection: "row",
     width: "100%",
     paddingHorizontal: 16,
     gap: 12,
-    marginTop: 24,
+    marginTop: 8,
+    marginBottom: 12,
   },
   wordColumn: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    borderRadius: 12,
-    padding: 12,
   },
-  wordHeader: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "white",
-    marginBottom: 6,
+  wordListCard: {
+    height: 80,
+  },
+  wordListHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
   },
   wordListBox: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   },
-  wordItem: {
-    backgroundColor: "rgba(255,255,255,0.08)",
+  wordChip: {
     paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    color: "white",
-    fontSize: 14,
-    letterSpacing: 0.5,
+    paddingHorizontal: 10,
+    borderRadius: 12,
   },
   wordEmpty: {
-    color: "#888",
-    fontSize: 14,
     fontStyle: "italic",
+    textAlign: "center",
+    paddingVertical: 12,
   },
 });

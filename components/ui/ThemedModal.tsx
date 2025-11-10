@@ -67,21 +67,25 @@ const Modal: React.FC<ModalProps> = ({
   const styles = createStyles(theme);
 
   const getSizeStyles = (): ViewStyle => {
+    const isMobile = screenWidth < 600;
     switch (size) {
       case 'small':
         return {
-          width: Math.min(screenWidth * 0.8, 400),
+          width: isMobile ? screenWidth * 0.9 : Math.min(screenWidth * 0.8, 400),
           maxHeight: screenHeight * 0.6,
+          marginHorizontal: isMobile ? 16 : 0,
         };
       case 'medium':
         return {
-          width: Math.min(screenWidth * 0.9, 500),
+          width: isMobile ? screenWidth * 0.95 : Math.min(screenWidth * 0.9, 500),
           maxHeight: screenHeight * 0.8,
+          marginHorizontal: isMobile ? 8 : 0,
         };
       case 'large':
         return {
-          width: Math.min(screenWidth * 0.95, 600),
+          width: isMobile ? screenWidth - 16 : Math.min(screenWidth * 0.95, 600),
           maxHeight: screenHeight * 0.9,
+          marginHorizontal: isMobile ? 8 : 0,
         };
       case 'fullscreen':
         return {
@@ -239,63 +243,68 @@ const Modal: React.FC<ModalProps> = ({
   );
 };
 
-const createStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  backdropTouchable: {
-    flex: 1,
-  },
-  solidBackdrop: {
-    backgroundColor: theme.colors.overlay,
-  },
-  transparentBackdrop: {
-    backgroundColor: 'transparent',
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
-    ...theme.shadows.xl,
-    overflow: 'hidden',
-  },
-  fullscreenContent: {
-    borderRadius: 0,
-    margin: 0,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderSecondary,
-  },
-  headerText: {
-    flex: 1,
-  },
-  subtitle: {
-    marginTop: theme.spacing.xs,
-  },
-  closeButton: {
-    marginLeft: theme.spacing.md,
-    minWidth: 32,
-  },
-  body: {
-    padding: theme.spacing.lg,
-  },
-});
+const createStyles = (theme: Theme) => {
+  const { width: screenWidth } = Dimensions.get('window');
+  const isMobile = screenWidth < 600;
+  
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    backdropTouchable: {
+      flex: 1,
+    },
+    solidBackdrop: {
+      backgroundColor: theme.colors.overlay,
+    },
+    transparentBackdrop: {
+      backgroundColor: 'transparent',
+    },
+    keyboardAvoidingView: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius.xl,
+      ...theme.shadows.xl,
+      overflow: 'hidden',
+    },
+    fullscreenContent: {
+      borderRadius: 0,
+      margin: 0,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+      paddingBottom: theme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.borderSecondary,
+    },
+    headerText: {
+      flex: 1,
+    },
+    subtitle: {
+      marginTop: theme.spacing.xs,
+    },
+    closeButton: {
+      marginLeft: theme.spacing.md,
+      minWidth: 32,
+    },
+    body: {
+      padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+    },
+  });
+};
 
 export default Modal;
