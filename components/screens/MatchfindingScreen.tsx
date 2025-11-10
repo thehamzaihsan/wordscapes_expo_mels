@@ -4,6 +4,8 @@ import WordSpringsText from "@/components/common/WordSpringsText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
 import ThemedText from "@/components/ui/ThemedText";
+import { useMatchmaking } from "@/hooks/useMatchmaking";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
@@ -14,7 +16,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // <--- CLEANED EMOJI LIST (removed bad characters) ---
 const avatarEmojis = [
-  "🛡️", "🐺", "🦊", "🦅", "🐉", "⚡", "🔥", "🌙", "⭐", "🧠", "🎯",
+  "🛡️",
+  "🐺",
+  "🦊",
+  "🦅",
+  "🐉",
+  "⚡",
+  "🔥",
+  "🌙",
+  "⭐",
+  "🧠",
+  "🎯",
 ];
 
 // <--- CLEANED TEXT LIST (removed bad characters) ---
@@ -31,6 +43,11 @@ export default function MatchfindingScreenComponent() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { width, height } = useWindowDimensions();
+  const { session } = useSupabaseAuth();
+
+  const { waiting, range, matchId, error } = useMatchmaking({
+    userId: session?.user?.id ?? null,
+  });
 
   // --- State for emoji animation ---
   const [emojiIndex, setEmojiIndex] = useState(0);
@@ -49,19 +66,20 @@ export default function MatchfindingScreenComponent() {
   useEffect(() => {
     const vsInterval = setInterval(() => {
       setVsTextIndex((prevIndex) => (prevIndex + 1) % findingText.length);
-    }, 1000); 
+    }, 1000);
     return () => clearInterval(vsInterval);
   }, []);
 
-  // --- Effect for 3-second navigation to MultiplayerGameScreen ---
+  // Navigate to game when a match is found
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (matchId) {
       setIsNavigating(true);
-      router.replace('/multiplayer-game');
-    }, 3000); // 3 seconds
-
-    return () => clearTimeout(timer); // Cleanup the timeout
-  }, [router]);
+      router.replace({
+        pathname: "/multiplayer-game",
+        params: { match: matchId },
+      });
+    }
+  }, [matchId, router]);
 
   // --- NEW: Responsive logic ---
   const minDimension = Math.min(width, height);
@@ -70,11 +88,13 @@ export default function MatchfindingScreenComponent() {
     (Platform.OS !== "web" && minDimension >= 600); // 600px is a good breakpoint
 
   // Define separate widths
-  const webContentWidth = 380;    // Fixed width for web/tablet
+  const webContentWidth = 380; // Fixed width for web/tablet
   const mobileMaxContentWidth = 380; // Max width for mobile
 
   // This is the max width for the container
-  const maxContentWidth = isWebOrTablet ? webContentWidth : mobileMaxContentWidth;
+  const maxContentWidth = isWebOrTablet
+    ? webContentWidth
+    : mobileMaxContentWidth;
 
   // This is the width we use for calculating font/element sizes
   const calculationWidth = isWebOrTablet
@@ -160,7 +180,6 @@ export default function MatchfindingScreenComponent() {
     return <LoadingScreen />;
   }
 
-
   return (
     <View style={styles.container}>
       <BackgroundImage />
@@ -192,15 +211,19 @@ export default function MatchfindingScreenComponent() {
               padding="none"
               style={styles.avatarContainer}
             >
-              <ThemedText style={styles.avatarText}>{avatarEmojis[3]}</ThemedText>
+              <ThemedText style={styles.avatarText}>
+                {avatarEmojis[3]}
+              </ThemedText>
             </Card>
-            <WordSpringsText style={styles.playerName}>
-              Player 1
-            </WordSpringsText>
+            <WordSpringsText style={styles.playerName}>You</WordSpringsText>
           </View>
 
           <WordSpringsText style={styles.findingText}>
-            {findingText[vsTextIndex]}
+            {error
+              ? error
+              : waiting
+              ? `${findingText[vsTextIndex]} (±${range})`
+              : findingText[vsTextIndex]}
           </WordSpringsText>
 
           <View style={styles.playerContainer}>
@@ -209,10 +232,12 @@ export default function MatchfindingScreenComponent() {
               padding="none"
               style={styles.avatarContainer}
             >
-              <ThemedText style={styles.avatarText}>{avatarEmojis[emojiIndex]}</ThemedText>
+              <ThemedText style={styles.avatarText}>
+                {avatarEmojis[emojiIndex]}
+              </ThemedText>
             </Card>
             <WordSpringsText style={styles.playerName}>
-              .....
+              {waiting ? "Searching..." : "..."}
             </WordSpringsText>
           </View>
         </View>

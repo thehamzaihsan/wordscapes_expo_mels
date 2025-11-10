@@ -1,4 +1,5 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
+import ChallengeProvider from "@/components/common/ChallengeProvider";
 import AnimatedSplashScreen from "@/components/screens/SplashScreen";
 import { BackgroundProvider } from "@/contexts/BackgroundContext";
 import { initializeGameManager } from "@/hooks/game-manager";
@@ -273,6 +274,7 @@ export default function RootLayout() {
             {appIsReady ? (
               <>
                 <LayoutWithInsets />
+                <ChallengeProvider />
                 <ToastHost />
               </>
             ) : (

@@ -1,12 +1,22 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import WordSpringsText from "@/components/common/WordSpringsText";
 import ThemedButton from "@/components/ui/ThemedButton";
+import Modal from "@/components/ui/ThemedModal";
 import ThemedText from "@/components/ui/ThemedText";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
+import { checkOnline } from "@/lib/network";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
-import { Play, Settings, Users } from "lucide-react-native";
-import { ActivityIndicator, Image, ScrollView, StatusBar, View } from "react-native";
+import { Play, Settings, Users, UserX, WifiOff } from "lucide-react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StatusBar,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Index() {
@@ -16,11 +26,101 @@ export default function Index() {
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
 
+  const [errorModal, setErrorModal] = useState<null | {
+    title: string;
+    subtitle?: string;
+    icon?: "offline" | "guest";
+    primary?: { label: string; action: () => void };
+    secondary?: { label: string; action: () => void };
+  }>(null);
+
   const handlePlay = () => {
     if (session) router.push("/levels");
     else router.push("/login");
   };
   const handleSettings = () => router.push("/settings");
+
+  const handleMultiplayer = async () => {
+    // 1) Internet check (quick, cross‑platform)
+    const online = await checkOnline();
+    if (!online) {
+      setErrorModal({
+        title: "No Internet",
+        subtitle: "You're offline. Check your connection and try again.",
+        icon: "offline",
+        primary: {
+          label: "Try again",
+          action: () => {
+            setErrorModal(null);
+            handleMultiplayer();
+          },
+        },
+        secondary: { label: "Close", action: () => setErrorModal(null) },
+      });
+      return;
+    }
+
+    // 2) Must be authenticated
+    if (!session?.user?.id) {
+      setErrorModal({
+        title: "Sign in required",
+        subtitle: "Multiplayer is only available for signed‑in players.",
+        icon: "guest",
+        primary: {
+          label: "Sign in",
+          action: () => {
+            setErrorModal(null);
+            router.push("/login");
+          },
+        },
+        secondary: { label: "Cancel", action: () => setErrorModal(null) },
+      });
+      return;
+    }
+
+    // 3) Profile must not be guest
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("is_guest")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    if (error) {
+      setErrorModal({
+        title: "Profile error",
+        subtitle: "We couldn't verify your account. Please try again.",
+        primary: {
+          label: "Retry",
+          action: () => {
+            setErrorModal(null);
+            handleMultiplayer();
+          },
+        },
+        secondary: { label: "Close", action: () => setErrorModal(null) },
+      });
+      return;
+    }
+
+    if (!profile || profile.is_guest) {
+      setErrorModal({
+        title: "Guest accounts can't play multiplayer",
+        subtitle:
+          "Create or sign in to a free account to battle other players.",
+        icon: "guest",
+        primary: {
+          label: "Sign in",
+          action: () => {
+            setErrorModal(null);
+            router.push("/login");
+          },
+        },
+        secondary: { label: "Cancel", action: () => setErrorModal(null) },
+      });
+      return;
+    }
+
+    router.push("/multiplayer");
+  };
 
   if (loading) {
     return (
@@ -78,7 +178,9 @@ export default function Index() {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <WordSpringsText style={{ fontSize: 40, paddingTop: 15, paddingBottom: 15 }}>
+            <WordSpringsText
+              style={{ fontSize: 40, paddingTop: 15, paddingBottom: 15 }}
+            >
               Word Springs
             </WordSpringsText>
           </View>
@@ -91,9 +193,7 @@ export default function Index() {
               size="xl"
               fullWidth
               leftIcon={<Users size={20} color="white" />}
-              onPress={() => {
-                router.push("/matchfinding");
-              }}
+              onPress={handleMultiplayer}
               style={styles.primaryButton}
             />
 
@@ -126,6 +226,42 @@ export default function Index() {
         </View> */}
         </View>
       </ScrollView>
+      {/* Pretty error modal */}
+      <Modal
+        isVisible={!!errorModal}
+        onClose={() => setErrorModal(null)}
+        title={errorModal?.title}
+        subtitle={errorModal?.subtitle}
+        backdrop="blur"
+        showCloseButton
+        size="small"
+      >
+        <View style={{ gap: theme.spacing.base }}>
+          {errorModal?.primary && (
+            <ThemedButton
+              title={errorModal.primary.label}
+              variant="primary"
+              onPress={errorModal.primary.action}
+              leftIcon={
+                errorModal.icon === "offline" ? (
+                  <WifiOff size={18} color="white" />
+                ) : errorModal.icon === "guest" ? (
+                  <UserX size={18} color="white" />
+                ) : undefined
+              }
+              fullWidth
+            />
+          )}
+          {errorModal?.secondary && (
+            <ThemedButton
+              title={errorModal.secondary.label}
+              variant="secondary"
+              onPress={errorModal.secondary.action}
+              fullWidth
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -144,10 +280,10 @@ const createStyles = (theme: any) => ({
   },
   safeArea: {
     flex: 1,
-    width: "100%",
+    width: "100%" as const,
     paddingHorizontal: theme.spacing.lg,
-    justifyContent: "space-around", // To provide space around content
-    alignItems: "center",
+    justifyContent: "space-around" as const, // To provide space around content
+    alignItems: "center" as const,
   },
   headerSection: {
     marginTop: theme.spacing.xl4,
@@ -164,7 +300,7 @@ const createStyles = (theme: any) => ({
     marginBottom: theme.spacing.lg,
   },
   actionButtonsContainer: {
-    width: "100%",
+    width: "100%" as const,
     maxWidth: 320,
     marginBottom: theme.spacing.xl4,
     gap: theme.spacing.base,
