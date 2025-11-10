@@ -57,6 +57,13 @@ export default function MultiplayerProfileRoute() {
   const router = useRouter();
   const { session, loading: authLoading } = useSupabaseAuth();
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !session?.user?.id) {
+      router.replace("/multiplayer-hub");
+    }
+  }, [authLoading, session, router]);
+
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -106,6 +113,19 @@ export default function MultiplayerProfileRoute() {
   const handleSaveUsername = async () => {
     if (!session?.user?.id || !usernameDraft.trim()) {
       showToast("Username cannot be empty", "warning");
+      return;
+    }
+
+    // Check if username is already taken
+    const { data: existingUser } = await supabase
+      .from("profiles")
+      .select("id")
+      .ilike("username", usernameDraft.trim())
+      .neq("id", session.user.id)
+      .maybeSingle();
+
+    if (existingUser) {
+      showToast("Username already taken", "error");
       return;
     }
 

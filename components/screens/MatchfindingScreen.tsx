@@ -49,7 +49,7 @@ export default function MatchfindingScreenComponent() {
   const insets = useSafeAreaInsets();
   const { theme, themeName } = useTheme();
   const { width, height } = useWindowDimensions();
-  const { session } = useSupabaseAuth();
+  const { session, loading: authLoading } = useSupabaseAuth();
 
   const { waiting, range, matchId, error } = useMatchmaking({
     userId: session?.user?.id ?? null,
@@ -64,6 +64,13 @@ export default function MatchfindingScreenComponent() {
   const scaleAnim = useState(() => new Animated.Value(0.95))[0];
   const opacityAnim = useState(() => new Animated.Value(0))[0];
   const rotateAnim = useState(() => new Animated.Value(0))[0];
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !session?.user?.id) {
+      router.replace("/multiplayer-hub");
+    }
+  }, [authLoading, session, router]);
 
   // Pulse animation for avatars
   useEffect(() => {
@@ -303,7 +310,8 @@ export default function MatchfindingScreenComponent() {
     outputRange: ['0deg', '360deg'],
   });
 
-  if (isNavigating) {
+  // Show loading while checking auth or if no session (will redirect)
+  if (authLoading || !session?.user?.id || isNavigating) {
     return <LoadingScreen />;
   }
 

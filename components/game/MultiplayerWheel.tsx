@@ -470,11 +470,11 @@ const styles = StyleSheet.create({
     paddingVertical: isSmallScreen ? 10 : 20,
   },
   rowWithShuffle: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
     marginBottom: isSmallScreen ? 4 : 8,
+    alignSelf: "center",
   },
   leftShuffleButton: {
     marginRight: isSmallScreen ? 8 : 16,
@@ -497,6 +497,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.6)",
+    alignSelf: "center",
     // borderRadius is applied dynamically inline
     overflow: "hidden",
   },

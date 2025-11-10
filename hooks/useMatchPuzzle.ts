@@ -8,7 +8,76 @@ type Puzzle = {
   category?: string;
   level?: number;
   baseWord?: string;
+  timeLimit?: number; // in seconds
 };
+
+// Calculate difficulty level based on average player ranking
+function getDifficultyFromRanking(avgRanking: number): {
+  minLevel: number;
+  maxLevel: number;
+  timeLimit: number;
+} {
+  // Ranking ranges and corresponding difficulty
+  // 0-499: Beginner (levels 1-20, 180s)
+  // 500-999: Intermediate (levels 21-40, 150s)
+  // 1000-1499: Advanced (levels 41-60, 120s)
+  // 1500-1999: Expert (levels 61-80, 90s)
+  // 2000+: Master (levels 81-100, 75s)
+  
+  if (avgRanking < 500) {
+    return { minLevel: 1, maxLevel: 20, timeLimit: 180 };
+  } else if (avgRanking < 1000) {
+    return { minLevel: 21, maxLevel: 40, timeLimit: 150 };
+  } else if (avgRanking < 1500) {
+    return { minLevel: 41, maxLevel: 60, timeLimit: 120 };
+  } else if (avgRanking < 2000) {
+    return { minLevel: 61, maxLevel: 80, timeLimit: 90 };
+  } else {
+    return { minLevel: 81, maxLevel: 100, timeLimit: 75 };
+  }
+}
+
+function pickPuzzleByRanking(avgRanking: number): Puzzle {
+  const { minLevel, maxLevel, timeLimit } = getDifficultyFromRanking(avgRanking);
+  
+  // levels is an object: { Category: [ { level, letters, crosswordWords, baseWord }, ... ] }
+  const categories = Object.keys(levels as any);
+  const validPuzzles: any[] = [];
+  
+  // Collect all puzzles within the level range
+  categories.forEach((cat) => {
+    const arr = (levels as any)[cat] as any[];
+    arr.forEach((entry) => {
+      if (entry.level >= minLevel && entry.level <= maxLevel) {
+        validPuzzles.push({ ...entry, category: cat });
+      }
+    });
+  });
+  
+  // Pick random from valid puzzles
+  const entry = validPuzzles.length > 0
+    ? validPuzzles[Math.floor(Math.random() * validPuzzles.length)]
+    : pickRandomPuzzle(); // fallback to old method if no valid puzzles
+  
+  const letters: string[] = (entry.letters || []).map((c: string) =>
+    (c || "").toUpperCase()
+  );
+  const words: string[] = (entry.crosswordWords || [])
+    .filter((w: string) => typeof w === "string")
+    .map((w: string) => w.toUpperCase());
+  
+  // Ensure uniqueness
+  const uniqWords = Array.from(new Set(words));
+  
+  return {
+    letters,
+    words: uniqWords,
+    category: entry.category,
+    level: entry.level,
+    baseWord: (entry.baseWord || "").toUpperCase(),
+    timeLimit,
+  };
+}
 
 function pickRandomPuzzle(): Puzzle {
   // levels is an object: { Category: [ { level, letters, crosswordWords, baseWord }, ... ] }
@@ -30,6 +99,7 @@ function pickRandomPuzzle(): Puzzle {
     category: cat,
     level: entry.level,
     baseWord: (entry.baseWord || "").toUpperCase(),
+    timeLimit: 120, // default 2 minutes
   };
 }
 
@@ -68,7 +138,23 @@ export function useMatchPuzzle(
           const p2 = m?.player2 as string | undefined;
           const creator = [p1, p2].filter(Boolean).sort()[0];
           if (creator && playerId && creator === playerId) {
-            const seed = pickRandomPuzzle();
+            // Fetch player rankings to determine difficulty
+            const { data: stats } = await supabase
+              .from("user_stats")
+              .select("user_id,ranking_points")
+              .in("user_id", [p1, p2].filter(Boolean));
+            
+            let avgRanking = 200; // default starting ranking
+            if (stats && stats.length > 0) {
+              const totalRanking = stats.reduce(
+                (sum, s) => sum + (s.ranking_points || 200),
+                0
+              );
+              avgRanking = Math.floor(totalRanking / stats.length);
+            }
+            
+            // Generate puzzle based on ranking
+            const seed = pickPuzzleByRanking(avgRanking);
             await supabase.from("match_events").insert({
               match_id: matchId,
               sender: playerId,
@@ -118,5 +204,6 @@ export function useMatchPuzzle(
     letters: puzzle?.letters ?? [],
     words: puzzle?.words ?? [],
     ready,
+    timeLimit: puzzle?.timeLimit ?? 120, // return time limit
   };
 }

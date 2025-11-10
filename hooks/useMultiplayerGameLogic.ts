@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 
-const TWO_MINUTES = 2 * 60;
-
-export const useMultiplayerGameLogic = () => {
-  const [timeLeft, setTimeLeft] = useState(TWO_MINUTES);
+export const useMultiplayerGameLogic = (initialTime: number = 120) => {
+  const [timeLeft, setTimeLeft] = useState(initialTime);
   const [player1Score, setPlayer1Score] = useState(0);
   const [player2Score, setPlayer2Score] = useState(0);
   const [player1Words, setPlayer1Words] = useState<string[]>([]);
@@ -40,7 +38,7 @@ export const useMultiplayerGameLogic = () => {
   }, [timeLeft, gameActive]);
 
   const startGame = () => {
-    setTimeLeft(TWO_MINUTES);
+    setTimeLeft(initialTime);
     setPlayer1Score(0);
     setPlayer2Score(0);
     setPlayer1Words([]);

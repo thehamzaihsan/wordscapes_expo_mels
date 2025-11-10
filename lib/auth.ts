@@ -451,17 +451,28 @@ export async function verifySignupOtp(params: {
         await updateGuestName(pending.username);
         if (pending.avatar) await updateGuestAvatar(pending.avatar);
       } catch {}
+      
+      // Remap guest data and sync user FIRST to create the snapshot
+      await remapGuestSnapshotToUser(user.id);
+      await syncUser(user.id).catch((err) =>
+        console.warn("[auth] syncUser after signup otp verify failed", err)
+      );
+      
+      // Now update the local profile with username/avatar
       await mutateLocalProfile((p) => {
         p.username = pending.username;
         if (pending.avatar) p.avatar = pending.avatar;
       });
+      
       await AsyncStorage.removeItem(`${PENDING_SIGNUP_PREFIX}${email}`);
+    } else {
+      // No pending data, just sync the user
+      await remapGuestSnapshotToUser(user.id);
+      await syncUser(user.id).catch((err) =>
+        console.warn("[auth] syncUser after signup otp verify failed", err)
+      );
     }
 
-    await remapGuestSnapshotToUser(user.id);
-    syncUser(user.id).catch((err) =>
-      console.warn("[auth] syncUser after signup otp verify failed", err)
-    );
     return { ok: true };
   } catch (e: any) {
     return { ok: false, error: e?.message || "Failed to verify OTP" };

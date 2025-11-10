@@ -55,6 +55,15 @@ export async function getLocalSnapshot(): Promise<LocalUserSnapshot | null> {
   return loadSnapshot();
 }
 
+export async function mutateLocalProfile(
+  mutator: (profile: ProfileRow) => void
+): Promise<void> {
+  const snapshot = await loadSnapshot();
+  if (!snapshot) return;
+  mutator(snapshot.profile);
+  await saveSnapshot(snapshot);
+}
+
 function logSupabaseWarning(
   context: string,
   error: unknown,
@@ -383,11 +392,36 @@ export async function pushLocal(
     );
     if (changed) {
       const partial: Partial<ProfileRow> = {
-        username: snapshot.profile.username,
         avatar: snapshot.profile.avatar,
         status: snapshot.profile.status,
         updated_at: nowISO(),
       };
+      
+      // Only update username if it's different (case-insensitive check)
+      const localUsername = snapshot.profile.username?.toLowerCase();
+      const remoteUsername = remoteProfile.username?.toLowerCase();
+      
+      if (localUsername !== remoteUsername) {
+        // Check if username is already taken by another user
+        const { data: existingUser } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("username", snapshot.profile.username || "")
+          .neq("id", userId)
+          .maybeSingle();
+        
+        if (!existingUser) {
+          // Username not taken, safe to update
+          partial.username = snapshot.profile.username;
+        } else {
+          // Username taken, sync local to match remote
+          console.warn("[sync] Username already taken, keeping current username");
+          snapshot.profile.username = remoteProfile.username;
+          await saveSnapshot(snapshot);
+        }
+      }
+      // If same username (case-insensitive), don't include it in update to avoid constraint violation
+      
       const { error } = await supabase
         .from("profiles")
         .update(partial)

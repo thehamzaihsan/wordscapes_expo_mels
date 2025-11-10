@@ -36,6 +36,13 @@ export default function LeaderboardRoute() {
   const router = useRouter();
   const { session, loading: authLoading } = useSupabaseAuth();
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !session?.user?.id) {
+      router.replace("/multiplayer-hub");
+    }
+  }, [authLoading, session, router]);
+
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Row[]>([]);
   const [meRank, setMeRank] = useState<number | null>(null);

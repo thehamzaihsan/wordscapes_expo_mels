@@ -52,6 +52,13 @@ export default function FriendsRoute() {
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !session?.user?.id) {
+      router.replace("/multiplayer-hub");
+    }
+  }, [authLoading, session, router]);
+
   const [tab, setTab] = useState<"friends" | "requests" | "search">("friends");
   const [loading, setLoading] = useState(true);
   const [friendRows, setFriendRows] = useState<FriendRelationshipRow[]>([]);
