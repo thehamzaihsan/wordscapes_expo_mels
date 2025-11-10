@@ -1,18 +1,24 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
 import WordSpringsText from "@/components/common/WordSpringsText";
-import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
 import ThemedText from "@/components/ui/ThemedText";
 import { useMatchmaking } from "@/hooks/useMatchmaking";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
-// <--- Import React, useState, and useEffect
+import { ArrowLeft, Swords, Zap } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import { 
+  Platform, 
+  StyleSheet, 
+  useWindowDimensions, 
+  View, 
+  Animated,
+  TouchableOpacity 
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 // <--- CLEANED EMOJI LIST (removed bad characters) ---
 const avatarEmojis = [
@@ -41,7 +47,7 @@ const findingText = [
 export default function MatchfindingScreenComponent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, themeName } = useTheme();
   const { width, height } = useWindowDimensions();
   const { session } = useSupabaseAuth();
 
@@ -49,10 +55,67 @@ export default function MatchfindingScreenComponent() {
     userId: session?.user?.id ?? null,
   });
 
-  // --- State for emoji animation ---
   const [emojiIndex, setEmojiIndex] = useState(0);
   const [vsTextIndex, setVsTextIndex] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
+  
+  // Animation values
+  const pulseAnim = useState(() => new Animated.Value(1))[0];
+  const scaleAnim = useState(() => new Animated.Value(0.95))[0];
+  const opacityAnim = useState(() => new Animated.Value(0))[0];
+  const rotateAnim = useState(() => new Animated.Value(0))[0];
+
+  // Pulse animation for avatars
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  // Scale animation for cards
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Fade in animation
+  useEffect(() => {
+    Animated.timing(opacityAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  // Rotate animation for VS icon
+  useEffect(() => {
+    const rotate = Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 3000,
+        useNativeDriver: true,
+      })
+    );
+    rotate.start();
+    return () => rotate.stop();
+  }, []);
 
   // --- Effect for emoji animation ---
   useEffect(() => {
@@ -103,11 +166,10 @@ export default function MatchfindingScreenComponent() {
   // --- End of new logic ---
 
   const createStyles = (currentTheme: any) => {
-    // All sizes are now based on our new `calculationWidth`
-    const avatarSize = calculationWidth * 0.4;
-    const avatarFontSize = avatarSize * 0.4;
-    const playerNameFontSize = calculationWidth * 0.085;
-    const findingTextFontSize = calculationWidth * 0.09;
+    const avatarSize = calculationWidth * 0.35;
+    const avatarFontSize = avatarSize * 0.5;
+    const playerNameFontSize = calculationWidth * 0.06;
+    const findingTextFontSize = calculationWidth * 0.07;
 
     return StyleSheet.create({
       container: {
@@ -117,7 +179,6 @@ export default function MatchfindingScreenComponent() {
         flex: 1,
         paddingHorizontal: currentTheme.spacing.lg,
         width: "100%",
-        // This now applies the correct max width (380 on mobile, 500 on web)
         maxWidth: maxContentWidth,
         alignSelf: "center",
       },
@@ -125,14 +186,23 @@ export default function MatchfindingScreenComponent() {
         flexDirection: "row",
         justifyContent: "flex-start",
         alignItems: "center",
-        marginBottom: currentTheme.spacing.lg,
-        marginLeft: 10,
+        marginBottom: currentTheme.spacing.xl,
+        paddingTop: currentTheme.spacing.md,
+      },
+      backButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: currentTheme.colors.surfaceVariant + '40',
+        justifyContent: "center",
+        alignItems: "center",
+        backdropFilter: "blur(10px)",
       },
       content: {
         flex: 1,
-        justifyContent: "space-around",
+        justifyContent: "space-evenly",
         alignItems: "center",
-        paddingBottom: currentTheme.spacing.xl6,
+        paddingBottom: currentTheme.spacing.xl4,
         backgroundColor: "transparent",
         width: "100%",
       },
@@ -140,30 +210,82 @@ export default function MatchfindingScreenComponent() {
         alignItems: "center",
         backgroundColor: "transparent",
         width: "100%",
+        gap: currentTheme.spacing.md,
       },
       avatarContainer: {
         width: avatarSize,
         height: avatarSize,
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: currentTheme.spacing.md,
+        overflow: "hidden",
+      },
+      avatarGradient: {
+        width: "100%",
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
       },
       avatarText: {
         fontSize: avatarFontSize,
-        lineHeight: avatarFontSize * 1.3,
-        fontWeight: currentTheme.typography.fontWeights.bold,
-        color: currentTheme.colors.text,
+        textAlign: "center",
       },
       playerName: {
         fontSize: playerNameFontSize,
         color: "white",
+        fontWeight: "600",
+      },
+      vsContainer: {
+        alignItems: "center",
+        gap: currentTheme.spacing.md,
+        paddingVertical: currentTheme.spacing.xl,
+      },
+      vsIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: currentTheme.colors.primary + '20',
+        justifyContent: "center",
+        alignItems: "center",
+        borderWidth: 3,
+        borderColor: currentTheme.colors.primary + '40',
+      },
+      findingTextContainer: {
+        alignItems: "center",
+        gap: currentTheme.spacing.sm,
+        paddingHorizontal: currentTheme.spacing.lg,
       },
       findingText: {
         fontSize: findingTextFontSize,
-        lineHeight: findingTextFontSize * 1.9, // <--- FIXED (was 5)
-        color: "orange",
-        marginVertical: calculationWidth * 0.06,
+        color: currentTheme.colors.primary,
         textAlign: "center",
+        fontWeight: "700",
+      },
+      rangeText: {
+        fontSize: findingTextFontSize * 0.7,
+        color: currentTheme.colors.textSecondary,
+        textAlign: "center",
+      },
+      statusBadge: {
+        paddingHorizontal: currentTheme.spacing.lg,
+        paddingVertical: currentTheme.spacing.sm,
+        borderRadius: currentTheme.borderRadius.full,
+        marginTop: currentTheme.spacing.md,
+      },
+      statusText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: "white",
+      },
+      loadingDots: {
+        flexDirection: "row",
+        gap: currentTheme.spacing.xs,
+        marginTop: currentTheme.spacing.sm,
+      },
+      dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: currentTheme.colors.primary,
       },
     });
   };
@@ -173,8 +295,13 @@ export default function MatchfindingScreenComponent() {
 
   const handleBack = () => {
     setIsNavigating(true);
-    router.back();
+    router.push("/multiplayer-hub");
   };
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   if (isNavigating) {
     return <LoadingScreen />;
@@ -194,53 +321,141 @@ export default function MatchfindingScreenComponent() {
           },
         ]}
       >
+        {/* Header with back button */}
         <View style={styles.header}>
-          <ThemedButton
-            title="Back"
-            variant="glass"
-            size="sm"
-            leftIcon={<ChevronLeft size={20} color={theme.colors.text} />}
-            onPress={handleBack}
-          />
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <ArrowLeft size={24} color="white" />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.playerContainer}>
-            <Card
-              variant="glassStrong"
-              padding="none"
-              style={styles.avatarContainer}
-            >
-              <ThemedText style={styles.avatarText}>
-                {avatarEmojis[3]}
-              </ThemedText>
-            </Card>
+        <Animated.View 
+          style={[
+            styles.content,
+            { opacity: opacityAnim }
+          ]}
+        >
+          {/* Player 1 (You) */}
+          <Animated.View 
+            style={[
+              styles.playerContainer,
+              { transform: [{ scale: scaleAnim }] }
+            ]}
+          >
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <Card
+                variant="glassStrong"
+                padding="none"
+                style={styles.avatarContainer}
+              >
+                <LinearGradient
+                  colors={[theme.colors.primary, theme.colors.primary + 'CC']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.avatarGradient}
+                >
+                  <ThemedText style={styles.avatarText}>
+                    {avatarEmojis[3]}
+                  </ThemedText>
+                </LinearGradient>
+              </Card>
+            </Animated.View>
             <WordSpringsText style={styles.playerName}>You</WordSpringsText>
-          </View>
-
-          <WordSpringsText style={styles.findingText}>
-            {error
-              ? error
-              : waiting
-              ? `${findingText[vsTextIndex]} (±${range})`
-              : findingText[vsTextIndex]}
-          </WordSpringsText>
-
-          <View style={styles.playerContainer}>
-            <Card
-              variant="glassStrong"
-              padding="none"
-              style={styles.avatarContainer}
-            >
-              <ThemedText style={styles.avatarText}>
-                {avatarEmojis[emojiIndex]}
+            <Card variant="glassStrong" padding="sm" style={styles.statusBadge}>
+              <ThemedText style={[styles.statusText, { color: themeName === 'light' ? 'black' : 'white' }]}>
+                Ready
               </ThemedText>
             </Card>
-            <WordSpringsText style={styles.playerName}>
-              {waiting ? "Searching..." : "..."}
-            </WordSpringsText>
+          </Animated.View>
+
+          {/* VS Section */}
+          <View style={styles.vsContainer}>
+            <Animated.View 
+              style={[
+                styles.vsIconContainer,
+                { transform: [{ rotate: spin }] }
+              ]}
+            >
+              <Swords size={40} color={theme.colors.primary} />
+            </Animated.View>
+            
+            <View style={styles.findingTextContainer}>
+              <WordSpringsText style={styles.findingText}>
+                {error ? error : findingText[vsTextIndex]}
+              </WordSpringsText>
+              {waiting && !error && (
+                <ThemedText style={[styles.rangeText, { color: 'white' }]}>
+                  Range: ±{range}
+                </ThemedText>
+              )}
+              
+              {/* Loading dots animation */}
+              {waiting && !error && (
+                <View style={styles.loadingDots}>
+                  {[0, 1, 2].map((i) => (
+                    <Animated.View
+                      key={i}
+                      style={[
+                        styles.dot,
+                        {
+                          opacity: pulseAnim.interpolate({
+                            inputRange: [1, 1.1],
+                            outputRange: [0.3, 1],
+                          }),
+                          transform: [{
+                            translateY: pulseAnim.interpolate({
+                              inputRange: [1, 1.1],
+                              outputRange: [0, -5],
+                            })
+                          }]
+                        }
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
+
+          {/* Player 2 (Opponent) */}
+          <Animated.View 
+            style={[
+              styles.playerContainer,
+              { transform: [{ scale: scaleAnim }] }
+            ]}
+          >
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <Card
+                variant="glassStrong"
+                padding="none"
+                style={styles.avatarContainer}
+              >
+                <LinearGradient
+                  colors={[theme.colors.warning, theme.colors.warning + 'CC']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.avatarGradient}
+                >
+                  <ThemedText style={styles.avatarText}>
+                    {avatarEmojis[emojiIndex]}
+                  </ThemedText>
+                </LinearGradient>
+              </Card>
+            </Animated.View>
+            <WordSpringsText style={styles.playerName}>
+              {waiting ? "Searching..." : "Opponent"}
+            </WordSpringsText>
+            {waiting && (
+              <Card variant="glassStrong" padding="sm" style={styles.statusBadge}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Zap size={14} color={themeName === 'light' ? 'black' : 'white'} />
+                  <ThemedText style={[styles.statusText, { color: themeName === 'light' ? 'black' : 'white' }]}>
+                    Searching
+                  </ThemedText>
+                </View>
+              </Card>
+            )}
+          </Animated.View>
+        </Animated.View>
       </View>
     </View>
   );

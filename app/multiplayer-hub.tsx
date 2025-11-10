@@ -1,4 +1,5 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
+import LoadingScreen from "@/components/common/LoadingScreen";
 import WordSpringsText from "@/components/common/WordSpringsText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
@@ -8,21 +9,20 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { supabase } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Search, Trophy, Users, Swords, ArrowLeft, UserPlus } from "lucide-react-native";
+import { ArrowLeft, Search, Swords, Trophy, UserPlus, Users } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  Animated,
   ScrollView,
   StatusBar,
   StyleSheet,
   TextInput,
-  View,
-  Animated,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 
 interface ProfileRow {
   id: string;
@@ -40,7 +40,7 @@ interface FriendRow {
 export default function MultiplayerHubScreen() {
   const insets = useSafeAreaInsets();
   const { session, loading: authLoading } = useSupabaseAuth();
-  const { theme } = useTheme();
+  const { theme, themeName } = useTheme();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
 
@@ -261,20 +261,7 @@ export default function MultiplayerHubScreen() {
   };
 
   if (authLoading || loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <BackgroundImage />
-        <StatusBar barStyle="light-content" translucent />
-        <ActivityIndicator color={theme.colors.primary} size="large" />
-        <ThemedText
-          variant="body1"
-          color="textSecondary"
-          style={{ marginTop: theme.spacing.base }}
-        >
-          Loading multiplayer...
-        </ThemedText>
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   if (!session?.user?.id || profile?.is_guest) {
@@ -315,7 +302,7 @@ export default function MultiplayerHubScreen() {
           style={[
             styles.safeArea,
             { 
-              paddingTop: insets.top, 
+              paddingTop: insets.top + theme.spacing.xl, 
               paddingBottom: insets.bottom,
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
@@ -334,13 +321,13 @@ export default function MultiplayerHubScreen() {
               onPress={() => router.push("/")}
               style={styles.backButton}
             >
-              <ArrowLeft size={24} color={theme.colors.text} />
+              <ArrowLeft size={24} color="white" />
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <WordSpringsText variant="h1" style={styles.headerTitle}>
+              <WordSpringsText variant="h1" style={[styles.headerTitle, { color: 'white' }]}>
                 Multiplayer Hub
               </WordSpringsText>
-              <ThemedText variant="body2" color="textSecondary" style={styles.subtitle}>
+              <ThemedText variant="body2" style={[styles.subtitle, { color: 'white' }]}>
                 Challenge players worldwide
               </ThemedText>
             </View>
@@ -375,7 +362,7 @@ export default function MultiplayerHubScreen() {
 
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
-            <ThemedText variant="h3" style={styles.sectionTitle}>
+            <ThemedText variant="h3" style={[styles.sectionTitle, { color: 'white' }]}>
               Quick Actions
             </ThemedText>
             <View style={styles.quickActionsGrid}>
@@ -417,7 +404,7 @@ export default function MultiplayerHubScreen() {
 
           {/* Main Actions */}
           <View style={styles.mainActionsContainer}>
-            <ThemedText variant="h3" style={styles.sectionTitle}>
+            <ThemedText variant="h3" style={[styles.sectionTitle, { color: 'white' }]}>
               Game Modes
             </ThemedText>
             
@@ -450,7 +437,7 @@ export default function MultiplayerHubScreen() {
                   title="Search Now"
                   variant="glass"
                   size="lg"
-                  leftIcon={<Search size={20} color="white" />}
+                  leftIcon={<Search size={20} color={themeName === 'light' ? 'black' : 'white'} />}
                   onPress={() => router.push("/matchfinding")}
                   style={styles.actionButton}
                 />
@@ -486,7 +473,7 @@ export default function MultiplayerHubScreen() {
                   title="View Rankings"
                   variant="glass"
                   size="lg"
-                  leftIcon={<Trophy size={20} color="white" />}
+                  leftIcon={<Trophy size={20} color={themeName === 'light' ? 'black' : 'white'} />}
                   onPress={() => router.push("/leaderboard")}
                   style={styles.actionButton}
                 />
