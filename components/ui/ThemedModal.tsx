@@ -171,12 +171,12 @@ const Modal: React.FC<ModalProps> = ({
           <View style={styles.header}>
             <View style={styles.headerText}>
               {title && (
-                <ThemedText variant="heading3" weight="semibold">
+                <ThemedText variant="h2" weight="bold" style={styles.title}>
                   {title}
                 </ThemedText>
               )}
               {subtitle && (
-                <ThemedText variant="body2" color="textSecondary" style={styles.subtitle}>
+                <ThemedText variant="body1" color="textSecondary" style={styles.subtitle}>
                   {subtitle}
                 </ThemedText>
               )}
@@ -277,6 +277,8 @@ const createStyles = (theme: Theme) => {
       borderRadius: theme.borderRadius.xl,
       ...theme.shadows.xl,
       overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.colors.border + '40',
     },
     fullscreenContent: {
       borderRadius: 0,
@@ -287,22 +289,29 @@ const createStyles = (theme: Theme) => {
       alignItems: 'flex-start',
       justifyContent: 'space-between',
       padding: isMobile ? theme.spacing.md : theme.spacing.lg,
-      paddingBottom: theme.spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.borderSecondary,
+      paddingBottom: theme.spacing.sm,
+      borderBottomWidth: 0,
     },
     headerText: {
       flex: 1,
+      paddingRight: theme.spacing.sm,
+    },
+    title: {
+      lineHeight: 28,
     },
     subtitle: {
       marginTop: theme.spacing.xs,
+      lineHeight: 20,
+      opacity: 0.8,
     },
     closeButton: {
-      marginLeft: theme.spacing.md,
+      marginLeft: theme.spacing.sm,
       minWidth: 32,
+      marginTop: -4,
     },
     body: {
       padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+      paddingTop: theme.spacing.sm,
     },
   });
 };

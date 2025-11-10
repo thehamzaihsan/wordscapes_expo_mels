@@ -236,35 +236,38 @@ export default function Index() {
         showCloseButton
         size="small"
       >
-        <View style={{ gap: theme.spacing.lg, paddingTop: theme.spacing.md }}>
+        <View style={{ gap: theme.spacing.md }}>
           {/* Icon Display */}
           {errorModal?.icon && (
             <View style={{
               alignItems: "center",
-              paddingVertical: theme.spacing.md,
+              paddingBottom: theme.spacing.sm,
             }}>
               <View style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
+                width: 72,
+                height: 72,
+                borderRadius: 36,
                 backgroundColor: errorModal.icon === "offline" 
-                  ? theme.colors.error + '20' 
-                  : theme.colors.warning + '20',
+                  ? theme.colors.error + '15' 
+                  : theme.colors.warning + '15',
                 justifyContent: "center",
                 alignItems: "center",
-                marginBottom: theme.spacing.sm,
+                borderWidth: 3,
+                borderColor: errorModal.icon === "offline" 
+                  ? theme.colors.error + '30' 
+                  : theme.colors.warning + '30',
               }}>
                 {errorModal.icon === "offline" ? (
-                  <WifiOff size={40} color={theme.colors.error} />
+                  <WifiOff size={36} color={theme.colors.error} />
                 ) : errorModal.icon === "guest" ? (
-                  <UserX size={40} color={theme.colors.warning} />
+                  <UserX size={36} color={theme.colors.warning} />
                 ) : null}
               </View>
             </View>
           )}
 
           {/* Action Buttons */}
-          <View style={{ gap: theme.spacing.sm }}>
+          <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.xs }}>
             {errorModal?.primary && (
               <ThemedButton
                 title={errorModal.primary.label}
