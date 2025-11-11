@@ -28,7 +28,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
   const { derivePlayerLevel } = require('@/hooks/guest-progress');
   
   return (
-    <ThemedCard variant="glassStrong" padding="lg" style={styles.header}>
+    <ThemedCard variant="glassStrong" padding="md" style={styles.header}>
       {/* Top Row: Back Button on left, Resources and Avatar on right */}
       <View style={styles.headerTop}>
         <ThemedButton
@@ -47,7 +47,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
             activeOpacity={0.7}
           >
             <ThemedText style={styles.resourceIcon}>💎</ThemedText>
-            <ThemedText variant="body2" weight="semibold" style={styles.resourceText}>
+            <ThemedText variant="body2" weight="semibold" style={styles.resourceText as any}>
               {guestMeta?.gems ?? 0}
             </ThemedText>
           </TouchableOpacity>
@@ -58,15 +58,16 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
             activeOpacity={0.7}
           >
             <ThemedText style={styles.resourceIcon}>⚡</ThemedText>
-            <ThemedText 
-              variant="body2" 
-              weight="semibold" 
-              style={[
-                styles.resourceText,
-                {
-                  color: (guestMeta?.energy ?? 0) > 50 ? theme.colors.success : theme.colors.error,
-                },
-              ]}
+            <ThemedText
+              variant="body2"
+              weight="semibold"
+              style={{
+                ...(styles.resourceText as any),
+                color:
+                  (guestMeta?.energy ?? 0) > 50
+                    ? theme.colors.success
+                    : theme.colors.error,
+              }}
             >
               {guestMeta?.energy ?? 0}/100
             </ThemedText>
@@ -84,7 +85,7 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
 
       {/* Player Info */}
       <View style={styles.playerInfo}>
-        <ThemedText variant="heading3" weight="bold" style={styles.playerName}>
+  <ThemedText variant="heading3" weight="bold" style={styles.playerName as any}>
           {displayName}
         </ThemedText>
         <View style={styles.levelContainer}>
@@ -133,16 +134,34 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
                   variant="outline"
                   size="sm"
                   onPress={() => onNavigate('xpshop')}
-                  style={[styles.buyXpButton, { borderColor: theme.colors.primary }]}
+                  style={{
+                    ...styles.buyXpButton,
+                    borderColor: theme.colors.primary,
+                  }}
                 />
               </View>
               
               {/* Progress Bar */}
               <View style={styles.xpBarContainer}>
-                <View style={[styles.xpBarBackground, { backgroundColor: theme.colors.border }]}>
-                  <View style={[styles.xpBar, { backgroundColor: theme.colors.primary, width: `${progressPercentage}%` }]} />
+                <View
+                  style={{
+                    ...styles.xpBarBackground,
+                    backgroundColor: theme.colors.border,
+                    position: 'relative',
+                  }}
+                >
+                  <View
+                    style={{
+                      ...(styles.xpBar as any),
+                      backgroundColor: theme.colors.primary,
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: `${progressPercentage}%`,
+                    }}
+                  />
                 </View>
-                <ThemedText variant="caption" color="primary" weight="medium" style={styles.progressText}>
+          <ThemedText variant="caption" color="primary" weight="medium" style={styles.progressText as any}>
                   {Math.round(progressPercentage)}% to XP Level {currentLevel + 1}
                 </ThemedText>
               </View>
@@ -164,74 +183,74 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
 
 const createStyles = (theme: any) => ({
   header: {
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-    borderRadius:0,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    borderRadius: 0,
   },
   headerTop: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   backButton: {
     alignSelf: 'flex-start' as const,
   },
   resourcesContainer: {
     flexDirection: 'row' as const,
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
     alignItems: 'center' as const,
   },
   resourceItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 4,
     borderRadius: theme.borderRadius.lg,
     gap: 4,
     borderWidth: 1,
   },
   resourceIcon: {
-    fontSize: 16,
-  },
-  resourceText: {
     fontSize: 14,
   },
+  resourceText: {
+    fontSize: 12,
+  },
   avatarButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: theme.borderRadius.lg,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     borderWidth: 2,
   },
   avatarIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   playerInfo: {
     alignItems: 'center' as const,
-    gap: theme.spacing.xs,
+    gap: 4,
     marginBottom: theme.spacing.xs,
   },
   playerName: {
-    fontSize: 20,
+    fontSize: 18,
   },
   levelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: theme.spacing.xs,
   },
   levelText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   xpLabelContainer: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    marginBottom: theme.spacing.sm,
-    width: '100%',
+    marginBottom: theme.spacing.xs,
+    width: '100%' as const,
   },
   xpInfoContainer: {
     flex: 1,
@@ -246,27 +265,27 @@ const createStyles = (theme: any) => ({
     fontSize: 11,
   },
   buyXpButton: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 4,
     borderRadius: theme.borderRadius.sm,
     borderWidth: 1,
   },
   xpBarContainer: {
     alignItems: 'center' as const,
-    width: '100%',
-    marginBottom: theme.spacing.xs,
+    width: '100%' as const,
+    marginBottom: 6,
   },
   xpBarBackground: {
-    width: '100%',
-    height: 12,
-    borderRadius: 6,
+    width: '100%' as const,
+    height: 8,
+    borderRadius: 4,
     overflow: 'hidden' as const,
     borderWidth: 1,
     marginBottom: theme.spacing.xs,
   },
   xpBar: {
     height: '100%',
-    borderRadius: 5,
+    borderRadius: 4,
     shadowColor: theme.colors.primary,
     shadowOffset: {
       width: 0,
@@ -277,19 +296,19 @@ const createStyles = (theme: any) => ({
     elevation: 2,
   },
   progressText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600' as const,
   },
   nextUnlockContainer: {
-    width: '100%',
+    width: '100%' as const,
     alignItems: 'center' as const,
-    marginTop: theme.spacing.xs,
-    paddingTop: theme.spacing.xs,
+    marginTop: 4,
+    paddingTop: 4,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border + '40',
   },
   nextUnlockText: {
-    fontSize: 11,
+    fontSize: 10,
     textAlign: 'center' as const,
     fontWeight: '600' as const,
   },

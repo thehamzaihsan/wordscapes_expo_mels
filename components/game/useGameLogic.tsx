@@ -4,17 +4,14 @@ import { Animated, Dimensions, View } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
 import {
-  generateCrossword,
-  type Grid as GeneratedGrid,
+    generateCrossword,
+    type Grid as GeneratedGrid,
 } from "@/hooks/crossword-gen";
 import {
-  generateBonusWords,
-  generateCrosswordLevelWithBaseword,
+    generateBonusWords,
+    generateCrosswordLevelWithBaseword,
 } from "@/hooks/game-manager";
-import { loadGuestProgress, saveGuestProgress } from "@/hooks/guest-progress";
 import { useLevelProgress } from "@/hooks/useLevelProgress";
-import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
-import { showToast } from "@/lib/toast";
 
 interface GridCell {
   letter: string | null;
@@ -384,6 +381,8 @@ export function useGameLogic({
             bonusWords: foundBonusWords.length,
             crosswordWords: foundCrosswordWords.length,
             attempts: 1, // Could track this if needed
+            // Ensure rewards persist even if local progress hasn't been initialized yet
+            levelDefs: (await import("@/constants/levels.json")).default as any,
           });
           
           console.log('[LevelComplete] Level completion persisted successfully');

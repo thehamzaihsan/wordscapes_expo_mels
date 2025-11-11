@@ -4,9 +4,9 @@ import levelsData from "@/constants/levels.json";
 import { initializeGameManager } from "@/hooks/game-manager";
 import type { GuestMeta, GuestProgressPayload } from "@/hooks/guest-progress";
 import {
-  buildInitialProgress,
-  loadGuestProgress,
-  saveGuestProgress,
+    buildInitialProgress,
+    loadGuestProgress,
+    saveGuestProgress,
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { getLocalSnapshot, pullRemote } from "@/lib/sync";
@@ -17,8 +17,8 @@ import React, { useState } from "react";
 import { Platform, StatusBar, StyleSheet, View } from "react-native";
 
 // Import the level components
-import LoadingScreen from "../common/LoadingScreen";
 import AdComponent from "../common/AdComponent";
+import LoadingScreen from "../common/LoadingScreen";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
 import LevelHeader from "../levels/LevelHeader";
@@ -91,124 +91,94 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
 
   // Initialize game manager and load levels
   // Initial load + subsequent refresh when returning to this screen
+  // Extracted load function so we can call it manually after returning from game
+  const refreshProgress = React.useCallback(async () => {
+    initializeGameManager();
+    try {
+      let snapshot: LocalUserSnapshot | null = null;
+      if (user?.id) {
+        try {
+          snapshot = await pullRemote(user.id);
+        } catch (err) {
+          console.warn("Failed to pull remote snapshot", err);
+        }
+      }
+      if (!snapshot) {
+        snapshot = await getLocalSnapshot();
+      }
+      setSnapshotProfileName(snapshot?.profile?.username ?? null);
+      const existing = await loadGuestProgress();
+      let progressToUse: GuestProgressPayload | null = existing;
+      if (
+        !progressToUse ||
+        !progressToUse.categories ||
+        typeof progressToUse.categories !== "object" ||
+        Array.isArray(progressToUse.categories) ||
+        Object.keys(progressToUse.categories).length === 0
+      ) {
+        console.warn("Guest progress missing or invalid, rebuilding initial structure");
+        const preferredName = authDisplayName || snapshot?.profile?.username || undefined;
+        let playerLevel = 0;
+        if (snapshot?.stats?.xp) {
+          const { derivePlayerLevel } = await import("@/hooks/guest-progress");
+          const derived = derivePlayerLevel(snapshot.stats.xp);
+          playerLevel = derived.level;
+        }
+        progressToUse = buildInitialProgress(levelsData as any, preferredName, playerLevel);
+        if (snapshot?.stats?.xp) {
+          progressToUse.meta.xp = snapshot.stats.xp;
+          progressToUse.meta.playerLevel = playerLevel;
+        }
+        await saveGuestProgress(progressToUse);
+      }
+      if (progressToUse && authDisplayName) {
+        const currentName = (progressToUse.meta.playerName || "").trim();
+        const isDefault = currentName.length === 0 || currentName.toLowerCase() === "guest";
+        if (isDefault && currentName !== authDisplayName) {
+          progressToUse.meta.playerName = authDisplayName;
+          progressToUse.updatedAt = new Date().toISOString();
+          await saveGuestProgress(progressToUse);
+        }
+      }
+      const { ensureCategoriesUnlocked } = await import("@/hooks/guest-progress");
+      progressToUse = await ensureCategoriesUnlocked(progressToUse);
+      const mapped: { [key: string]: LevelData[] } = {};
+      Object.keys(progressToUse.categories).forEach((cat) => {
+        mapped[cat] = progressToUse!.categories[cat].map((l) => ({
+          level: l.level,
+          baseWord: l.baseWord,
+          letters: [],
+          crosswordWords: [],
+          difficulty: l.difficulty as Difficulty,
+          isUnlocked: l.isUnlocked,
+          isCompleted: l.isCompleted,
+        }));
+      });
+      setLevelCategories(mapped);
+      setGuestMeta(progressToUse.meta);
+      const { getUnlockedCategories } = await import("@/hooks/guest-progress");
+      const unlockedCategories = getUnlockedCategories(progressToUse.meta.playerLevel);
+      if (unlockedCategories.length > 0 && !unlockedCategories.includes(selectedCategory)) {
+        setSelectedCategory(unlockedCategories[0]);
+      }
+    } catch (e) {
+      console.error("Failed to refresh guest progress", e);
+    }
+  }, [authDisplayName, selectedCategory, user?.id]);
+
+  // Initial + focus refresh
   useFocusEffect(
     React.useCallback(() => {
-      let isMounted = true;
-      const load = async () => {
+      let mounted = true;
+      (async () => {
         setIsLoading(true);
-        initializeGameManager();
-        try {
-          let snapshot: LocalUserSnapshot | null = null;
-          if (user?.id) {
-            try {
-              snapshot = await pullRemote(user.id);
-            } catch (err) {
-              console.warn("Failed to pull remote snapshot", err);
-            }
-          }
-          if (!snapshot) {
-            snapshot = await getLocalSnapshot();
-          }
-          if (!isMounted) return;
-          setSnapshotProfileName(snapshot?.profile?.username ?? null);
-          const existing = await loadGuestProgress();
-          let progressToUse: GuestProgressPayload | null = existing;
-          // Validate shape; if corrupted or missing categories rebuild
-          if (
-            !progressToUse ||
-            !progressToUse.categories ||
-            typeof progressToUse.categories !== "object" ||
-            Array.isArray(progressToUse.categories) ||
-            Object.keys(progressToUse.categories).length === 0
-          ) {
-            console.warn(
-              "Guest progress missing or invalid, rebuilding initial structure"
-            );
-            const preferredName =
-              authDisplayName || snapshot?.profile?.username || undefined;
-
-            // Calculate player level from snapshot if available
-            let playerLevel = 0;
-            if (snapshot?.stats?.xp) {
-              const { derivePlayerLevel } = await import(
-                "@/hooks/guest-progress"
-              );
-              const derived = derivePlayerLevel(snapshot.stats.xp);
-              playerLevel = derived.level;
-            }
-
-            progressToUse = buildInitialProgress(
-              levelsData as any,
-              preferredName,
-              playerLevel
-            );
-
-            // If we have a snapshot with XP, ensure the meta is properly set
-            if (snapshot?.stats?.xp) {
-              progressToUse.meta.xp = snapshot.stats.xp;
-              progressToUse.meta.playerLevel = playerLevel;
-            }
-
-            await saveGuestProgress(progressToUse);
-          }
-
-          if (isMounted && progressToUse && authDisplayName) {
-            const currentName = (progressToUse.meta.playerName || "").trim();
-            const isDefault =
-              currentName.length === 0 || currentName.toLowerCase() === "guest";
-            if (isDefault && currentName !== authDisplayName) {
-              progressToUse.meta.playerName = authDisplayName;
-              progressToUse.updatedAt = new Date().toISOString();
-              await saveGuestProgress(progressToUse);
-            }
-          }
-          if (!isMounted) return;
-
-          // Ensure all categories that should be unlocked are present
-          const { ensureCategoriesUnlocked } = await import(
-            "@/hooks/guest-progress"
-          );
-          progressToUse = await ensureCategoriesUnlocked(progressToUse);
-
-          const mapped: { [key: string]: LevelData[] } = {};
-          Object.keys(progressToUse.categories).forEach((cat) => {
-            mapped[cat] = progressToUse!.categories[cat].map((l) => ({
-              level: l.level,
-              baseWord: l.baseWord,
-              letters: [],
-              crosswordWords: [],
-              difficulty: l.difficulty as Difficulty,
-              isUnlocked: l.isUnlocked,
-              isCompleted: l.isCompleted,
-            }));
-          });
-          setLevelCategories(mapped);
-          setGuestMeta(progressToUse.meta);
-
-          // Set initial category to first unlocked category
-          const { getUnlockedCategories } = await import(
-            "@/hooks/guest-progress"
-          );
-          const unlockedCategories = getUnlockedCategories(
-            progressToUse.meta.playerLevel
-          );
-          if (
-            unlockedCategories.length > 0 &&
-            !unlockedCategories.includes(selectedCategory)
-          ) {
-            setSelectedCategory(unlockedCategories[0]);
-          }
-        } catch (e) {
-          console.error("Failed to refresh guest progress", e);
-        } finally {
-          if (isMounted) setIsLoading(false);
-        }
-      };
-      load();
+        await refreshProgress();
+        if (mounted) setIsLoading(false);
+      })();
       return () => {
-        isMounted = false;
+        mounted = false;
       };
-    }, [authDisplayName, selectedCategory, user?.id])
+    }, [refreshProgress])
   );
 
   const handleShopPress = () => {
@@ -258,6 +228,8 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     return <LoadingScreen />;
   }
 
+  const adsEnabled = process.env.EXPO_PUBLIC_ENABLE_ADS === "1" || false;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121213" />
@@ -283,7 +255,7 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         guestMeta={guestMeta}
         onLevelPress={handleLevelPress}
       />
-      <AdComponent />
+      {adsEnabled && <AdComponent />}
     </View>
   );
 };
@@ -295,7 +267,7 @@ const styles = StyleSheet.create({
     // Web: center the content with a max width for desktop layouts.
     // Mobile: take full width so the screen is visible on small devices.
     ...(Platform.OS === "web"
-      ? { width: "100%", maxWidth: 1600, alignSelf: "center" }
+      ? { width: "100%", maxWidth: 1024, alignSelf: "center", paddingHorizontal: 12 }
       : { width: "100%" }),
   },
   loadingContainer: {

@@ -68,13 +68,13 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
               activeOpacity={0.8}
             >
               <ThemedCard
-                variant={isSelected ? "primary" : isUnlocked ? "elevated" : "ghost"}
-                padding="md"
-                style={[
-                  styles.categoryTab,
-                  isSelected && styles.categoryTabActive,
-                  !isUnlocked && styles.categoryTabLocked,
-                ]}
+                variant={isUnlocked ? "glass" : "flat"}
+                padding="sm"
+                style={{
+                  ...(styles.categoryTab as any),
+                  ...(isSelected ? styles.categoryTabActive : {}),
+                  ...(!isUnlocked ? styles.categoryTabLocked : {}),
+                }}
               >
                 <View style={styles.categoryContent}>
                   <View style={styles.categoryHeader}>
@@ -122,38 +122,36 @@ const createStyles = (theme: any) => ({
   categoryContainer: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     borderTopWidth: 0,
   },
   categoryScrollContent: {
-    paddingHorizontal: theme.spacing.sm,
-    gap: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.xs,
+    gap: theme.spacing.sm,
+    paddingVertical: 4,
   },
   categoryTab: {
- 
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  categoryTabActive: {
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  categoryTabActive: {
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-    transform: [{ scale: 1.05 }],
-  },
   categoryTabLocked: {
     opacity: 0.6,
-    minHeight: 80,
+    minHeight: 56,
   },
   categoryContent: {
     alignItems: 'center' as const,
@@ -162,7 +160,7 @@ const createStyles = (theme: any) => ({
   categoryHeader: {
     alignItems: 'center' as const,
     flexDirection: 'row' as const,
-    gap: theme.spacing.xs,
+    gap: 4,
   },
   categoryEmoji: {
     fontSize: 18,
