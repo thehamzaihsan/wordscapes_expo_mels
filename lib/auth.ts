@@ -1,7 +1,7 @@
 import {
-  clearAllLocalProgressForActiveUser,
-  updateGuestAvatar,
-  updateGuestName,
+    clearAllLocalProgressForActiveUser,
+    updateGuestAvatar,
+    updateGuestName,
 } from "@/hooks/guest-progress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
@@ -225,8 +225,7 @@ export async function signOutSupabase(): Promise<AuthResult> {
   try {
     // Clear local per-user progress and fallback guest progress and the snapshot
     await clearAllLocalProgressForActiveUser();
-    const { clearLocalSnapshot } = await import("./sync");
-    await clearLocalSnapshot();
+  // Snapshot clearing handled via clearAllLocalProgressForActiveUser and resets
     
     // Clear user-specific settings like background selection
     await AsyncStorage.removeItem("selectedBackground");
@@ -452,17 +451,16 @@ export async function verifySignupOtp(params: {
         if (pending.avatar) await updateGuestAvatar(pending.avatar);
       } catch {}
       
-      // Remap guest data and sync user FIRST to create the snapshot
-      await remapGuestSnapshotToUser(user.id);
-      await syncUser(user.id).catch((err) =>
-        console.warn("[auth] syncUser after signup otp verify failed", err)
-      );
-      
-      // Now update the local profile with username/avatar
+      // Ensure local snapshot is updated with chosen username BEFORE first sync
       await mutateLocalProfile((p) => {
         p.username = pending.username;
         if (pending.avatar) p.avatar = pending.avatar;
       });
+      // Remap guest data and then sync user
+      await remapGuestSnapshotToUser(user.id);
+      await syncUser(user.id).catch((err) =>
+        console.warn("[auth] syncUser after signup otp verify failed", err)
+      );
       
       await AsyncStorage.removeItem(`${PENDING_SIGNUP_PREFIX}${email}`);
     } else {

@@ -1,6 +1,6 @@
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { sendSignupOtp } from "@/lib/auth";
-import { isSupabaseEnabled } from "@/lib/supabase";
+import { isSupabaseEnabled, supabase } from "@/lib/supabase";
 import {
   ChevronLeft,
   Eye,
@@ -9,8 +9,9 @@ import {
   Mail,
   User,
 } from "lucide-react-native";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
@@ -64,6 +65,16 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<
+    | "idle"
+    | "checking"
+    | "available"
+    | "taken"
+    | "error"
+  >("idle");
+  const [usernameMessage, setUsernameMessage] = useState<string>("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Google flow disabled for now
   const nameRef = useRef<any>(null);
   const emailRef = useRef<any>(null);
@@ -80,6 +91,14 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
     const nameErr = validateCommon(name);
     if (nameErr) {
       setError(nameErr);
+      return;
+    }
+    if (usernameStatus !== "available") {
+      setError(
+        usernameStatus === "taken"
+          ? "Username already exists"
+          : "Please wait for username validation"
+      );
       return;
     }
     if (!emailRegex.test(email.trim())) {
@@ -118,6 +137,90 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
   // Google sign-in handler removed
 
   // Google completion removed
+
+  // Live username uniqueness validation
+  useEffect(() => {
+    if (!isSupabaseEnabled()) return; // skip validation when supabase disabled
+    const raw = name.trim();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!raw) {
+      setUsernameStatus("idle");
+      setUsernameMessage("");
+      setSuggestions([]);
+      return;
+    }
+    const basicErr = validateCommon(raw);
+    if (basicErr) {
+      setUsernameStatus("error");
+      setUsernameMessage(basicErr);
+      setSuggestions([]);
+      return;
+    }
+    // Debounce network call
+    debounceRef.current = setTimeout(async () => {
+      setUsernameStatus("checking");
+      setUsernameMessage("");
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("username", raw)
+          .maybeSingle();
+        if (error) {
+          setUsernameStatus("error");
+          setUsernameMessage("Validation failed");
+          setSuggestions([]);
+        } else if (data) {
+          setUsernameStatus("taken");
+          setUsernameMessage("Username already exists");
+          // Generate suggestions
+          const base = raw
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "")
+            .slice(0, 15);
+          const generated: string[] = [];
+            for (let i = 0; i < 6 && generated.length < 3; i++) {
+            const suffix = Math.floor(Math.random() * 90 + 10); // two digits
+            const candidate = `${base}${suffix}`;
+            if (candidate !== base && !generated.includes(candidate)) {
+              generated.push(candidate);
+            }
+          }
+          // Filter out taken suggestions (best effort)
+          if (generated.length > 0) {
+            try {
+              const { data: takenList } = await supabase
+                .from("profiles")
+                .select("username")
+                .in("username", generated);
+              const takenSet = new Set(
+                (takenList || []).map((r: any) => r.username?.toLowerCase())
+              );
+              setSuggestions(
+                generated.filter((g) => !takenSet.has(g.toLowerCase()))
+              );
+            } catch {
+              setSuggestions(generated);
+            }
+          } else {
+            setSuggestions([]);
+          }
+        } else {
+          setUsernameStatus("available");
+          setUsernameMessage("Username available");
+          setSuggestions([]);
+        }
+      } catch (e) {
+        setUsernameStatus("error");
+        setUsernameMessage("Network error");
+        setSuggestions([]);
+      }
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name]);
 
   return (
     <View style={styles.container}>
@@ -194,9 +297,75 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   returnKeyType="next"
                   onSubmitEditing={() => emailRef.current?.focus()}
                   autoCapitalize="words"
-                  style={styles.input}
+                  inputStyle={styles.input}
+                  containerStyle={{}}
                 />
               </View>
+
+              {/* Username availability & suggestions */}
+              {name.trim().length > 0 && (
+                <View style={{ marginTop: -8, marginBottom: theme.spacing.md }}>
+                  <ThemedText
+                    variant="body2"
+                    style={{
+                      textAlign: "left",
+                      color:
+                        usernameStatus === "available"
+                          ? (theme.colors.success || "#10B981")
+                          : usernameStatus === "taken" || usernameStatus === "error"
+                          ? theme.colors.error
+                          : theme.colors.textSecondary,
+                    }}
+                  >
+                    {usernameStatus === "checking" ? (
+                      <>
+                        Checking username availability... <ActivityIndicator size="small" color={theme.colors.primary} />
+                      </>
+                    ) : usernameStatus === "available" ? (
+                      usernameMessage || "Username available"
+                    ) : usernameStatus === "taken" ? (
+                      usernameMessage || "Username already exists"
+                    ) : usernameStatus === "error" ? (
+                      usernameMessage || "Could not validate username"
+                    ) : (
+                      usernameMessage || "Enter a username"
+                    )}
+                  </ThemedText>
+
+                  {usernameStatus === "taken" && suggestions.length > 0 && (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        gap: theme.spacing.xs,
+                        marginTop: theme.spacing.xs,
+                      }}
+                    >
+                      {suggestions.map((s) => (
+                        <TouchableOpacity
+                          key={s}
+                          onPress={() => {
+                            setName(s);
+                            setSuggestions([]);
+                          }}
+                          style={{
+                            paddingHorizontal: theme.spacing.sm,
+                            paddingVertical: theme.spacing.xs,
+                            backgroundColor: `${theme.colors.primary}20`,
+                            borderRadius: theme.borderRadius.md,
+                            borderWidth: 1,
+                            borderColor: theme.colors.primary,
+                          }}
+                        >
+                          <ThemedText variant="caption" style={{ color: theme.colors.primary }}>
+                            {s}
+                          </ThemedText>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
 
               {/* Email Input */}
               <View style={styles.inputContainer}>
@@ -217,7 +386,8 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                   }
                   returnKeyType="next"
                   onSubmitEditing={() => passRef.current?.focus()}
-                  style={styles.input}
+                  inputStyle={styles.input}
+                  containerStyle={{}}
                 />
               </View>
 
@@ -250,7 +420,8 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                     Keyboard.dismiss();
                     handleLocalCreate();
                   }}
-                  style={styles.input}
+                  inputStyle={styles.input}
+                  containerStyle={{}}
                 />
               </View>
 
@@ -307,7 +478,9 @@ const CreateAccountScreen: React.FC<CreateAccountScreenProps> = ({
                 size="lg"
                 fullWidth
                 isLoading={loading}
-                disabled={loading}
+                disabled={
+                  loading || usernameStatus !== "available" || !!validateCommon(name)
+                }
                 onPress={handleLocalCreate}
                 style={styles.createButton}
               />
@@ -342,7 +515,6 @@ const createStyles = (theme: any) => ({
   accountCard: {
     maxWidth: 400,
     alignSelf: "center" as const,
-    width: "100%",
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
