@@ -176,7 +176,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
         // Reset the wheel for the next word
         // A small delay gives visual feedback before clearing
         setTimeout(() => resetSelection(), 100);
-      }, 1800); // 1-second delay before submission. You can adjust this value.
+      }, 1000); // 1-second delay before submission. You can adjust this value.
 
       setSubmissionTimer(newTimer);
     }
