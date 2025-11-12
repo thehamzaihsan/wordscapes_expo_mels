@@ -610,7 +610,7 @@ export default function MultiplayerGameScreen({
                 <View style={[styles.gameOverIconContainer, { backgroundColor: theme.colors.success + '20' }]}>
                   <Award size={64} color={theme.colors.success} strokeWidth={2.5} />
                 </View>
-                <ThemedText variant="h1" weight="bold" style={[styles.gameOverTitle, { color: theme.colors.success , paddingBottom: 8 , marginBottom: 4}]}>
+                <ThemedText variant="h1" weight="bold" style={[styles.gameOverTitle, { color: theme.colors.success }]}>
                   Victory!
                 </ThemedText>
               </>
