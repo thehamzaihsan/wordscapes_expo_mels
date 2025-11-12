@@ -3,23 +3,24 @@
  * Dynamic input component with theme support
  */
 
-import { Theme, useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/constants/themes';
+import { useTheme } from '@/hooks/useTheme';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TextInputProps,
-  TextStyle,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    StyleSheet,
+    Text,
+    TextInput,
+    TextInputProps,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle,
 } from 'react-native';
 
 type InputVariant = 'default' | 'outlined' | 'filled' | 'underlined';
 type InputSize = 'sm' | 'md' | 'lg';
 
-interface InputProps extends Omit<TextInputProps, 'style'> {
+export interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
   error?: string;
   helperText?: string;
@@ -35,7 +36,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   showRequiredIndicator?: boolean;
 }
 
-const Input: React.FC<InputProps> = ({
+const Input = React.forwardRef<TextInput, InputProps>(({ 
   label,
   error,
   helperText,
@@ -54,7 +55,7 @@ const Input: React.FC<InputProps> = ({
   onBlur,
   editable = true,
   ...textInputProps
-}) => {
+}, ref) => {
   const { theme } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const styles = createStyles(theme);
@@ -204,14 +205,14 @@ const Input: React.FC<InputProps> = ({
     ...sizeStyles.input,
     color: theme.colors.text,
     paddingRight: rightIcon ? 0 : 0, // Add padding when right icon is present
-    ...(Array.isArray(inputStyle) ? StyleSheet.flatten(inputStyle) : inputStyle || {}),
+    ...(inputStyle || {}),
   };
 
   return (
-    <View style={[styles.container, Array.isArray(containerStyle) ? StyleSheet.flatten(containerStyle) : containerStyle]}>
+  <View style={[styles.container, containerStyle]}>
       {label && (
         <View style={styles.labelContainer}>
-          <Text style={[styles.label, Array.isArray(labelStyle) ? StyleSheet.flatten(labelStyle) : labelStyle]}>
+          <Text style={[styles.label, labelStyle]}>
             {label}
             {required && showRequiredIndicator && (
               <Text style={styles.required}> *</Text>
@@ -234,6 +235,7 @@ const Input: React.FC<InputProps> = ({
           onBlur={handleBlur}
           placeholderTextColor={theme.colors.textTertiary}
           editable={editable}
+          ref={ref}
           {...textInputProps}
         />
         
@@ -260,7 +262,7 @@ const Input: React.FC<InputProps> = ({
       )}
     </View>
   );
-};
+});
 
 const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
@@ -273,7 +275,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   label: {
     fontSize: theme.typography.fontSizes.sm,
     fontFamily: theme.typography.fontFamilies.medium,
-    fontWeight: theme.typography.fontWeights.medium,
+  fontWeight: '500',
     color: theme.colors.text,
   },
   required: {
@@ -289,7 +291,7 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: theme.typography.fontFamilies.regular,
-    fontWeight: theme.typography.fontWeights.normal,
+  fontWeight: '400',
   },
   leftIcon: {
     marginRight: theme.spacing.sm,

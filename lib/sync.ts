@@ -1,24 +1,24 @@
 import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import {
-  derivePlayerLevel,
-  getCategoryOrder,
-  GuestCategoryProgress,
-  GuestMeta,
-  GuestProgressPayload,
-  saveGuestProgress,
+    derivePlayerLevel,
+    getCategoryOrder,
+    GuestCategoryProgress,
+    GuestMeta,
+    GuestProgressPayload,
+    saveGuestProgress,
 } from "@/hooks/guest-progress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDefaultEnergy } from "./energy";
 import { supabase } from "./supabase";
 import type {
-  LevelProgressRow,
-  LocalUserSnapshot,
-  ProfileRow,
-  SubscriptionTier,
-  SyncOptions,
-  SyncResult,
-  UserStatsRow,
+    LevelProgressRow,
+    LocalUserSnapshot,
+    ProfileRow,
+    SubscriptionTier,
+    SyncOptions,
+    SyncResult,
+    UserStatsRow,
 } from "./syncTypes";
 
 const LOCAL_USER_SNAPSHOT_KEY = "wordscapes_user_snapshot_v1";
@@ -142,13 +142,14 @@ async function applySnapshotToGuestProgress(snapshot: LocalUserSnapshot) {
 }
 
 export async function createDefaultSnapshot(
-  userId: string
+  userId: string,
+  opts?: { username?: string | null; avatar?: string | null }
 ): Promise<LocalUserSnapshot> {
   const defaultEnergy = getDefaultEnergy();
   const profile: ProfileRow = {
     id: userId,
-    username: "Player",
-    avatar: null,
+    username: (opts?.username?.trim?.() || "Player") as string,
+    avatar: (opts?.avatar ?? null) as any,
     status: "free",
     is_guest: false,
     created_at: nowISO(),
@@ -462,7 +463,22 @@ export async function syncUser(
   if (!snapshot) {
     snapshot = await pullRemote(userId);
     if (!snapshot) {
-      snapshot = await createDefaultSnapshot(userId);
+      // Initialize with auth metadata username/avatar if available
+      try {
+        const { data } = await supabase.auth.getUser();
+        const meta = ((data?.user?.user_metadata as any) || {}) as Record<string, any>;
+        const desiredUsername =
+          (typeof meta?.username === "string" && meta.username.trim()) ||
+          (data?.user?.email ? data.user.email.split("@")[0] : "Player");
+        const desiredAvatar =
+          (typeof meta?.avatar === "string" && meta.avatar.trim()) || null;
+        snapshot = await createDefaultSnapshot(userId, {
+          username: desiredUsername,
+          avatar: desiredAvatar,
+        });
+      } catch {
+        snapshot = await createDefaultSnapshot(userId);
+      }
       await ensureRemoteProfileAndStats(snapshot);
       await saveSnapshot(snapshot);
       return {

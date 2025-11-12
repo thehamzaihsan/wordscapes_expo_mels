@@ -3,31 +3,23 @@ import LottieView from "lottie-react-native";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
+    Animated,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    useWindowDimensions,
 } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
-import {
-  completeLevelAndPersist,
-  loadGuestProgress,
-  type GuestProgressPayload,
-} from "@/hooks/guest-progress";
 import { useSettings } from "@/hooks/useSettings";
-import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
-import { supabase } from "@/lib/supabase";
-import { requestSync } from "@/lib/sync";
+import AdComponent from "../common/AdComponent";
 import LetterWheel from "../game/inputWheel";
 import { useGameLogic } from "../game/useGameLogic";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
 import ThemedText from "../ui/ThemedText";
-import AdComponent from "../common/AdComponent";
 
 interface GameScreenProps {
   onNavigate?: (screen: string) => void;
@@ -273,79 +265,7 @@ export default function GameScreen({
     [gameGrid, animationsEnabled]
   );
 
-  // Persist completion exactly once per level clear
-  const persistedRef = useRef(false);
-  useEffect(() => {
-    if (!gameComplete || persistedRef.current) return;
-    persistedRef.current = true;
-    (async () => {
-      const levelNumber = levelData?.level || 1;
-      const category = categoryName || "Mountain";
-      const crosswordCount = crosswordWords.length;
-      const bonusCount = foundBonusWords.length;
-      console.info("[COMPLETE] Persisting rewards", {
-        category,
-        levelNumber,
-        bonusWords: bonusCount,
-        crosswordWords: crosswordCount,
-      });
-
-      const prev = await loadGuestProgress();
-      const prevMeta = prev?.meta;
-      const prevCompleted = prev?.categories?.[category]?.find(
-        (l) => l.level === levelNumber
-      )?.isCompleted;
-
-      const updated: GuestProgressPayload | null =
-        await completeLevelAndPersist({
-          category,
-          levelNumber,
-          score,
-          bonusWords: bonusCount,
-          crosswordWords: crosswordCount,
-          attempts: 1,
-          levelDefs: undefined,
-        }).catch((e) => {
-          console.warn("[COMPLETE] failed to save guest progress", e);
-          return null;
-        });
-
-      if (updated) {
-        console.info("[COMPLETE] Saved guest progress", {
-          gemsBefore: prevMeta?.gems,
-          gemsAfter: updated.meta.gems,
-          xpBefore: prevMeta?.xp,
-          xpAfter: updated.meta.xp,
-          wasFirstCompletion: !prevCompleted,
-        });
-        try {
-          await updateGuestSnapshotFromProgress(updated);
-
-          // Trigger sync for logged-in users to push the completion to remote immediately
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session?.user?.id) {
-            console.info(
-              "[COMPLETE] Syncing level completion to remote for logged-in user"
-            );
-            await requestSync(session.user.id, { immediate: true }).catch(
-              (syncErr) => {
-                console.warn("[COMPLETE] Sync failed but continuing", syncErr);
-              }
-            );
-          }
-        } catch {}
-      }
-    })();
-  }, [
-    gameComplete,
-    levelData?.level,
-    categoryName,
-    crosswordWords.length,
-    foundBonusWords.length,
-    score,
-  ]);
+  // Persistence of completion is handled inside useGameLogic to avoid double-deduction and race conditions
 
   return (
     <View style={styles.container} ref={containerRef}>
