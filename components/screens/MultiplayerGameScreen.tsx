@@ -10,6 +10,7 @@ import { useMatchPuzzle } from "@/hooks/useMatchPuzzle";
 import { useMultiplayerGameLogic } from "@/hooks/useMultiplayerGameLogic";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Theme, useTheme } from "@/hooks/useTheme";
+import { useSettings } from "@/hooks/useSettings";
 import {
   adjustRankingOnFinish,
   finishMatch,
@@ -24,6 +25,7 @@ import AdComponent from "../common/AdComponent";
 import BackgroundImage from "../common/BackgroundImage";
 import LoadingScreen from "../common/LoadingScreen";
 import MultiplayerWheel from "../game/MultiplayerWheel";
+import MultiplayerWheelGesture from "../game/MultiplayerWheelGesture";
 
 interface MultiplayerGameScreenProps {
   onNavigate?: (screen: string) => void;
@@ -68,6 +70,9 @@ export default function MultiplayerGameScreen({
   
   const { timeLeft, gameActive, startGame, stopGame } =
     useMultiplayerGameLogic(timeLimit, startTime);
+
+  const { settings } = useSettings();
+  const useGestureWheel = settings.useGestureWheel ?? true;
 
   const {
     wordsFound,
@@ -463,13 +468,23 @@ export default function MultiplayerGameScreen({
         </View>
 
         <View style={styles.wheelContainer}>
-          <MultiplayerWheel
-            letters={puzzleLetters}
-            onWordComplete={onWordComplete}
-            validWords={puzzleWords}
-            foundWords={[...wordsFound, ...opponentWords]}
-            onNavigate={onNavigate}
-          />
+          {useGestureWheel ? (
+            <MultiplayerWheelGesture
+              letters={puzzleLetters}
+              onWordComplete={onWordComplete}
+              validWords={puzzleWords}
+              foundWords={[...wordsFound, ...opponentWords]}
+              onNavigate={onNavigate}
+            />
+          ) : (
+            <MultiplayerWheel
+              letters={puzzleLetters}
+              onWordComplete={onWordComplete}
+              validWords={puzzleWords}
+              foundWords={[...wordsFound, ...opponentWords]}
+              onNavigate={onNavigate}
+            />
+          )}
           
           {/* Word Feedback Animation */}
           {wordFeedback.show && (

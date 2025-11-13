@@ -16,6 +16,7 @@ import { Difficulty } from "@/constants/difficulty";
 import { useSettings } from "@/hooks/useSettings";
 import AdComponent from "../common/AdComponent";
 import LetterWheel from "../game/inputWheel";
+import LetterWheelGesture from "../game/InputWheelGesture";
 import { useGameLogic } from "../game/useGameLogic";
 import ThemedButton from "../ui/ThemedButton";
 import ThemedCard from "../ui/ThemedCard";
@@ -87,6 +88,7 @@ export default function GameScreen({
   const { settings, updateSetting } = useSettings();
   const soundEnabled = settings.soundEnabled;
   const animationsEnabled = settings.animationsEnabled;
+  const useGestureWheel = settings.useGestureWheel ?? true; // Default to true for gesture wheel
 
   const toggleSound = useCallback(() => {
     updateSetting("soundEnabled", !soundEnabled);
@@ -377,39 +379,75 @@ export default function GameScreen({
 
           <View style={styles.wheel} ref={letterWheelRef} collapsable={false}>
             {letters.length ? (
-              <LetterWheel
-                letters={letters}
-                onLetterSelect={() => {}}
-                onWordComplete={async (w) => {
-                  const result = await handleWordSubmit(w, {
-                    deferReveal: true,
-                  });
-                  try {
-                    if (result?.success) {
-                      if (result.type === "crossword") {
+              useGestureWheel ? (
+                <LetterWheelGesture
+                  letters={letters}
+                  onLetterSelect={() => {}}
+                  onWordComplete={async (w) => {
+                    const result = await handleWordSubmit(w, {
+                      deferReveal: true,
+                    });
+                    try {
+                      if (result?.success) {
+                        if (result.type === "crossword") {
+                          if (soundEnabled)
+                            await correctSoundRef.current?.replayAsync();
+                          // Fire floating animation toward target cells
+                          await startFloatingAnimation(w);
+                          revealWordCells(w);
+                        } else if (result.type === "bonus") {
+                          if (soundEnabled)
+                            await bonusSoundRef.current?.replayAsync();
+                        }
+                      } else {
                         if (soundEnabled)
-                          await correctSoundRef.current?.replayAsync();
-                        // Fire floating animation toward target cells
-                        await startFloatingAnimation(w);
-                        revealWordCells(w);
-                      } else if (result.type === "bonus") {
-                        if (soundEnabled)
-                          await bonusSoundRef.current?.replayAsync();
+                          await wrongSoundRef.current?.replayAsync();
                       }
-                    } else {
-                      if (soundEnabled)
-                        await wrongSoundRef.current?.replayAsync();
-                    }
-                  } catch {}
-                }}
-                validWords={allValidWords}
-                foundWords={[...foundCrosswordWords, ...foundBonusWords]}
-                crosswordWords={crosswordWords}
-                onHint={handleWordHint}
-                hintsLeft={globalHints}
-                canUsePaidHints={false}
-                onNavigate={onNavigate}
-              />
+                    } catch {}
+                  }}
+                  validWords={allValidWords}
+                  foundWords={[...foundCrosswordWords, ...foundBonusWords]}
+                  crosswordWords={crosswordWords}
+                  onHint={handleWordHint}
+                  hintsLeft={globalHints}
+                  canUsePaidHints={false}
+                  onNavigate={onNavigate}
+                />
+              ) : (
+                <LetterWheel
+                  letters={letters}
+                  onLetterSelect={() => {}}
+                  onWordComplete={async (w) => {
+                    const result = await handleWordSubmit(w, {
+                      deferReveal: true,
+                    });
+                    try {
+                      if (result?.success) {
+                        if (result.type === "crossword") {
+                          if (soundEnabled)
+                            await correctSoundRef.current?.replayAsync();
+                          // Fire floating animation toward target cells
+                          await startFloatingAnimation(w);
+                          revealWordCells(w);
+                        } else if (result.type === "bonus") {
+                          if (soundEnabled)
+                            await bonusSoundRef.current?.replayAsync();
+                        }
+                      } else {
+                        if (soundEnabled)
+                          await wrongSoundRef.current?.replayAsync();
+                      }
+                    } catch {}
+                  }}
+                  validWords={allValidWords}
+                  foundWords={[...foundCrosswordWords, ...foundBonusWords]}
+                  crosswordWords={crosswordWords}
+                  onHint={handleWordHint}
+                  hintsLeft={globalHints}
+                  canUsePaidHints={false}
+                  onNavigate={onNavigate}
+                />
+              )
             ) : (
               <Text style={styles.infoText}>No letters</Text>
             )}
