@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import { Animated, Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
@@ -63,10 +63,11 @@ export default function MultiplayerGameScreen({
     words: puzzleWords,
     ready: puzzleReady,
     timeLimit,
+    startTime,
   } = useMatchPuzzle(matchId, playerId);
   
   const { timeLeft, gameActive, startGame, stopGame } =
-    useMultiplayerGameLogic(timeLimit);
+    useMultiplayerGameLogic(timeLimit, startTime);
 
   const {
     wordsFound,
@@ -76,12 +77,7 @@ export default function MultiplayerGameScreen({
     status,
     lastReason,
   } = useLiveMatch({ matchId, playerId });
-  useEffect(() => {
-    if (rematchCreatedId) {
-      onNavigate?.(`multiplayer-game?match=${rematchCreatedId}`);
-    }
-  }, [rematchCreatedId, onNavigate]);
-
+  
   const [showWithdraw, setShowWithdraw] = useState(false as boolean);
   const [gameOver, setGameOver] = useState(false as boolean);
   const [resultText, setResultText] = useState<string>("");
@@ -96,6 +92,41 @@ export default function MultiplayerGameScreen({
     message: string;
     type: 'success' | 'error' | 'warning';
   }>({ show: false, message: '', type: 'success' });
+  
+  useEffect(() => {
+    if (rematchCreatedId) {
+      onNavigate?.(`multiplayer-game?match=${rematchCreatedId}`);
+    }
+  }, [rematchCreatedId, onNavigate]);
+
+  // Intercept browser back button and reload to show withdraw confirmation
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (gameOver) return; // Don't intercept if game is already over
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      window.history.pushState(null, '', window.location.href);
+      setShowWithdraw(true);
+    };
+
+    // Push a state to intercept back button
+    window.history.pushState(null, '', window.location.href);
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [gameOver]);
   
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
   const feedbackScale = useRef(new Animated.Value(0.8)).current;
@@ -473,7 +504,7 @@ export default function MultiplayerGameScreen({
                 </ThemedText>
               </View>
               <View style={styles.wordListBox}>
-                {wordsFound.slice(-4).map((w) => (
+                {wordsFound.map((w) => (
                   <View key={w} style={[styles.wordChip, { backgroundColor: theme.colors.primary + '30' }]}>
                     <ThemedText variant="caption">{w}</ThemedText>
                   </View>
@@ -497,7 +528,7 @@ export default function MultiplayerGameScreen({
                 </ThemedText>
               </View>
               <View style={styles.wordListBox}>
-                {opponentWords.slice(-4).map((w) => (
+                {opponentWords.map((w) => (
                   <View key={w} style={[styles.wordChip, { backgroundColor: theme.colors.surface + '60' }]}>
                     <ThemedText variant="caption">{w}</ThemedText>
                   </View>

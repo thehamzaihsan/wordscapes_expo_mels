@@ -45,7 +45,7 @@ export interface GuestProgressPayload {
 
 const STORAGE_KEY_GUEST = "wordscapes_guest_progress";
 const STORAGE_KEY_PREFIX = "wordscapes_user_progress:";
-const CURRENT_VERSION = 6;
+const CURRENT_VERSION = 7;
 const DEFAULT_ENERGY_CAP = getDefaultEnergy();
 
 const defaultMeta: GuestMeta = {
@@ -291,6 +291,46 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
           `[Migration] Fixed level unlock states to progressive unlocking`
         );
       }
+      if (parsed.version < 7 && parsed.categories) {
+        // Add missing categories for accounts created before version 7
+        const levelDefinitions = levelsData as Record<string, any[]>;
+        const categoryOrder = getCategoryOrder();
+        const unlockedCategories = getUnlockedCategories(parsed.meta.playerLevel);
+        const firstUnlockedCategory = unlockedCategories[0];
+        
+        categoryOrder.forEach((category) => {
+          if (!parsed.categories[category] && levelDefinitions[category]) {
+            const isCategoryUnlocked = unlockedCategories.includes(category);
+            const isFirstCategory = category === firstUnlockedCategory;
+            
+            parsed.categories[category] = levelDefinitions[category].map(
+              (lvl: any, idx: number) => ({
+                level: lvl.level ?? idx + 1,
+                baseWord: lvl.baseWord,
+                difficulty: lvl.difficulty,
+                isUnlocked: isCategoryUnlocked ? (isFirstCategory ? idx < 3 : idx === 0) : false,
+                isCompleted: false,
+                bestScore: 0,
+                attempts: 0,
+              })
+            );
+          }
+        });
+        
+        // Fix existing first category to have first 3 levels unlocked
+        if (firstUnlockedCategory && parsed.categories[firstUnlockedCategory]) {
+          const firstCatLevels = parsed.categories[firstUnlockedCategory];
+          for (let i = 0; i < Math.min(3, firstCatLevels.length); i++) {
+            if (!firstCatLevels[i].isCompleted) {
+              firstCatLevels[i].isUnlocked = true;
+            }
+          }
+        }
+        
+        console.log(
+          `[Migration] Added missing categories and fixed first category unlock states`
+        );
+      }
       parsed.version = CURRENT_VERSION;
       parsed.updatedAt = new Date().toISOString();
       saveGuestProgress(parsed).catch(() => {});
@@ -327,14 +367,21 @@ export function buildInitialProgress(
   const categories: GuestCategoryProgress = {};
   const currentPlayerLevel = playerLevel ?? 0;
   const unlockedCategories = getUnlockedCategories(currentPlayerLevel);
-  unlockedCategories.forEach((category) => {
+  const categoryOrder = getCategoryOrder();
+  
+  // Create ALL categories, not just unlocked ones
+  categoryOrder.forEach((category) => {
     if (levelDefs[category]) {
+      const isCategoryUnlocked = unlockedCategories.includes(category);
+      const isFirstCategory = category === unlockedCategories[0];
+      
       categories[category] = levelDefs[category].map(
         (lvl: any, idx: number) => ({
           level: lvl.level ?? idx + 1,
           baseWord: lvl.baseWord,
           difficulty: lvl.difficulty,
-          isUnlocked: category === unlockedCategories[0] ? idx < 3 : idx === 0,
+          // First category: unlock first 3 levels, other unlocked categories: unlock first level only, locked categories: all locked
+          isUnlocked: isCategoryUnlocked ? (isFirstCategory ? idx < 3 : idx === 0) : false,
           isCompleted: false,
           bestScore: 0,
           attempts: 0,

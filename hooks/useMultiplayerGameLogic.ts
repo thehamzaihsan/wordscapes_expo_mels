@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
-export const useMultiplayerGameLogic = (initialTime: number = 120) => {
+export const useMultiplayerGameLogic = (
+  initialTime: number = 120,
+  gameStartTime?: string | null
+) => {
   const [timeLeft, setTimeLeft] = useState(initialTime);
   const [player1Score, setPlayer1Score] = useState(0);
   const [player2Score, setPlayer2Score] = useState(0);
@@ -21,24 +24,34 @@ export const useMultiplayerGameLogic = (initialTime: number = 120) => {
   ]); // Example words
   const [gameActive, setGameActive] = useState(false);
 
+  // Calculate time left based on server start time
   useEffect(() => {
-    if (!gameActive) return;
+    if (!gameActive || !gameStartTime) return;
 
-    if (timeLeft === 0) {
-      setGameActive(false);
-      // Handle game over logic
-      return;
-    }
+    const calculateTimeLeft = () => {
+      const startMs = new Date(gameStartTime).getTime();
+      const nowMs = Date.now();
+      const elapsedSeconds = Math.floor((nowMs - startMs) / 1000);
+      const remaining = Math.max(0, initialTime - elapsedSeconds);
+      setTimeLeft(remaining);
+      
+      if (remaining === 0) {
+        setGameActive(false);
+      }
+    };
 
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
-    }, 1000);
+    // Calculate immediately
+    calculateTimeLeft();
+
+    // Update every second
+    const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, gameActive]);
+  }, [gameActive, gameStartTime, initialTime]);
 
   const startGame = () => {
-    setTimeLeft(initialTime);
+    // Don't reset timeLeft here if we have a server start time
+    // Time will be calculated from gameStartTime
     setPlayer1Score(0);
     setPlayer2Score(0);
     setPlayer1Words([]);

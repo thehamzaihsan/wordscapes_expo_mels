@@ -9,6 +9,7 @@ type Puzzle = {
   level?: number;
   baseWord?: string;
   timeLimit?: number; // in seconds
+  startTime?: string; // ISO timestamp when puzzle was created
 };
 
 // Calculate difficulty level based on average player ranking
@@ -44,11 +45,16 @@ function pickPuzzleByRanking(avgRanking: number): Puzzle {
   const categories = Object.keys(levels as any);
   const validPuzzles: any[] = [];
   
-  // Collect all puzzles within the level range
+  // Collect all puzzles within the level range with sufficient letters and words for multiplayer
   categories.forEach((cat) => {
     const arr = (levels as any)[cat] as any[];
     arr.forEach((entry) => {
-      if (entry.level >= minLevel && entry.level <= maxLevel) {
+      const letterCount = (entry.letters || []).length;
+      const wordCount = (entry.crosswordWords || []).length;
+      
+      // For multiplayer: require at least 6 letters and more than 20 words for competitive gameplay
+      if (entry.level >= minLevel && entry.level <= maxLevel && 
+          letterCount >= 6 && wordCount > 20) {
         validPuzzles.push({ ...entry, category: cat });
       }
     });
@@ -82,9 +88,30 @@ function pickPuzzleByRanking(avgRanking: number): Puzzle {
 function pickRandomPuzzle(): Puzzle {
   // levels is an object: { Category: [ { level, letters, crosswordWords, baseWord }, ... ] }
   const categories = Object.keys(levels as any);
-  const cat = categories[Math.floor(Math.random() * categories.length)];
-  const arr = (levels as any)[cat] as any[];
-  const entry = arr[Math.floor(Math.random() * arr.length)];
+  const validPuzzles: any[] = [];
+  
+  // Collect all puzzles with at least 6 letters and more than 20 words
+  categories.forEach((cat) => {
+    const arr = (levels as any)[cat] as any[];
+    arr.forEach((entry) => {
+      const letterCount = (entry.letters || []).length;
+      const wordCount = (entry.crosswordWords || []).length;
+      
+      if (letterCount >= 6 && wordCount > 20) {
+        validPuzzles.push({ ...entry, category: cat });
+      }
+    });
+  });
+  
+  // Pick random from valid puzzles, or fall back to any puzzle if none meet criteria
+  const entry = validPuzzles.length > 0
+    ? validPuzzles[Math.floor(Math.random() * validPuzzles.length)]
+    : (() => {
+        const cat = categories[Math.floor(Math.random() * categories.length)];
+        const arr = (levels as any)[cat] as any[];
+        return { ...arr[Math.floor(Math.random() * arr.length)], category: cat };
+      })();
+  
   const letters: string[] = (entry.letters || []).map((c: string) =>
     (c || "").toUpperCase()
   );
@@ -96,7 +123,7 @@ function pickRandomPuzzle(): Puzzle {
   return {
     letters,
     words: uniqWords,
-    category: cat,
+    category: entry.category,
     level: entry.level,
     baseWord: (entry.baseWord || "").toUpperCase(),
     timeLimit: 120, // default 2 minutes
@@ -109,6 +136,7 @@ export function useMatchPuzzle(
 ) {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [ready, setReady] = useState(false);
+  const [startTime, setStartTime] = useState<string | null>(null);
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
@@ -118,13 +146,14 @@ export function useMatchPuzzle(
       // 1) Check for an existing puzzle_seed event
       const { data: ev } = await supabase
         .from("match_events")
-        .select("payload")
+        .select("payload,created_at")
         .eq("match_id", matchId)
         .eq("event_type", "puzzle_seed")
         .order("created_at", { ascending: true });
       const latest = ev && ev.length ? ev[ev.length - 1] : null;
       if (latest?.payload?.letters && latest?.payload?.words) {
         if (!cancelled) setPuzzle(latest.payload as Puzzle);
+        if (!cancelled) setStartTime(latest.created_at);
         if (!cancelled) setReady(true);
       } else {
         // 2) If no puzzle yet, only one side should create it (smallest user id)
@@ -187,6 +216,7 @@ export function useMatchPuzzle(
             e?.payload?.words
           ) {
             setPuzzle(e.payload as Puzzle);
+            setStartTime(e.created_at);
           }
         }
       )
@@ -205,5 +235,6 @@ export function useMatchPuzzle(
     words: puzzle?.words ?? [],
     ready,
     timeLimit: puzzle?.timeLimit ?? 120, // return time limit
+    startTime, // return when the game started
   };
 }

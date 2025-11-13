@@ -242,12 +242,13 @@ export default function FriendsRoute() {
 
   const sendGameRequest = async (friend: ProfileRow) => {
     if (!session?.user?.id) return;
-    const players = [session.user.id, friend.id].sort();
+    const player1 = session.user.id;
+    const player2 = friend.id;
     // Get ranking points
     const { data: stats } = await supabase
       .from("user_stats")
       .select("user_id,ranking_points")
-      .in("user_id", players);
+      .in("user_id", [player1, player2]);
     const map: Record<string, number> = {};
     (stats || []).forEach(
       (s: any) =>
@@ -255,12 +256,12 @@ export default function FriendsRoute() {
           typeof s.ranking_points === "number" ? s.ranking_points : 200)
     );
     const { error } = await supabase.from("matches").insert({
-      player1: players[0],
-      player2: players[1],
+      player1: player1,
+      player2: player2,
       status: "pending",
       level: 1,
-      player1_ranking_start: map[players[0]] ?? 200,
-      player2_ranking_start: map[players[1]] ?? 200,
+      player1_ranking_start: map[player1] ?? 200,
+      player2_ranking_start: map[player2] ?? 200,
     });
     if (error) showToast(error.message, "error");
     else showToast("Game request sent", "success");

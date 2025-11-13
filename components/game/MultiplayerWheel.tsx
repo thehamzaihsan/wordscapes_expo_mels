@@ -15,6 +15,8 @@ import {
   View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { GAME_SETTINGS } from "@/constants/gameSettings";
+
 interface LetterWheelProps {
   letters?: string[];
   onWordComplete?: (word: string) => void;
@@ -63,9 +65,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const [animatedLetters, setAnimatedLetters] = useState<AnimatedLetter[]>([]);
   const [isShuffling, setIsShuffling] = useState(false);
   const letterPositions = useRef<LetterPosition[]>([]);
-  const [submissionTimer, setSubmissionTimer] = useState<NodeJS.Timeout | null>(
-    null
-  );
 
   // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
   const hexagonSize = isSmallScreen ? 28 : isMediumScreen ? 32 : 35;
@@ -160,34 +159,65 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     });
   }, [shuffledLetters, wheelSize, radius, wheelCenter]);
 
+  // Auto-submit timer - only starts after you stop selecting letters
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastWordRef = useRef<string>('');
+  const onWordCompleteRef = useRef(onWordComplete);
+  
+  // Keep the ref updated
   useEffect(() => {
-    // Clear any existing timer when a new letter is selected
-    if (submissionTimer) {
-      clearTimeout(submissionTimer);
+    onWordCompleteRef.current = onWordComplete;
+  }, [onWordComplete]);
+  
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
 
-    // Only set a new timer if there's a word of at least 2 letters
-    if (currentWord.length >= 2) {
-      const newTimer = setTimeout(() => {
-        // When the timer runs out, submit the word regardless of correctness
-        if (onWordComplete) {
-          onWordComplete(currentWord.toLowerCase());
-        }
-        // Reset the wheel for the next word
-        // A small delay gives visual feedback before clearing
-        setTimeout(() => resetSelection(), 100);
-      }, 1000); // 1-second delay before submission. You can adjust this value.
-
-      setSubmissionTimer(newTimer);
+    // Don't set timer if word is too short
+    if (currentWord.length < GAME_SETTINGS.MULTIPLAYER_WHEEL.MIN_WORD_LENGTH_FOR_AUTO_SUBMIT) {
+      return;
     }
 
-    // Cleanup function to clear the timer if the component unmounts
+    // Set a new timer - this will restart every time currentWord changes
+    // So it only fires when you STOP selecting letters for the delay duration
+    timerRef.current = setTimeout(() => {
+      const wordToSubmit = currentWord.toLowerCase();
+      
+      // Prevent double submission
+      if (wordToSubmit === lastWordRef.current) {
+        return;
+      }
+      
+      lastWordRef.current = wordToSubmit;
+      
+      // Submit the word
+      if (onWordCompleteRef.current) {
+        onWordCompleteRef.current(wordToSubmit);
+      }
+      
+      // Reset the wheel after a small delay
+      setTimeout(() => {
+        setSelectedLetters([]);
+        setSelectedIndices([]);
+        setConnectionPath("");
+        setCurrentWord("");
+        lastWordRef.current = '';
+      }, GAME_SETTINGS.MULTIPLAYER_WHEEL.CLEAR_DELAY);
+      
+      timerRef.current = null;
+    }, GAME_SETTINGS.MULTIPLAYER_WHEEL.AUTO_SUBMIT_DELAY);
+
+    // Cleanup
     return () => {
-      if (submissionTimer) {
-        clearTimeout(submissionTimer);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, [currentWord, onWordComplete, resetSelection]);
+  }, [currentWord]);
 
   const updateConnectionPath = useCallback((indices: number[]): void => {
     if (indices.length === 0) {
