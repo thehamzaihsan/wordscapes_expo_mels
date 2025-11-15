@@ -95,20 +95,12 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
   const refreshProgress = React.useCallback(async () => {
     initializeGameManager();
     try {
-      let snapshot: LocalUserSnapshot | null = null;
-      if (user?.id) {
-        try {
-          snapshot = await pullRemote(user.id);
-        } catch (err) {
-          console.warn("Failed to pull remote snapshot", err);
-        }
-      }
-      if (!snapshot) {
-        snapshot = await getLocalSnapshot();
-      }
-      setSnapshotProfileName(snapshot?.profile?.username ?? null);
+      // ALWAYS load local progress first - it's the source of truth
       const existing = await loadGuestProgress();
       let progressToUse: GuestProgressPayload | null = existing;
+      
+      // Only pull snapshot if we need to initialize for the first time
+      let snapshot: LocalUserSnapshot | null = null;
       if (
         !progressToUse ||
         !progressToUse.categories ||
@@ -116,7 +108,20 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         Array.isArray(progressToUse.categories) ||
         Object.keys(progressToUse.categories).length === 0
       ) {
-        console.warn("Guest progress missing or invalid, rebuilding initial structure");
+        console.warn("Guest progress missing or invalid, pulling snapshot");
+        if (user?.id) {
+          try {
+            snapshot = await pullRemote(user.id);
+          } catch (err) {
+            console.warn("Failed to pull remote snapshot", err);
+          }
+        }
+        if (!snapshot) {
+          snapshot = await getLocalSnapshot();
+        }
+        setSnapshotProfileName(snapshot?.profile?.username ?? null);
+        
+        console.warn("Rebuilding initial structure from snapshot");
         const preferredName = authDisplayName || snapshot?.profile?.username || undefined;
         let playerLevel = 0;
         if (snapshot?.stats?.xp) {
@@ -125,13 +130,32 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           playerLevel = derived.level;
         }
         progressToUse = buildInitialProgress(levelsData as any, preferredName, playerLevel);
+        // Only use snapshot XP/gems when building initial progress (no existing progress)
         if (snapshot?.stats?.xp) {
           progressToUse.meta.xp = snapshot.stats.xp;
+          progressToUse.meta.gems = snapshot.stats.gems || 0;
           progressToUse.meta.playerLevel = playerLevel;
         }
         await saveGuestProgress(progressToUse);
+      } else {
+        // We have existing progress - just get snapshot for profile name if needed
+        if (!snapshotProfileName) {
+          if (user?.id) {
+            try {
+              snapshot = await pullRemote(user.id);
+            } catch (err) {
+              console.warn("Failed to pull remote snapshot", err);
+            }
+          }
+          if (!snapshot) {
+            snapshot = await getLocalSnapshot();
+          }
+          setSnapshotProfileName(snapshot?.profile?.username ?? null);
+        }
       }
-      if (progressToUse && authDisplayName) {
+      
+      // Update player name if needed (only during initial setup, not on every refresh)
+      if (progressToUse && authDisplayName && !existing) {
         const currentName = (progressToUse.meta.playerName || "").trim();
         const isDefault = currentName.length === 0 || currentName.toLowerCase() === "guest";
         if (isDefault && currentName !== authDisplayName) {
@@ -140,8 +164,13 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
           await saveGuestProgress(progressToUse);
         }
       }
+      
+      // Ensure categories are unlocked
       const { ensureCategoriesUnlocked } = await import("@/hooks/guest-progress");
       progressToUse = await ensureCategoriesUnlocked(progressToUse);
+      
+      // Reload one final time to get the absolute latest data
+      progressToUse = await loadGuestProgress() || progressToUse;
       const mapped: { [key: string]: LevelData[] } = {};
       Object.keys(progressToUse.categories).forEach((cat) => {
         mapped[cat] = progressToUse!.categories[cat].map((l) => ({
@@ -156,6 +185,14 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
       });
       setLevelCategories(mapped);
       setGuestMeta(progressToUse.meta);
+      
+      console.log('[LevelScreen] Progress loaded and UI updated:', {
+        gems: progressToUse.meta.gems,
+        xp: progressToUse.meta.xp,
+        playerLevel: progressToUse.meta.playerLevel,
+        energy: progressToUse.meta.energy,
+      });
+      
       const { getUnlockedCategories } = await import("@/hooks/guest-progress");
       const unlockedCategories = getUnlockedCategories(progressToUse.meta.playerLevel);
       if (unlockedCategories.length > 0 && !unlockedCategories.includes(selectedCategory)) {

@@ -95,7 +95,17 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({
   };
 
   const confirmPurchaseXP = async (xpAmount: number, gemsCost: number) => {
-    if (!progress) return;
+    if (!progress) {
+      console.error('[XPShop] No progress data available');
+      return;
+    }
+
+    console.log('[XPShop] Purchasing XP:', {
+      xpAmount,
+      gemsCost,
+      currentGems: progress.meta.gems,
+      currentXP: progress.meta.xp,
+    });
 
     setPurchasing(true);
     hideModal();
@@ -114,12 +124,19 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({
       const derived = derivePlayerLevel(updatedProgress.meta.xp);
       updatedProgress.meta.playerLevel = derived.level;
 
+      console.log('[XPShop] Saving updated progress:', {
+        newGems: updatedProgress.meta.gems,
+        newXP: updatedProgress.meta.xp,
+        newLevel: updatedProgress.meta.playerLevel,
+      });
+
       await saveGuestProgress(updatedProgress);
       setProgress(updatedProgress);
 
+      console.log('[XPShop] Purchase successful!');
       showToast(`Purchased ${xpAmount} XP!`, "success");
     } catch (error) {
-      console.error("Purchase failed:", error);
+      console.error("[XPShop] Purchase failed:", error);
       showToast("Purchase failed", "error");
     } finally {
       setPurchasing(false);
@@ -222,7 +239,17 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({
     hintsAmount: number,
     gemsCost: number
   ) => {
-    if (!progress) return;
+    if (!progress) {
+      console.error('[XPShop] No progress data available for hints purchase');
+      return;
+    }
+
+    console.log('[XPShop] Purchasing Hints:', {
+      hintsAmount,
+      gemsCost,
+      currentGems: progress.meta.gems,
+      currentHints: progress.meta.hints || 0,
+    });
 
     setPurchasing(true);
     hideModal();
@@ -238,12 +265,18 @@ const XPShopScreen: React.FC<XPShopScreenProps> = ({
         updatedAt: new Date().toISOString(),
       };
 
+      console.log('[XPShop] Saving updated progress:', {
+        newGems: updatedProgress.meta.gems,
+        newHints: updatedProgress.meta.hints,
+      });
+
       await saveGuestProgress(updatedProgress);
       setProgress(updatedProgress);
 
+      console.log('[XPShop] Hints purchase successful!');
       showToast(`Purchased ${hintsAmount} hints!`, "success");
     } catch (error) {
-      console.error("Purchase failed:", error);
+      console.error("[XPShop] Hints purchase failed:", error);
       showToast("Purchase failed", "error");
     } finally {
       setPurchasing(false);

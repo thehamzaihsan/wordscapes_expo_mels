@@ -366,7 +366,7 @@ export function useGameLogic({
         try {
           const { completeLevelAndPersist } = await import("@/hooks/guest-progress");
           
-          console.log('[LevelComplete] Persisting level completion:', {
+          console.log('[LevelComplete] Starting level completion:', {
             category: categoryName,
             level: levelData.level,
             score,
@@ -374,18 +374,26 @@ export function useGameLogic({
             foundBonusWords: foundBonusWords.length
           });
           
-          await completeLevelAndPersist({
+          const result = await completeLevelAndPersist({
             category: categoryName,
             levelNumber: levelData.level,
             score,
             bonusWords: foundBonusWords.length,
             crosswordWords: foundCrosswordWords.length,
-            attempts: 1, // Could track this if needed
-            // Ensure rewards persist even if local progress hasn't been initialized yet
+            attempts: 1,
             levelDefs: (await import("@/constants/levels.json")).default as any,
           });
           
-          console.log('[LevelComplete] Level completion persisted successfully');
+          if (result) {
+            console.log('[LevelComplete] Level completion persisted successfully');
+          console.log('[LevelComplete] Updated progress:', {
+            gems: result.meta.gems,
+            xp: result.meta.xp,
+            playerLevel: result.meta.playerLevel
+          });
+          } else {
+            console.error('[LevelComplete] completeLevelAndPersist returned null');
+          }
         } catch (error) {
           console.error('[LevelComplete] Failed to persist level completion:', error);
         }

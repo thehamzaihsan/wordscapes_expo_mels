@@ -435,7 +435,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             <Path
               d={connectionPath}
               stroke="#4CAF50"
-              strokeWidth={3}
+              strokeWidth={6}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -607,14 +607,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   letterText: {
-    fontSize: isSmallScreen ? 27 : isMediumScreen ? 29 : 31,
+    fontSize: isSmallScreen ? 30 : isMediumScreen ? 33 : 36,
     fontWeight: "600",
     color: "#333333",
     textAlign: "center",
   },
   letterTextSelected: {
     color: "#FFFFFF",
-    fontSize: isSmallScreen ? 25 : isMediumScreen ? 27 : 29,
+    fontSize: isSmallScreen ? 28 : isMediumScreen ? 31 : 34,
   },
   selectionNumber: {
     position: "absolute",

@@ -217,6 +217,8 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
   try {
     const uid = await getActiveUserId();
     const key = keyForUser(uid);
+    console.log('[loadGuestProgress] Loading from key:', key);
+    
     let raw = await AsyncStorage.getItem(key);
     if (!raw && uid) {
       const legacy = await AsyncStorage.getItem(STORAGE_KEY_GUEST);
@@ -226,8 +228,14 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
         raw = legacy;
       }
     }
-    if (!raw) return null;
+    if (!raw) {
+      console.log('[loadGuestProgress] No data found');
+      return null;
+    }
+    
     const parsed: GuestProgressPayload = JSON.parse(raw);
+    console.log('[loadGuestProgress] Loaded - Gems:', parsed.meta.gems, 'XP:', parsed.meta.xp);
+    
     if (!parsed.version || parsed.version < CURRENT_VERSION) {
       parsed.meta = {
         ...defaultMeta,
@@ -333,13 +341,11 @@ export async function loadGuestProgress(): Promise<GuestProgressPayload | null> 
       }
       parsed.version = CURRENT_VERSION;
       parsed.updatedAt = new Date().toISOString();
-      saveGuestProgress(parsed).catch(() => {});
+      // Don't save here - let the caller decide when to save to avoid race conditions
     }
     const { progress: updatedProgress, energyGained } =
       checkAndApplyEnergyRegeneration(parsed);
-    if (energyGained > 0) {
-      saveGuestProgress(updatedProgress).catch(() => {});
-    }
+    // Don't save energy changes here either - return the updated progress for caller to save if needed
     return updatedProgress;
   } catch (e) {
     console.warn("Failed to load guest progress", e);
@@ -352,10 +358,29 @@ export async function saveGuestProgress(
 ): Promise<void> {
   try {
     const uid = await getActiveUserId();
-    await AsyncStorage.setItem(keyForUser(uid), JSON.stringify(progress));
-    updateGuestSnapshotFromProgress(progress).catch(() => {});
+    const key = keyForUser(uid);
+    const data = JSON.stringify(progress);
+    
+    console.log('[saveGuestProgress] Saving to key:', key);
+    console.log('[saveGuestProgress] Gems:', progress.meta.gems, 'XP:', progress.meta.xp);
+    
+    await AsyncStorage.setItem(key, data);
+    
+    // Verify it was saved
+    const saved = await AsyncStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      console.log('[saveGuestProgress] Verified save - Gems:', parsed.meta.gems, 'XP:', parsed.meta.xp);
+    } else {
+      console.error('[saveGuestProgress] SAVE FAILED - data not in storage!');
+    }
+    
+    await updateGuestSnapshotFromProgress(progress).catch((err) => {
+      console.error('[saveGuestProgress] Snapshot update failed:', err);
+    });
   } catch (e) {
-    console.warn("Failed to save guest progress", e);
+    console.error("[saveGuestProgress] CRITICAL SAVE ERROR:", e);
+    throw e; // Re-throw so caller knows it failed
   }
 }
 
@@ -420,12 +445,35 @@ export function applyLevelCompletion(
   crosswordWordsFound: number,
   attemptsThisRun: number
 ): GuestProgressPayload {
+  console.log('[LevelCompletion] Starting:', {
+    category,
+    levelNumber,
+    score,
+    bonusWordsFound,
+    crosswordWordsFound,
+  });
+  
   const categoryLevels = progress.categories[category];
-  if (!categoryLevels) return progress;
+  if (!categoryLevels) {
+    console.error('[LevelCompletion] Category not found:', category);
+    return progress;
+  }
+  
   const idx = categoryLevels.findIndex((l) => l.level === levelNumber);
-  if (idx === -1) return progress;
+  if (idx === -1) {
+    console.error('[LevelCompletion] Level not found:', { category, levelNumber });
+    return progress;
+  }
+  
   const lvl = categoryLevels[idx];
   const isFirstCompletion = !lvl.isCompleted;
+  
+  console.log('[LevelCompletion] Level found:', {
+    levelIndex: idx,
+    isFirstCompletion,
+    currentlyCompleted: lvl.isCompleted,
+    currentBestScore: lvl.bestScore,
+  });
   const updated: GuestLevelProgress = {
     ...lvl,
     isCompleted: true,
@@ -434,14 +482,37 @@ export function applyLevelCompletion(
     lastCompletedAt: new Date().toISOString(),
   };
   categoryLevels[idx] = updated;
+  
+  // Unlock next level
   if (idx + 1 < categoryLevels.length) {
-    categoryLevels[idx + 1] = { ...categoryLevels[idx + 1], isUnlocked: true };
+    const nextLevel = categoryLevels[idx + 1];
+    categoryLevels[idx + 1] = { ...nextLevel, isUnlocked: true };
+    console.log('[LevelUnlock] Unlocked next level:', {
+      category,
+      nextLevelNumber: nextLevel.level,
+      wasAlreadyUnlocked: nextLevel.isUnlocked,
+    });
+  } else {
+    console.log('[LevelUnlock] No more levels in category:', category);
   }
   if (isFirstCompletion) {
-    progress.meta.gems += economy.gems.earnPerLevel;
-    progress.meta.gems += bonusWordsFound * economy.bonusWord.rewardGems;
-    progress.meta.xp += crosswordWordsFound * economy.xp.gainPerWord;
-    progress.meta.xp += bonusWordsFound * economy.xp.gainPerBonusWord;
+    const gemsEarned = economy.gems.earnPerLevel + (bonusWordsFound * economy.bonusWord.rewardGems);
+    const xpEarned = (crosswordWordsFound * economy.xp.gainPerWord) + (bonusWordsFound * economy.xp.gainPerBonusWord);
+    
+    progress.meta.gems += gemsEarned;
+    progress.meta.xp += xpEarned;
+    
+    console.log('[Rewards] Level completion rewards:', {
+      gemsEarned,
+      xpEarned,
+      newGemsTotal: progress.meta.gems,
+      newXpTotal: progress.meta.xp,
+      isFirstCompletion,
+      category,
+      levelNumber
+    });
+  } else {
+    console.log('[Rewards] Level already completed - no rewards awarded');
   }
   progress.meta.lastEnergyUpdate = new Date().toISOString();
   const derived = derivePlayerLevel(progress.meta.xp);
@@ -496,8 +567,22 @@ export async function ensureCategoriesUnlocked(
     }
   });
   if (modified) {
-    progress.updatedAt = new Date().toISOString();
-    await saveGuestProgress(progress);
+    // Reload the latest progress to avoid overwriting recent changes
+    const latest = await loadGuestProgress();
+    if (latest) {
+      // Merge the new categories into the latest progress
+      Object.keys(progress.categories).forEach((cat) => {
+        if (!latest.categories[cat]) {
+          latest.categories[cat] = progress.categories[cat];
+        }
+      });
+      latest.updatedAt = new Date().toISOString();
+      await saveGuestProgress(latest);
+      return latest;
+    } else {
+      progress.updatedAt = new Date().toISOString();
+      await saveGuestProgress(progress);
+    }
   }
   return progress;
 }
@@ -552,18 +637,30 @@ export async function completeLevelAndPersist(params: {
     params.crosswordWords,
     params.attempts
   );
+  
+  console.log('[completeLevelAndPersist] Saving progress to storage...');
   await saveGuestProgress(progress);
-  updateGuestSnapshotFromProgress(progress).catch(() => {});
+  
+  console.log('[completeLevelAndPersist] Updating snapshot...');
+  await updateGuestSnapshotFromProgress(progress).catch((err) => {
+    console.error('[completeLevelAndPersist] Failed to update snapshot:', err);
+  });
+  
   // After saving, if we have a user, trigger a sync.
   const uid = await getActiveUserId();
   if (uid) {
+    console.log('[completeLevelAndPersist] Requesting sync for user:', uid);
     const { requestSync } = await import("@/lib/sync");
     // Request a coordinated sync; immediate flag asks the coordinator to
     // run as soon as possible but still dedupe concurrent calls.
     requestSync(uid, { immediate: true }).catch((err) => {
       console.warn("[completeLevelAndPersist] Background sync failed", err);
     });
+  } else {
+    console.log('[completeLevelAndPersist] No user ID - skipping sync');
   }
+  
+  console.log('[completeLevelAndPersist] Completion successful, returning progress');
   return progress;
 }
 
