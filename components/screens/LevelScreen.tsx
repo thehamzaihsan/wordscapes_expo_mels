@@ -139,17 +139,9 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         await saveGuestProgress(progressToUse);
       } else {
         // We have existing progress - just get snapshot for profile name if needed
+        // IMPORTANT: Don't call pullRemote here as it overwrites local progress
         if (!snapshotProfileName) {
-          if (user?.id) {
-            try {
-              snapshot = await pullRemote(user.id);
-            } catch (err) {
-              console.warn("Failed to pull remote snapshot", err);
-            }
-          }
-          if (!snapshot) {
-            snapshot = await getLocalSnapshot();
-          }
+          snapshot = await getLocalSnapshot();
           setSnapshotProfileName(snapshot?.profile?.username ?? null);
         }
       }

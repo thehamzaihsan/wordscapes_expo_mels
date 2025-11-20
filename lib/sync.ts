@@ -363,19 +363,23 @@ export async function pushLocal(
       new Date(snapshot.stats.updated_at).getTime() >
       new Date(remoteStats.updated_at).getTime()
     ) {
+      // Exclude generated columns like total_matches from update
+      const { total_matches, ...statsToUpdate } = snapshot.stats as any;
       const { error } = await supabase
         .from("user_stats")
-        .update(snapshot.stats)
+        .update(statsToUpdate)
         .eq("user_id", userId);
       if (!error) updatedStats = true;
-      else logSupabaseWarning("update stats", error, snapshot.stats as any);
+      else logSupabaseWarning("update stats", error, statsToUpdate);
     }
   } else {
+    // Exclude generated columns like total_matches from insert
+    const { total_matches, ...statsToInsert } = snapshot.stats as any;
     const { error } = await supabase
       .from("user_stats")
-      .insert(snapshot.stats as any);
+      .insert(statsToInsert);
     if (!error) updatedStats = true;
-    else logSupabaseWarning("insert stats", error, snapshot.stats as any);
+    else logSupabaseWarning("insert stats", error, statsToInsert);
   }
 
   let profileUpdated = false;
@@ -500,6 +504,18 @@ export async function syncUser(
     };
   }
   const pushRes = await pushLocal(userId, options);
+
+  // After pushing, pull the latest stats from remote to ensure we have the most recent data
+  const { data: remoteStats, error: statsErr } = await supabase
+    .from("user_stats")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  
+  if (!statsErr && remoteStats) {
+    // Update snapshot with latest remote stats
+    snapshot.stats = remoteStats as UserStatsRow;
+  }
 
   const { data: remoteLevels, error: lErr } = await supabase
     .from("level_progress")
