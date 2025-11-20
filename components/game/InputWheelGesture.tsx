@@ -10,6 +10,8 @@ import {
   Animated,
   Dimensions,
   Modal,
+  PanResponder,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -82,7 +84,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   );
   const isDragging = useRef(false);
   const currentTouches = useRef<Set<number>>(new Set());
-  const wheelContainerRef = useRef<HTMLDivElement>(null);
+  const wheelContainerRef = useRef<View>(null);
+  const wheelLayout = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
   // --- REFINED DYNAMIC SIZING WITH RESPONSIVE VALUES ---
   const hexagonSize = isSmallScreen ? 28 : isMediumScreen ? 32 : 35;
@@ -275,8 +278,70 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     }
   }, [currentWord, onWordComplete, resetSelection]);
 
-  // Handle mouse/touch move over wheel for web
+  // Helper function to check if touch is on a letter
+  const findLetterAtPosition = useCallback((x: number, y: number): number => {
+    const touchRadius = hexagonSize * 1.5;
+    for (let i = 0; i < letterPositions.current.length; i++) {
+      const pos = letterPositions.current[i];
+      const dx = x - pos.x;
+      const dy = y - pos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance <= touchRadius) {
+        return i;
+      }
+    }
+    return -1;
+  }, [hexagonSize]);
+
+  // PanResponder for mobile gesture handling
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => Platform.OS !== 'web' && !isShuffling,
+        onMoveShouldSetPanResponder: () => Platform.OS !== 'web' && !isShuffling,
+        onPanResponderGrant: (evt, gestureState) => {
+          console.log('[PanResponder] Touch started', evt.nativeEvent.locationX, evt.nativeEvent.locationY);
+          const relativeX = evt.nativeEvent.locationX || 0;
+          const relativeY = evt.nativeEvent.locationY || 0;
+          
+          console.log('[PanResponder] Checking letters at:', relativeX, relativeY);
+          console.log('[PanResponder] Letter positions:', letterPositions.current);
+          
+          const letterIndex = findLetterAtPosition(relativeX, relativeY);
+          if (letterIndex >= 0) {
+            console.log('[PanResponder] Found letter:', letterIndex, shuffledLetters[letterIndex]);
+            handleLetterPress(shuffledLetters[letterIndex], letterIndex);
+          } else {
+            console.log('[PanResponder] No letter found at this position');
+          }
+        },
+        onPanResponderMove: (evt, gestureState) => {
+          if (!isDragging.current || isShuffling) return;
+          
+          const relativeX = evt.nativeEvent.locationX || 0;
+          const relativeY = evt.nativeEvent.locationY || 0;
+          
+          const letterIndex = findLetterAtPosition(relativeX, relativeY);
+          if (letterIndex >= 0 && !currentTouches.current.has(letterIndex)) {
+            handleLetterPress(shuffledLetters[letterIndex], letterIndex);
+          }
+        },
+        onPanResponderRelease: () => {
+          console.log('[PanResponder] Released');
+          handleLetterRelease();
+        },
+        onPanResponderTerminate: () => {
+          console.log('[PanResponder] Terminated');
+          handleLetterRelease();
+        },
+      }),
+    [isShuffling, hexagonSize, shuffledLetters, handleLetterPress, handleLetterRelease, findLetterAtPosition]
+  );
+
+  // Web: Handle mouse/touch move over wheel
   const handleWheelMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (Platform.OS !== 'web') return; // Only for web
     if (!isDragging.current || isShuffling) return;
     
     let clientX: number;
@@ -293,26 +358,18 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     
     if (!wheelContainerRef.current) return;
     
-    const rect = wheelContainerRef.current.getBoundingClientRect();
+    const rect = (wheelContainerRef.current as any).getBoundingClientRect();
     const relativeX = clientX - rect.left;
     const relativeY = clientY - rect.top;
     
-    // Find which letter is at this position - reduced hitbox
-    const touchRadius = hexagonSize * 0.9; // Reduced from 1.2 to 0.9 for tighter detection
-    for (let i = 0; i < letterPositions.current.length; i++) {
-      const pos = letterPositions.current[i];
-      const dx = relativeX - pos.x;
-      const dy = relativeY - pos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance <= touchRadius && !currentTouches.current.has(i)) {
-        handleLetterPress(shuffledLetters[i], i);
-        break;
-      }
+    const letterIndex = findLetterAtPosition(relativeX, relativeY);
+    if (letterIndex >= 0 && !currentTouches.current.has(letterIndex)) {
+      handleLetterPress(shuffledLetters[letterIndex], letterIndex);
     }
-  }, [isShuffling, hexagonSize, shuffledLetters, handleLetterPress]);
+  }, [isShuffling, hexagonSize, shuffledLetters, handleLetterPress, findLetterAtPosition]);
 
   const handleWheelMouseUp = useCallback(() => {
+    if (Platform.OS !== 'web') return; // Only for web
     handleLetterRelease();
   }, [handleLetterRelease]);
 
@@ -468,16 +525,22 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
         </TouchableOpacity>
 
         <View
-          ref={wheelContainerRef as any}
+          ref={wheelContainerRef}
+          {...(Platform.OS !== 'web' ? panResponder.panHandlers : {})}
+          onLayout={(event) => {
+            const { x, y, width, height } = event.nativeEvent.layout;
+            wheelLayout.current = { x, y, width, height };
+            console.log('[Layout] Wheel container:', wheelLayout.current);
+          }}
+          onMouseMove={Platform.OS === 'web' ? handleWheelMove as any : undefined}
+          onTouchMove={Platform.OS === 'web' ? handleWheelMove as any : undefined}
+          onMouseUp={Platform.OS === 'web' ? handleWheelMouseUp as any : undefined}
+          onTouchEnd={Platform.OS === 'web' ? handleWheelMouseUp as any : undefined}
+          onMouseLeave={Platform.OS === 'web' ? handleWheelMouseUp as any : undefined}
           style={[
             styles.wheelContainer,
             { width: wheelSize, height: wheelSize, borderRadius: wheelCenter },
           ]}
-          onMouseMove={handleWheelMove as any}
-          onTouchMove={handleWheelMove as any}
-          onMouseUp={handleWheelMouseUp as any}
-          onTouchEnd={handleWheelMouseUp as any}
-          onMouseLeave={handleWheelMouseUp as any}
         >
           <Svg 
             style={StyleSheet.absoluteFill} 
@@ -552,35 +615,63 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                     transform: [{ scale: animLetter.scale }],
                   },
                 ]}
+                pointerEvents={Platform.OS === 'web' ? 'auto' : 'none'}
               >
-                <TouchableOpacity
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                  onPressIn={() => handleLetterPress(letter, index)}
-                  onPressOut={handleLetterRelease}
-                  activeOpacity={1}
-                  disabled={isShuffling}
-                >
-                  <Text
-                    style={[
-                      styles.letterText,
-                      isSelected && styles.letterTextSelected,
-                    ]}
+                {Platform.OS === 'web' ? (
+                  <TouchableOpacity
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPressIn={() => handleLetterPress(letter, index)}
+                    onPressOut={handleLetterRelease}
+                    activeOpacity={1}
+                    disabled={isShuffling}
                   >
-                    {letter.toUpperCase()}
-                  </Text>
-                  {isSelected && (
-                    <View style={styles.selectionNumber}>
-                      <Text style={styles.selectionNumberText}>
-                        {selectionOrder}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.letterText,
+                        isSelected && styles.letterTextSelected,
+                      ]}
+                    >
+                      {letter.toUpperCase()}
+                    </Text>
+                    {isSelected && (
+                      <View style={styles.selectionNumber}>
+                        <Text style={styles.selectionNumberText}>
+                          {selectionOrder}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <View
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.letterText,
+                        isSelected && styles.letterTextSelected,
+                      ]}
+                    >
+                      {letter.toUpperCase()}
+                    </Text>
+                    {isSelected && (
+                      <View style={styles.selectionNumber}>
+                        <Text style={styles.selectionNumberText}>
+                          {selectionOrder}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
               </Animated.View>
             );
           })}
