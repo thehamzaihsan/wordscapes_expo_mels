@@ -484,7 +484,7 @@ const GestureInputWheel: React.FC<LetterWheelProps> = ({
             <Path
               d={connectionPath}
               stroke="#4CAF50"
-              strokeWidth={4}
+              strokeWidth={8}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -586,7 +586,7 @@ const GestureInputWheel: React.FC<LetterWheelProps> = ({
           ]}
           onPress={handleHint}
         >
-          <Lightbulb size={isSmallScreen ? 20 : 24} color="#ffffff" />
+          <Lightbulb size={isSmallScreen ? 20 : 24} color="#FFD700" fill="#FFD700" />
           {hintsLeft > 0 && (
             <View style={styles.hintDot}>
               <Text style={styles.hintDotText}>{hintsLeft}</Text>
@@ -772,14 +772,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   letterText: {
-    fontSize: isSmallScreen ? 27 : isMediumScreen ? 29 : 31,
+    fontSize: isSmallScreen ? 32 : isMediumScreen ? 34 : 36,
     fontWeight: "600",
     color: "#333333",
     textAlign: "center",
   },
   letterTextSelected: {
     color: "#FFFFFF",
-    fontSize: isSmallScreen ? 25 : isMediumScreen ? 27 : 29,
+    fontSize: isSmallScreen ? 30 : isMediumScreen ? 32 : 34,
   },
   selectionNumber: {
     position: "absolute",

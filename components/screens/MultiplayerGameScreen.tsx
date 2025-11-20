@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
@@ -19,7 +21,7 @@ import {
 import { dequeueForMatch } from "@/lib/matchmaking";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
-import { AlertTriangle, ArrowLeft, Award, Clock, Frown, Handshake, Trophy, User, XCircle, Zap } from "lucide-react-native";
+import { AlertTriangle, ArrowLeft, Award, Clock, Frown, Handshake, Share2, Trophy, User, XCircle, Zap } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AdComponent from "../common/AdComponent";
 import BackgroundImage from "../common/BackgroundImage";
@@ -97,6 +99,9 @@ export default function MultiplayerGameScreen({
     message: string;
     type: 'success' | 'error' | 'warning';
   }>({ show: false, message: '', type: 'success' });
+  
+  const gameOverModalRef = useRef<View>(null);
+  const [isSharing, setIsSharing] = useState(false);
   
   useEffect(() => {
     if (rematchCreatedId) {
@@ -363,6 +368,32 @@ export default function MultiplayerGameScreen({
     setTimeout(() => setWordFeedback({ show: false, message: '', type: 'success' }), 1500);
     
     await submitWord(w);
+  };
+
+  const handleShareResult = async () => {
+    if (!gameOverModalRef.current) return;
+    
+    setIsSharing(true);
+    try {
+      const uri = await captureRef(gameOverModalRef, {
+        format: 'png',
+        quality: 1,
+      });
+      
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: 'Share your victory!',
+        });
+      } else {
+        console.log('Sharing is not available on this platform');
+      }
+    } catch (error) {
+      console.error('Error sharing result:', error);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   // While waiting for synchronized puzzle or the grace delay, show a loading screen
@@ -646,9 +677,10 @@ export default function MultiplayerGameScreen({
         title=""
         showCloseButton
         backdrop="blur"
-        size="small"
+        size="medium"
+        scrollable={true}
       >
-        <View style={styles.gameOverContent}>
+        <View ref={gameOverModalRef} collapsable={false} style={styles.gameOverContent}>
           {/* Result Icon and Title */}
           <View style={styles.gameOverHeader}>
             {(resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && (
@@ -683,7 +715,57 @@ export default function MultiplayerGameScreen({
             )}
           </View>
 
+          {/* Debug text */}
+          <ThemedText variant="caption" style={{ textAlign: 'center', opacity: 0.5 }}>
+            Debug: Result = "{resultText}" | gameOver={String(gameOver)} | isSharing={String(isSharing)}
+          </ThemedText>
+
+          {/* TEST BUTTON - Should always appear */}
+          <View style={{ backgroundColor: 'red', padding: 10, marginVertical: 10 }}>
+            <ThemedText style={{ color: 'white', textAlign: 'center' }}>
+              TEST: If you see this, buttons can render
+            </ThemedText>
+          </View>
+
+          {/* Player names and scores */}
+          <View style={styles.gameOverPlayersContainer}>
+            <View style={styles.gameOverPlayerInfo}>
+              <User size={20} color={theme.colors.text} />
+              <ThemedText variant="body" weight="medium" style={styles.gameOverPlayerName}>
+                {leftName}
+              </ThemedText>
+              <ThemedText variant="h3" weight="bold" style={styles.gameOverPlayerScore}>
+                {wordsFound.length}
+              </ThemedText>
+            </View>
+            <ThemedText variant="body" style={styles.gameOverVsText}>VS</ThemedText>
+            <View style={styles.gameOverPlayerInfo}>
+              <User size={20} color={theme.colors.text} />
+              <ThemedText variant="body" weight="medium" style={styles.gameOverPlayerName}>
+                {rightName}
+              </ThemedText>
+              <ThemedText variant="h3" weight="bold" style={styles.gameOverPlayerScore}>
+                {opponentWords.length}
+              </ThemedText>
+            </View>
+          </View>
    
+          {/* Share Button - always show for testing */}
+          <ThemedButton
+            title={isSharing ? "Sharing..." : "Share Result"}
+            variant="secondary"
+            size="lg"
+            onPress={() => {
+              console.log('[Share] Result text:', resultText);
+              console.log('[Share] Is victory?', resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory"));
+              handleShareResult();
+            }}
+            fullWidth
+            leftIcon={<Share2 size={20} color={theme.colors.text} />}
+            disabled={isSharing}
+            isLoading={isSharing}
+          />
+
           {/* Back Button */}
           <ThemedButton
             title="Back to Hub"
@@ -891,6 +973,35 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 32,
     textAlign: "center",
     width: "100%",
+  },
+  gameOverPlayersContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    width: "100%",
+  },
+  gameOverPlayerInfo: {
+    flex: 1,
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: theme.colors.surfaceVariant + '40',
+    padding: 16,
+    borderRadius: theme.borderRadius.lg,
+  },
+  gameOverPlayerName: {
+    fontSize: 14,
+    textAlign: "center",
+  },
+  gameOverPlayerScore: {
+    fontSize: 28,
+    textAlign: "center",
+  },
+  gameOverVsText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    paddingHorizontal: 8,
+    opacity: 0.6,
   },
   gameOverScoreContainer: {
     flexDirection: "row",

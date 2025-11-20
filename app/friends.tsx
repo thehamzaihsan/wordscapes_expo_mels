@@ -679,14 +679,20 @@ export default function FriendsRoute() {
                     </View>
                   </View>
                   <View style={styles.resultActions}>
-                    <ThemedButton
-                      title="Add Friend"
-                      size="md"
-                      variant="primary"
-                      leftIcon={<UserPlus size={16} color="white" />}
-                      onPress={() => sendFriendRequest(searchResult.id)}
-                      fullWidth
-                    />
+                    {!friendRows.some(
+                      (r) =>
+                        (r.requester === session.user.id && r.addressee === searchResult.id) ||
+                        (r.addressee === session.user.id && r.requester === searchResult.id)
+                    ) && (
+                      <ThemedButton
+                        title="Add Friend"
+                        size="md"
+                        variant="primary"
+                        leftIcon={<UserPlus size={16} color="white" />}
+                        onPress={() => sendFriendRequest(searchResult.id)}
+                        fullWidth
+                      />
+                    )}
                     <ThemedButton
                       title="Challenge"
                       size="md"
