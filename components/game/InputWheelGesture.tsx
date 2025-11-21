@@ -1,21 +1,21 @@
 import { Lightbulb, Shuffle } from "lucide-react-native";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  PanResponder,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Modal,
+    PanResponder,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
@@ -552,7 +552,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             <Path
               d={connectionPath}
               stroke="#4CAF50"
-              strokeWidth={6}
+              strokeWidth={12}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -685,7 +685,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           ]}
           onPress={handleHint}
         >
-          <Lightbulb size={isSmallScreen ? 20 : 24} color="#ffffff" />
+          <Lightbulb size={isSmallScreen ? 24 : 28} color="#FFD700" fill="#FFD700" />
           {hintsLeft > 0 && (
             <View style={styles.hintDot}>
               <Text style={styles.hintDotText}>{hintsLeft}</Text>
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
     marginLeft: isSmallScreen ? 8 : 16,
   },
   hintButton: {
-    backgroundColor: "#F59E0B", // solid gold
+    backgroundColor: "#B45309", // solid gold
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -899,25 +899,20 @@ const styles = StyleSheet.create({
     marginTop: isSmallScreen ? 15 : 20,
   },
   centerButton: {
-    width: isSmallScreen ? 40 : 48,
-    height: isSmallScreen ? 40 : 48,
-    borderRadius: isSmallScreen ? 20 : 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderColor: "rgba(255,255,255,0.2)",
   },
   removeButton: {
     backgroundColor: "#EF4444", // solid red
   },
   shuffleButton: {
-    backgroundColor: "#F59E0B", // solid orange
+    backgroundColor: "#3B82F6",
     minWidth: isSmallScreen ? 40 : 50,
     minHeight: isSmallScreen ? 40 : 50,
     borderRadius: 99999,
@@ -930,7 +925,7 @@ const styles = StyleSheet.create({
   },
   disabledCenterButton: {
     backgroundColor: "#D1D5DB", // solid gray
-    opacity: 0.6,
+    opacity: 0.5,
   },
   centerButtonText: {
     color: "#ffffff",
@@ -943,17 +938,17 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
     width: "80%",
-    maxWidth: 300,
+    maxWidth: 320,
   },
   hintCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
     padding: 24,
     alignItems: "center",
     shadowColor: "#000",
@@ -962,33 +957,33 @@ const styles = StyleSheet.create({
       height: 4,
     },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 4.65,
     elevation: 8,
   },
   hintIcon: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   hintTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#22C55E",
-    marginBottom: 12,
+    color: "#1F2937",
+    marginBottom: 8,
     fontFamily: "Helvetica",
   },
   hintText: {
-    fontSize: 18,
-    color: "#374151",
+    fontSize: 16,
+    color: "#4B5563",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 24,
     lineHeight: 24,
     fontFamily: "Helvetica",
   },
   hintCloseButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#3B82F6",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 25,
-    minWidth: 120,
+    borderRadius: 24,
+    width: "100%",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -999,10 +994,37 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   hintCloseButtonText: {
-    color: "#FFFFFF",
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
     fontFamily: "Helvetica",
+  },
+  hintModalCard: {
+    width: width * 0.85,
+    maxWidth: 350,
+    padding: 24,
+    alignItems: "center",
+  },
+  hintModalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  hintModalText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 24,
+    color: "#4B5563",
+  },
+  hintModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  hintModalButton: {
+    flex: 1,
   },
 });

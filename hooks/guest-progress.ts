@@ -1,9 +1,9 @@
 import economy from "@/constants/economy.json";
 import levelsData from "@/constants/levels.json";
 import {
-  applyEnergyRegeneration,
-  clampEnergy,
-  getDefaultEnergy,
+    applyEnergyRegeneration,
+    clampEnergy,
+    getDefaultEnergy,
 } from "@/lib/energy";
 import { updateGuestSnapshotFromProgress } from "@/lib/guestSnapshot";
 
@@ -473,7 +473,10 @@ export function applyLevelCompletion(
     isFirstCompletion,
     currentlyCompleted: lvl.isCompleted,
     currentBestScore: lvl.bestScore,
+    progressGems: progress.meta.gems,
+    progressXP: progress.meta.xp
   });
+
   const updated: GuestLevelProgress = {
     ...lvl,
     isCompleted: true,
@@ -495,18 +498,25 @@ export function applyLevelCompletion(
   } else {
     console.log('[LevelUnlock] No more levels in category:', category);
   }
+
+  // ALWAYS award rewards if it's the first completion
   if (isFirstCompletion) {
     const gemsEarned = economy.gems.earnPerLevel + (bonusWordsFound * economy.bonusWord.rewardGems);
     const xpEarned = (crosswordWordsFound * economy.xp.gainPerWord) + (bonusWordsFound * economy.xp.gainPerBonusWord);
     
+    const oldGems = progress.meta.gems;
+    const oldXp = progress.meta.xp;
+
     progress.meta.gems += gemsEarned;
     progress.meta.xp += xpEarned;
     
-    console.log('[Rewards] Level completion rewards:', {
+    console.log('[Rewards] Level completion rewards AWARDED:', {
       gemsEarned,
       xpEarned,
-      newGemsTotal: progress.meta.gems,
-      newXpTotal: progress.meta.xp,
+      oldGems,
+      newGems: progress.meta.gems,
+      oldXp,
+      newXp: progress.meta.xp,
       isFirstCompletion,
       category,
       levelNumber

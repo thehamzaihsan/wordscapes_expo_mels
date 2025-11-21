@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, View } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
+import levelsData from "@/constants/levels.json";
 import {
     generateCrossword,
     type Grid as GeneratedGrid,
@@ -724,5 +725,12 @@ export function useGameLogic({
     revealWordCells,
     setAnimatingLetters,
     setHintAnim,
+    nextLevel: (() => {
+      if (!categoryName || !levelData) return null;
+      const categoryLevels = (levelsData as any)[categoryName];
+      if (!categoryLevels) return null;
+      const next = categoryLevels.find((l: any) => l.level === levelData.level + 1);
+      return next ? next : null;
+    })(),
   };
 }

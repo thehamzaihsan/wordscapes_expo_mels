@@ -1,4 +1,5 @@
 import { Audio } from "expo-av";
+import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -48,6 +49,7 @@ export default function GameScreen({
   const { width } = useWindowDimensions();
   const isBigScreen = width >= 768;
   const [modalVisible, setModalVisible] = useState(false);
+  const router = useRouter();
   
   const {
     // state
@@ -71,6 +73,7 @@ export default function GameScreen({
     handleWordSubmit,
     handleWordHint,
     revealWordCells,
+    nextLevel,
     // handleNextLevel,
   } = useGameLogic({
     difficulty,
@@ -498,11 +501,25 @@ export default function GameScreen({
             )}
             <ThemedButton
               variant="primary"
-              title="Back to Levels"
+              title={nextLevel ? "Next Level" : "Back to Levels"}
               style={styles.nextButton}
               onPress={() => {
                 setModalVisible(false);
-                onNavigate?.("levels");
+                if (nextLevel) {
+                  router.push({
+                    pathname: "/game",
+                    params: {
+                      levelNumber: nextLevel.level,
+                      baseWord: nextLevel.baseWord,
+                      difficulty: nextLevel.difficulty,
+                      categoryName: categoryName,
+                      levelTitle: `Level ${nextLevel.level}`,
+                      levelDataJSON: JSON.stringify(nextLevel)
+                    }
+                  });
+                } else {
+                  onNavigate?.("levels");
+                }
               }}
             ></ThemedButton>
           </ThemedCard>
