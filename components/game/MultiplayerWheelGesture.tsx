@@ -272,6 +272,42 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     }
   }, [currentWord, onWordComplete, resetSelection]);
 
+  // Handle touch start to initialize gesture
+  const handleWheelTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isShuffling) return;
+    
+    console.log('[Multiplayer Touch] Touch started');
+    isDragging.current = true;
+    setIsDraggingState(true);
+    currentTouches.current.clear();
+    
+    // Process the initial touch
+    if (e.nativeEvent.touches.length > 0) {
+      const touch = e.nativeEvent.touches[0];
+      
+      if (!wheelContainerRef.current) return;
+      
+      wheelContainerRef.current.measure((x, y, width, height, pageX, pageY) => {
+        const relativeX = touch.pageX - pageX;
+        const relativeY = touch.pageY - pageY;
+        
+        // Find which letter is at this position
+        const touchRadius = hexagonSize * 0.9;
+        for (let i = 0; i < letterPositions.current.length; i++) {
+          const pos = letterPositions.current[i];
+          const dx = relativeX - pos.x;
+          const dy = relativeY - pos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance <= touchRadius) {
+            handleLetterPress(shuffledLetters[i], i);
+            break;
+          }
+        }
+      });
+    }
+  }, [isShuffling, hexagonSize, shuffledLetters, handleLetterPress]);
+
   // Handle mouse/touch move over wheel for React Native
   const handleWheelMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging.current || isShuffling) return;
@@ -411,6 +447,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             styles.wheelContainer,
             { width: wheelSize, height: wheelSize, borderRadius: wheelCenter },
           ]}
+          onTouchStart={handleWheelTouchStart as any}
           onTouchMove={handleWheelMove as any}
           onTouchEnd={handleWheelMouseUp as any}
         >
@@ -487,18 +524,15 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                     transform: [{ scale: animLetter.scale }],
                   },
                 ]}
+                pointerEvents="none"
               >
-                <TouchableOpacity
+                <View
                   style={{
                     width: "100%",
                     height: "100%",
                     justifyContent: "center",
                     alignItems: "center",
                   }}
-                  onPressIn={() => handleLetterPress(letter, index)}
-                  onPressOut={handleLetterRelease}
-                  activeOpacity={1}
-                  disabled={isShuffling}
                 >
                   <Text
                     style={[
@@ -515,7 +549,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
                       </Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </View>
               </Animated.View>
             );
           })}

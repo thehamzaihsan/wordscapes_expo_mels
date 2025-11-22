@@ -1,6 +1,6 @@
 import * as Sharing from "expo-sharing";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import { Animated, Image, Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { captureRef } from "react-native-view-shot";
 
 import ThemedButton from "@/components/ui/ThemedButton";
@@ -21,7 +21,7 @@ import {
 import { dequeueForMatch } from "@/lib/matchmaking";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
-import { AlertTriangle, ArrowLeft, Award, Clock, Frown, Handshake, Share2, Trophy, User, XCircle, Zap } from "lucide-react-native";
+import { AlertTriangle, ArrowLeft, Award, Clock, Handshake, Share2, Trophy, User, XCircle, Zap } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AdComponent from "../common/AdComponent";
 import BackgroundImage from "../common/BackgroundImage";
@@ -380,14 +380,43 @@ export default function MultiplayerGameScreen({
         quality: 1,
       });
       
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        await Sharing.shareAsync(uri, {
-          mimeType: 'image/png',
-          dialogTitle: 'Share your victory!',
-        });
+      // Detect if we're on web desktop vs mobile
+      const isWeb = Platform.OS === 'web';
+      const isMobileWeb = isWeb && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isWeb && !isMobileWeb) {
+        // Desktop web: Download the PNG file
+        console.log('[Share] Desktop web detected, downloading PNG');
+        
+        // Fetch the image data
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        
+        // Create a download link
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `wordsprings-match-result-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL object
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        console.log('[Share] PNG downloaded successfully');
       } else {
-        console.log('Sharing is not available on this platform');
+        // Mobile (native or web): Use native share API
+        console.log('[Share] Mobile detected, using native share');
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'image/png',
+            dialogTitle: 'Share your match result!',
+          });
+        } else {
+          console.log('Sharing is not available on this platform');
+        }
       }
     } catch (error) {
       console.error('Error sharing result:', error);
@@ -680,118 +709,108 @@ export default function MultiplayerGameScreen({
         size="medium"
         scrollable={true}
       >
-        <View ref={gameOverModalRef} collapsable={false} style={styles.gameOverContent}>
-          {/* Gradient Background Overlay */}
-          <View style={[
-            styles.gameOverGradient,
-            (resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && styles.gameOverGradientWin,
-            resultText.toLowerCase().includes("lose") && styles.gameOverGradientLoss,
-            (resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && styles.gameOverGradientTie,
-          ]} />
-          
-          {/* Content Container */}
-          <View style={styles.gameOverInnerContent}>
-            {/* Result Icon and Title */}
-            <View style={styles.gameOverHeader}>
-              {(resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && (
-                <>
-                  <View style={[styles.gameOverIconContainer, styles.gameOverIconWin]}>
-                    <Award size={80} color="#FFD700" strokeWidth={2.5} />
-                  </View>
-                  <ThemedText variant="title" weight="bold" style={styles.gameOverTitleWin}>
-                    🎉 VICTORY! 🎉
-                  </ThemedText>
-                  <ThemedText variant="body1" style={styles.gameOverSubtitle}>
-                    You dominated the match!
-                  </ThemedText>
-                </>
-              )}
-              {resultText.toLowerCase().includes("lose") && (
-                <>
-                  <View style={[styles.gameOverIconContainer, styles.gameOverIconLoss]}>
-                    <Frown size={80} color="#EF4444" strokeWidth={2.5} />
-                  </View>
-                  <ThemedText variant="title" weight="bold" style={styles.gameOverTitleLoss}>
-                    DEFEAT
-                  </ThemedText>
-                  <ThemedText variant="body1" style={styles.gameOverSubtitle}>
-                    Better luck next time!
-                  </ThemedText>
-                </>
-              )}
-              {(resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && (
-                <>
-                  <View style={[styles.gameOverIconContainer, styles.gameOverIconTie]}>
-                    <Handshake size={80} color="#F59E0B" strokeWidth={2.5} />
-                  </View>
-                  <ThemedText variant="title" weight="bold" style={styles.gameOverTitleTie}>
-                    DRAW
-                  </ThemedText>
-                  <ThemedText variant="body1" style={styles.gameOverSubtitle}>
-                    Evenly matched!
-                  </ThemedText>
-                </>
-              )}
+        <View ref={gameOverModalRef} collapsable={false} style={styles.shareCard}>
+          {/* Header with Logo and Branding */}
+          <View style={styles.shareCardHeader}>
+            <View style={styles.shareCardLogoContainer}>
+              <Image 
+                source={require('@/assets/images/icon.png')} 
+                style={styles.shareCardLogo}
+                resizeMode="contain"
+              />
+              <View>
+                <ThemedText variant="subtitle" weight="bold" style={styles.shareCardTitle}>
+                  Wordsprings
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.shareCardSubtitle}>
+                  Multiplayer
+                </ThemedText>
+              </View>
             </View>
+          </View>
 
-            {/* Stats Card */}
-            <View style={styles.gameOverStatsCard}>
-              <View style={styles.gameOverStatsRow}>
-                <View style={styles.gameOverPlayerCard}>
-                  <View style={styles.gameOverPlayerIconContainer}>
-                    <User size={24} color={theme.colors.primary} />
-                  </View>
-                  <ThemedText variant="caption" style={styles.gameOverPlayerLabel}>
-                    YOU
-                  </ThemedText>
-                  <ThemedText variant="body1" weight="medium" style={styles.gameOverPlayerNameText} numberOfLines={1}>
-                    {leftName}
-                  </ThemedText>
-                  <View style={styles.gameOverScoreBadge}>
-                    <ThemedText variant="title" weight="bold" style={styles.gameOverScoreText}>
-                      {wordsFound.length}
-                    </ThemedText>
-                    <ThemedText variant="caption" style={styles.gameOverScoreLabel}>
-                      WORDS
-                    </ThemedText>
-                  </View>
-                </View>
+          {/* Match Result Banner */}
+          <View style={[
+            styles.shareCardResultBanner,
+            (resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && styles.shareCardResultWin,
+            resultText.toLowerCase().includes("lose") && styles.shareCardResultLoss,
+            (resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && styles.shareCardResultTie,
+          ]}>
+            {(resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && (
+              <>
+                <Award size={48} color="#FFFFFF" strokeWidth={2.5} />
+                <ThemedText variant="title" weight="bold" style={styles.shareCardResultText}>
+                  VICTORY!
+                </ThemedText>
+              </>
+            )}
+            {resultText.toLowerCase().includes("lose") && (
+              <>
+                <XCircle size={48} color="#FFFFFF" strokeWidth={2.5} />
+                <ThemedText variant="title" weight="bold" style={styles.shareCardResultText}>
+                  DEFEAT
+                </ThemedText>
+              </>
+            )}
+            {(resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && (
+              <>
+                <Handshake size={48} color="#FFFFFF" strokeWidth={2.5} />
+                <ThemedText variant="title" weight="bold" style={styles.shareCardResultText}>
+                  DRAW
+                </ThemedText>
+              </>
+            )}
+          </View>
 
-                <View style={styles.gameOverVsDivider}>
-                  <ThemedText variant="subtitle" weight="bold" style={styles.gameOverVsText}>
-                    VS
-                  </ThemedText>
-                </View>
-
-                <View style={styles.gameOverPlayerCard}>
-                  <View style={styles.gameOverPlayerIconContainer}>
-                    <User size={24} color={theme.colors.error} />
-                  </View>
-                  <ThemedText variant="caption" style={styles.gameOverPlayerLabel}>
-                    OPPONENT
-                  </ThemedText>
-                  <ThemedText variant="body1" weight="medium" style={styles.gameOverPlayerNameText} numberOfLines={1}>
-                    {rightName}
-                  </ThemedText>
-                  <View style={styles.gameOverScoreBadge}>
-                    <ThemedText variant="title" weight="bold" style={styles.gameOverScoreText}>
-                      {opponentWords.length}
-                    </ThemedText>
-                    <ThemedText variant="caption" style={styles.gameOverScoreLabel}>
-                      WORDS
-                    </ThemedText>
-                  </View>
-                </View>
+          {/* Match Stats */}
+          <View style={styles.shareCardStats}>
+            <View style={styles.shareCardPlayerSection}>
+              <View style={styles.shareCardPlayerAvatar}>
+                <User size={28} color="#6366F1" />
+              </View>
+              <ThemedText variant="body1" weight="bold" style={styles.shareCardPlayerName} numberOfLines={1}>
+                {leftName}
+              </ThemedText>
+              <View style={styles.shareCardScoreContainer}>
+                <ThemedText variant="title" weight="bold" style={styles.shareCardScore}>
+                  {wordsFound.length}
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.shareCardScoreLabel}>
+                  words
+                </ThemedText>
               </View>
             </View>
 
-            {/* Branding Footer */}
-            <View style={styles.gameOverBranding}>
-              <Zap size={20} color={theme.colors.primary} fill={theme.colors.primary} />
-              <ThemedText variant="body1" weight="bold" style={styles.gameOverBrandText}>
-                Wordscapes Multiplayer
+            <View style={styles.shareCardVsDivider}>
+              <ThemedText variant="subtitle" weight="bold" style={styles.shareCardVsText}>
+                VS
               </ThemedText>
             </View>
+
+            <View style={styles.shareCardPlayerSection}>
+              <View style={styles.shareCardPlayerAvatar}>
+                <User size={28} color="#EF4444" />
+              </View>
+              <ThemedText variant="body1" weight="bold" style={styles.shareCardPlayerName} numberOfLines={1}>
+                {rightName}
+              </ThemedText>
+              <View style={styles.shareCardScoreContainer}>
+                <ThemedText variant="title" weight="bold" style={styles.shareCardScore}>
+                  {opponentWords.length}
+                </ThemedText>
+                <ThemedText variant="caption" style={styles.shareCardScoreLabel}>
+                  words
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+
+          {/* Footer with Website Link */}
+          <View style={styles.shareCardFooter}>
+            <View style={styles.shareCardFooterDivider} />
+            <ThemedText variant="caption" style={styles.shareCardWebsite}>
+              Play now at wordsprings.vercel.app
+            </ThemedText>
           </View>
         </View>
 
@@ -994,6 +1013,137 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     gap: 12,
     paddingTop: 8,
   },
+  // Share Card Styles (for social media sharing)
+  shareCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    padding: 24,
+    gap: 20,
+    minWidth: 350,
+    maxWidth: 450,
+  },
+  shareCardHeader: {
+    alignItems: 'center',
+    paddingBottom: 12,
+  },
+  shareCardLogoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  shareCardLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  shareCardTitle: {
+    fontSize: 24,
+    color: '#1F2937',
+    lineHeight: 28,
+  },
+  shareCardSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    lineHeight: 16,
+  },
+  shareCardResultBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 20,
+    borderRadius: 12,
+    marginVertical: 8,
+  },
+  shareCardResultWin: {
+    backgroundColor: '#10B981',
+  },
+  shareCardResultLoss: {
+    backgroundColor: '#EF4444',
+  },
+  shareCardResultTie: {
+    backgroundColor: '#F59E0B',
+  },
+  shareCardResultText: {
+    fontSize: 28,
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  shareCardStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+    paddingVertical: 16,
+  },
+  shareCardPlayerSection: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  shareCardPlayerAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  shareCardPlayerName: {
+    fontSize: 14,
+    color: '#1F2937',
+    textAlign: 'center',
+    maxWidth: 120,
+  },
+  shareCardScoreContainer: {
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+  },
+  shareCardScore: {
+    fontSize: 36,
+    color: '#6366F1',
+    lineHeight: 36,
+  },
+  shareCardScoreLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  shareCardVsDivider: {
+    paddingHorizontal: 8,
+  },
+  shareCardVsText: {
+    fontSize: 18,
+    color: '#9CA3AF',
+    fontWeight: 'bold',
+  },
+  shareCardFooter: {
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 16,
+  },
+  shareCardFooterDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  shareCardWebsite: {
+    fontSize: 13,
+    color: '#6366F1',
+    fontWeight: '600',
+  },
+  
+  // Keep old game over styles for the modal display (not captured)
   gameOverContent: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.xl,
