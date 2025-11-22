@@ -1529,5 +1529,77 @@
         "SO"
       ]
     }
+  ],
+  "Desert": [
+    {
+      "level": 1,
+      "difficulty": "easy",
+      "baseWord": "SAND",
+      "letters": ["S", "A", "N", "D"],
+      "crosswordWords": ["SAND", "AND", "SAD", "AS", "AN", "AD"]
+    },
+    {
+      "level": 2,
+      "difficulty": "easy",
+      "baseWord": "HEAT",
+      "letters": ["H", "E", "A", "T"],
+      "crosswordWords": ["HEAT", "HATE", "EAT", "TEA", "HAT", "ATE", "THE", "ETA", "AH", "AT", "HE"]
+    },
+    {
+      "level": 3,
+      "difficulty": "easy",
+      "baseWord": "DUNE",
+      "letters": ["D", "U", "N", "E"],
+      "crosswordWords": ["DUNE", "NUDE", "DEN", "DUE", "END", "NED"]
+    },
+    {
+      "level": 4,
+      "difficulty": "medium",
+      "baseWord": "CACTUS",
+      "letters": ["C", "A", "C", "T", "U", "S"],
+      "crosswordWords": ["CACTUS", "CAST", "CATS", "CUT", "CUTS", "ACT", "ACTS", "SAT", "CAT", "SAC", "SCA", "TAU"]
+    },
+    {
+      "level": 5,
+      "difficulty": "medium",
+      "baseWord": "OASIS",
+      "letters": ["O", "A", "S", "I", "S"],
+      "crosswordWords": ["OASIS", "AS", "IS", "SO", "SIS"]
+    },
+    {
+      "level": 6,
+      "difficulty": "medium",
+      "baseWord": "MIRAGE",
+      "letters": ["M", "I", "R", "A", "G", "E"],
+      "crosswordWords": ["MIRAGE", "IMAGE", "GRIME", "GAME", "RAGE", "GEAR", "GRAM", "AIM", "AGE", "ARE", "EAR", "ERA", "RIM", "RAG", "GAM"]
+    },
+    {
+      "level": 7,
+      "difficulty": "hard",
+      "baseWord": "LIZARD",
+      "letters": ["L", "I", "Z", "A", "R", "D"],
+      "crosswordWords": ["LIZARD", "LIAR", "RAID", "DIAL", "LAID", "RAIL", "LARD", "AIR", "AID", "LAD", "RID", "LID", "RAD"]
+    },
+    {
+      "level": 8,
+      "difficulty": "hard",
+      "baseWord": "CANYON",
+      "letters": ["C", "A", "N", "Y", "O", "N"],
+      "crosswordWords": ["CANYON", "CANNY", "CANON", "CAN", "CON", "ANY", "NAY", "COY", "NON", "YON"]
+    },
+    {
+      "level": 9,
+      "difficulty": "hard",
+      "baseWord": "SUNSET",
+      "letters": ["S", "U", "N", "S", "E", "T"],
+      "crosswordWords": ["SUNSET", "TUNES", "UNSET", "NEST", "NETS", "TENS", "SENT", "SETS", "NUTS", "STUN", "USE", "SET", "TEN", "SUN", "NUT", "NET", "SUE"]
+    },
+    {
+      "level": 10,
+      "difficulty": "hard",
+      "baseWord": "SCORCHING",
+      "letters": ["S", "C", "O", "R", "C", "H"],
+      "crosswordWords": ["SCORCH", "CHORUS", "CROSS", "CORDS", "CHORDS", "ORCH", "CORS", "CORD", "COSH", "ROCS", "HORN", "CONS", "CORN", "COR", "ORE", "SHO"]
+    }
   ]
 }
