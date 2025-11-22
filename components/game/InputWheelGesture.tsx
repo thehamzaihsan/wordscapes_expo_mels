@@ -1,21 +1,21 @@
 import { Lightbulb, Shuffle } from "lucide-react-native";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    PanResponder,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Modal,
+  PanResponder,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
@@ -506,7 +506,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     <View style={styles.container}>
       {/* Current word display */}
       <Text style={styles.currentWord}>
-        {currentWord || "Swipe to form words"}
+        {currentWord || "Swipe to form word"}
       </Text>
 
       <View style={styles.rowWithShuffle}>
