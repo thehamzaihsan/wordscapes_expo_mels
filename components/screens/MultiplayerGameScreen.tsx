@@ -326,11 +326,22 @@ export default function MultiplayerGameScreen({
   const onWordComplete = async (word: string) => {
     const w = (word || "").toUpperCase();
     
-    // Check if word is valid
-    if (!puzzleWords.includes(w)) {
+    // Check if word is valid English word (multiplayer accepts any valid word, not just crossword words)
+    if (!isValidEnglishWord(w)) {
       setWordFeedback({
         show: true,
-        message: '❌ Invalid word',
+        message: '❌ Not a valid word',
+        type: 'error'
+      });
+      setTimeout(() => setWordFeedback({ show: false, message: '', type: 'success' }), 2000);
+      return;
+    }
+    
+    // Check minimum length (at least 2 letters)
+    if (w.length < 2) {
+      setWordFeedback({
+        show: true,
+        message: '❌ Word too short',
         type: 'error'
       });
       setTimeout(() => setWordFeedback({ show: false, message: '', type: 'success' }), 2000);

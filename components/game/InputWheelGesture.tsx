@@ -1,4 +1,4 @@
-import { Hammer, Lightbulb, Shuffle } from "lucide-react-native";
+import { Lightbulb, Shuffle } from "lucide-react-native";
 import React, {
     useCallback,
     useEffect,
@@ -25,7 +25,6 @@ import ThemedText from "../ui/ThemedText";
 interface LetterWheelProps {
   letters?: string[];
   onWordComplete?: (word: string) => void;
-  onLetterSelect?: (letter: string, index: number) => void;
   validWords?: string[];
   foundWords?: string[]; // Words already found
   crosswordWords?: string[];
@@ -64,8 +63,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   foundWords = [],
   crosswordWords = [],
   onHint,
-  onReveal,
-  onHammer,
   hintsLeft = 1,
   canUsePaidHints = true,
   onNavigate,
@@ -524,26 +521,6 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
             disabled={isShuffling}
           >
             <Shuffle size={isSmallScreen ? 20 : 24} color="#ffffff" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.centerButton,
-              styles.hammerButton,
-              isShuffling && styles.disabledCenterButton,
-            ]}
-            onPress={async () => {
-              if (onHammer) {
-                try {
-                  await onHammer();
-                } catch (e) {
-                  console.error("Hammer failed", e);
-                }
-              }
-            }}
-            disabled={isShuffling}
-          >
-            <Hammer size={isSmallScreen ? 20 : 24} color="#ffffff" />
           </TouchableOpacity>
         </View>
 
