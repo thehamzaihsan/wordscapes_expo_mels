@@ -75,6 +75,12 @@ function pickPuzzleByRanking(avgRanking: number): Puzzle {
   // Ensure uniqueness
   const uniqWords = Array.from(new Set(words));
   
+  // Shuffle letters to prevent pattern memorization from previous runs of same level
+  for (let i = letters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [letters[i], letters[j]] = [letters[j], letters[i]];
+  }
+  
   return {
     letters,
     words: uniqWords,

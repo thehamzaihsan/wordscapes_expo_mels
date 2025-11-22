@@ -1,4 +1,4 @@
-import { Lightbulb, Shuffle } from "lucide-react-native";
+import { Hammer, Lightbulb, Shuffle } from "lucide-react-native";
 import React, {
     useCallback,
     useEffect,
@@ -29,9 +29,9 @@ interface LetterWheelProps {
   validWords?: string[];
   foundWords?: string[]; // Words already found
   crosswordWords?: string[];
-  onHint?: (word: string) => Promise<boolean> | boolean; // returns true if hint applied, false if failed
-  hintsLeft?: number;
-  canUsePaidHints?: boolean; // If true, allow pressing hint even when hintsLeft is 0 (paid hint flows)
+  onHint?: (hintedWord: string) => Promise<boolean>;
+  hintsLeft: number;
+  canUsePaidHints: boolean; // If true, allow pressing hint even when hintsLeft is 0 (paid hint flows)
   onNavigate?: (screen: string) => void; // Navigation function
 }
 
@@ -64,6 +64,8 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   foundWords = [],
   crosswordWords = [],
   onHint,
+  onReveal,
+  onHammer,
   hintsLeft = 1,
   canUsePaidHints = true,
   onNavigate,
@@ -511,18 +513,39 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
       </Text>
 
       <View style={styles.rowWithShuffle}>
-        <TouchableOpacity
-          style={[
-            styles.centerButton,
-            styles.shuffleButton,
-            styles.leftShuffleButton,
-            isShuffling && styles.disabledCenterButton,
-          ]}
-          onPress={shuffleLetters}
-          disabled={isShuffling}
-        >
-          <Shuffle size={isSmallScreen ? 20 : 24} color="#ffffff" />
-        </TouchableOpacity>
+        <View style={styles.sideControls}>
+          <TouchableOpacity
+            style={[
+              styles.centerButton,
+              styles.shuffleButton,
+              isShuffling && styles.disabledCenterButton,
+            ]}
+            onPress={shuffleLetters}
+            disabled={isShuffling}
+          >
+            <Shuffle size={isSmallScreen ? 20 : 24} color="#ffffff" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.centerButton,
+              styles.hammerButton,
+              isShuffling && styles.disabledCenterButton,
+            ]}
+            onPress={async () => {
+              if (onHammer) {
+                try {
+                  await onHammer();
+                } catch (e) {
+                  console.error("Hammer failed", e);
+                }
+              }
+            }}
+            disabled={isShuffling}
+          >
+            <Hammer size={isSmallScreen ? 20 : 24} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
 
         <View
           ref={wheelContainerRef}
@@ -677,21 +700,23 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
           })}
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.centerButton,
-            styles.hintButton,
-            styles.rightHintButton,
-          ]}
-          onPress={handleHint}
-        >
-          <Lightbulb size={isSmallScreen ? 24 : 28} color="#FFD700" fill="#FFD700" />
-          {hintsLeft > 0 && (
-            <View style={styles.hintDot}>
-              <Text style={styles.hintDotText}>{hintsLeft}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.sideControls}>
+          <TouchableOpacity
+            style={[
+              styles.centerButton,
+              styles.hintButton,
+            ]}
+            onPress={handleHint}
+          >
+            <Lightbulb size={isSmallScreen ? 24 : 28} color="#FFD700" fill="#FFD700" />
+            {hintsLeft > 0 && (
+              <View style={styles.hintDot}>
+                <Text style={styles.hintDotText}>{hintsLeft}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+        </View>
       </View>
 
       {/* Hint Modal */}
@@ -806,6 +831,24 @@ const styles = StyleSheet.create({
     minWidth: isSmallScreen ? 40 : 50,
     minHeight: isSmallScreen ? 40 : 50,
     borderRadius: 99999,
+  },
+  hammerButton: {
+    backgroundColor: "#7C3AED", // violet
+    minWidth: isSmallScreen ? 40 : 50,
+    minHeight: isSmallScreen ? 40 : 50,
+    borderRadius: 99999,
+  },
+  revealButton: {
+    backgroundColor: "#059669", // emerald
+    minWidth: isSmallScreen ? 40 : 50,
+    minHeight: isSmallScreen ? 40 : 50,
+    borderRadius: 99999,
+  },
+  sideControls: {
+    flexDirection: "column",
+    gap: isSmallScreen ? 8 : 12,
+    justifyContent: "center",
+    marginHorizontal: isSmallScreen ? 8 : 16,
   },
   hintCountText: {
     color: "#fffbe6",

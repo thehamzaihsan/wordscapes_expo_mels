@@ -4,13 +4,13 @@ import LottieView from "lottie-react-native";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    useWindowDimensions,
+  Animated,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from "react-native";
 
 import { Difficulty } from "@/constants/difficulty";
@@ -462,32 +462,21 @@ export default function GameScreen({
 
       <Modal transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
-          <ThemedCard
-            style={styles.modalCard}
-            variant="glassStrong"
-            padding="lg"
-          >
-            <ThemedText>LEVEL COMPLETED</ThemedText>
+          <ThemedCard style={styles.modalCard} padding="lg">
             {animationsEnabled && (
               <LottieView
                 source={require("../../assets/animations/level-complete.json")}
                 autoPlay
                 loop={false}
-                style={{ width: 200, height: 200 }}
+                style={styles.lottie}
               />
             )}
-            {!animationsEnabled && (
-              <View
-                style={{
-                  width: 200,
-                  height: 200,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontSize: 60 }}>🎉</Text>
-              </View>
-            )}
+            <ThemedText variant="h2" style={styles.modalTitle}>
+              Level Complete!
+            </ThemedText>
+            <ThemedText variant="body1" style={styles.modalScore}>
+              Score: {score}
+            </ThemedText>
             {/* Play complete sound once when modal opens */}
             {gameComplete && (
               <View style={{ height: 0, width: 0 }}>
@@ -652,5 +641,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textTransform: "uppercase",
     zIndex: -1, // Ensures the title is behind the buttons and doesn't block presses
+  },
+  lottie: {
+    width: 200,
+    height: 200,
+  },
+  modalScore: {
+    color: "#fff",
+    fontSize: 18,
+    marginBottom: 20,
   },
 });

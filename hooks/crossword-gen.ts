@@ -13,14 +13,14 @@ const KEY = (x: number, y: number) => `${x},${y}`;
 
 export function generateCrossword(words: string[]): Grid | null {
   if (!Array.isArray(words) || words.length === 0) return null;
-  if (words.length > 10) throw new Error("generateCrossword accepts up to 10 words");
+  if (words.length > 20) throw new Error("generateCrossword accepts up to 20 words");
 
   // normalize + sort longest first (better chance to place)
   const list = [...words].map(w => w.toUpperCase()).sort((a, b) => b.length - a.length);
 
   // constraints to avoid runaway grid growth
   const MAX_COORD = 40; // allowed coordinates range [-MAX_COORD, MAX_COORD]
-  const MAX_ATTEMPTS = 20000; // global trial limit (safe guard)
+  const MAX_ATTEMPTS = 5000; // Reduced from 20000 to prevent freezing
 
   let attemptCount = 0;
 
@@ -142,7 +142,7 @@ export function generateCrossword(words: string[]): Grid | null {
       }
     }
 
-    const RANDOM_PLACEMENT_TRIES = 300;
+    const RANDOM_PLACEMENT_TRIES = 50; // Reduced from 300
     let fallbackTries = 0;
     while (fallbackTries++ < RANDOM_PLACEMENT_TRIES && attemptCount <= MAX_ATTEMPTS) {
       const dir: Dir = Math.random() < 0.5 ? "across" : "down";

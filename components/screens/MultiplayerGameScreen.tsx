@@ -1,7 +1,7 @@
+import * as Sharing from "expo-sharing";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { captureRef } from "react-native-view-shot";
-import * as Sharing from "expo-sharing";
 
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
@@ -10,13 +10,13 @@ import ThemedText from "@/components/ui/ThemedText";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
 import { useMatchPuzzle } from "@/hooks/useMatchPuzzle";
 import { useMultiplayerGameLogic } from "@/hooks/useMultiplayerGameLogic";
+import { useSettings } from "@/hooks/useSettings";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Theme, useTheme } from "@/hooks/useTheme";
-import { useSettings } from "@/hooks/useSettings";
 import {
-  adjustRankingOnFinish,
-  finishMatch,
-  getMatchPlayers
+    adjustRankingOnFinish,
+    finishMatch,
+    getMatchPlayers
 } from "@/lib/matches";
 import { dequeueForMatch } from "@/lib/matchmaking";
 import { supabase } from "@/lib/supabase";
@@ -681,87 +681,130 @@ export default function MultiplayerGameScreen({
         scrollable={true}
       >
         <View ref={gameOverModalRef} collapsable={false} style={styles.gameOverContent}>
-          {/* Result Icon and Title */}
-          <View style={styles.gameOverHeader}>
-            {(resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && (
-              <>
-                <View style={[styles.gameOverIconContainer, { backgroundColor: theme.colors.success + '20' }]}>
-                  <Award size={64} color={theme.colors.success} strokeWidth={2.5} />
-                </View>
-                <ThemedText variant="h1" weight="bold" style={[styles.gameOverTitle, { color: theme.colors.success }]}>
-                  Victory!
-                </ThemedText>
-              </>
-            )}
-            {resultText.toLowerCase().includes("lose") && (
-              <>
-                <View style={[styles.gameOverIconContainer, { backgroundColor: theme.colors.error + '20' }]}>
-                  <Frown size={64} color={theme.colors.error} strokeWidth={2.5} />
-                </View>
-                <ThemedText variant="h1" weight="bold" style={[styles.gameOverTitle, { color: theme.colors.error }]}>
-                  Defeat
-                </ThemedText>
-              </>
-            )}
-            {(resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && (
-              <>
-                <View style={[styles.gameOverIconContainer, { backgroundColor: theme.colors.warning + '20' }]}>
-                  <Handshake size={64} color={theme.colors.warning} strokeWidth={2.5} />
-                </View>
-                <ThemedText variant="h1" weight="bold" style={[styles.gameOverTitle, { color: theme.colors.warning }]}>
-                  Draw
-                </ThemedText>
-              </>
-            )}
-          </View>
+          {/* Gradient Background Overlay */}
+          <View style={[
+            styles.gameOverGradient,
+            (resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && styles.gameOverGradientWin,
+            resultText.toLowerCase().includes("lose") && styles.gameOverGradientLoss,
+            (resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && styles.gameOverGradientTie,
+          ]} />
+          
+          {/* Content Container */}
+          <View style={styles.gameOverInnerContent}>
+            {/* Result Icon and Title */}
+            <View style={styles.gameOverHeader}>
+              {(resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory")) && (
+                <>
+                  <View style={[styles.gameOverIconContainer, styles.gameOverIconWin]}>
+                    <Award size={80} color="#FFD700" strokeWidth={2.5} />
+                  </View>
+                  <ThemedText variant="title" weight="bold" style={styles.gameOverTitleWin}>
+                    🎉 VICTORY! 🎉
+                  </ThemedText>
+                  <ThemedText variant="body1" style={styles.gameOverSubtitle}>
+                    You dominated the match!
+                  </ThemedText>
+                </>
+              )}
+              {resultText.toLowerCase().includes("lose") && (
+                <>
+                  <View style={[styles.gameOverIconContainer, styles.gameOverIconLoss]}>
+                    <Frown size={80} color="#EF4444" strokeWidth={2.5} />
+                  </View>
+                  <ThemedText variant="title" weight="bold" style={styles.gameOverTitleLoss}>
+                    DEFEAT
+                  </ThemedText>
+                  <ThemedText variant="body1" style={styles.gameOverSubtitle}>
+                    Better luck next time!
+                  </ThemedText>
+                </>
+              )}
+              {(resultText.toLowerCase().includes("tie") || resultText.toLowerCase().includes("draw")) && (
+                <>
+                  <View style={[styles.gameOverIconContainer, styles.gameOverIconTie]}>
+                    <Handshake size={80} color="#F59E0B" strokeWidth={2.5} />
+                  </View>
+                  <ThemedText variant="title" weight="bold" style={styles.gameOverTitleTie}>
+                    DRAW
+                  </ThemedText>
+                  <ThemedText variant="body1" style={styles.gameOverSubtitle}>
+                    Evenly matched!
+                  </ThemedText>
+                </>
+              )}
+            </View>
 
-          {/* Debug text */}
-          <ThemedText variant="caption" style={{ textAlign: 'center', opacity: 0.5 }}>
-            Debug: Result = "{resultText}" | gameOver={String(gameOver)} | isSharing={String(isSharing)}
-          </ThemedText>
+            {/* Stats Card */}
+            <View style={styles.gameOverStatsCard}>
+              <View style={styles.gameOverStatsRow}>
+                <View style={styles.gameOverPlayerCard}>
+                  <View style={styles.gameOverPlayerIconContainer}>
+                    <User size={24} color={theme.colors.primary} />
+                  </View>
+                  <ThemedText variant="caption" style={styles.gameOverPlayerLabel}>
+                    YOU
+                  </ThemedText>
+                  <ThemedText variant="body1" weight="medium" style={styles.gameOverPlayerNameText} numberOfLines={1}>
+                    {leftName}
+                  </ThemedText>
+                  <View style={styles.gameOverScoreBadge}>
+                    <ThemedText variant="title" weight="bold" style={styles.gameOverScoreText}>
+                      {wordsFound.length}
+                    </ThemedText>
+                    <ThemedText variant="caption" style={styles.gameOverScoreLabel}>
+                      WORDS
+                    </ThemedText>
+                  </View>
+                </View>
 
-          {/* TEST BUTTON - Should always appear */}
-          <View style={{ backgroundColor: 'red', padding: 10, marginVertical: 10 }}>
-            <ThemedText style={{ color: 'white', textAlign: 'center' }}>
-              TEST: If you see this, buttons can render
-            </ThemedText>
-          </View>
+                <View style={styles.gameOverVsDivider}>
+                  <ThemedText variant="subtitle" weight="bold" style={styles.gameOverVsText}>
+                    VS
+                  </ThemedText>
+                </View>
 
-          {/* Player names and scores */}
-          <View style={styles.gameOverPlayersContainer}>
-            <View style={styles.gameOverPlayerInfo}>
-              <User size={20} color={theme.colors.text} />
-              <ThemedText variant="body" weight="medium" style={styles.gameOverPlayerName}>
-                {leftName}
-              </ThemedText>
-              <ThemedText variant="h3" weight="bold" style={styles.gameOverPlayerScore}>
-                {wordsFound.length}
+                <View style={styles.gameOverPlayerCard}>
+                  <View style={styles.gameOverPlayerIconContainer}>
+                    <User size={24} color={theme.colors.error} />
+                  </View>
+                  <ThemedText variant="caption" style={styles.gameOverPlayerLabel}>
+                    OPPONENT
+                  </ThemedText>
+                  <ThemedText variant="body1" weight="medium" style={styles.gameOverPlayerNameText} numberOfLines={1}>
+                    {rightName}
+                  </ThemedText>
+                  <View style={styles.gameOverScoreBadge}>
+                    <ThemedText variant="title" weight="bold" style={styles.gameOverScoreText}>
+                      {opponentWords.length}
+                    </ThemedText>
+                    <ThemedText variant="caption" style={styles.gameOverScoreLabel}>
+                      WORDS
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Branding Footer */}
+            <View style={styles.gameOverBranding}>
+              <Zap size={20} color={theme.colors.primary} fill={theme.colors.primary} />
+              <ThemedText variant="body1" weight="bold" style={styles.gameOverBrandText}>
+                Wordscapes Multiplayer
               </ThemedText>
             </View>
-            <ThemedText variant="body" style={styles.gameOverVsText}>VS</ThemedText>
-            <View style={styles.gameOverPlayerInfo}>
-              <User size={20} color={theme.colors.text} />
-              <ThemedText variant="body" weight="medium" style={styles.gameOverPlayerName}>
-                {rightName}
-              </ThemedText>
-              <ThemedText variant="h3" weight="bold" style={styles.gameOverPlayerScore}>
-                {opponentWords.length}
-              </ThemedText>
-            </View>
           </View>
-   
-          {/* Share Button - always show for testing */}
+        </View>
+
+        {/* Action Buttons Container - outside captured area */}
+        <View style={{ gap: 12, marginTop: 16 }}>
+          {/* Share Button */}
           <ThemedButton
             title={isSharing ? "Sharing..." : "Share Result"}
-            variant="secondary"
+            variant="primary"
             size="lg"
-            onPress={() => {
-              console.log('[Share] Result text:', resultText);
-              console.log('[Share] Is victory?', resultText.toLowerCase().includes("win") || resultText.toLowerCase().includes("victory"));
-              handleShareResult();
-            }}
+            onPress={handleShareResult}
             fullWidth
-            leftIcon={<Share2 size={20} color={theme.colors.text} />}
+            leftIcon={<Share2 size={20} color="#FFFFFF" />}
             disabled={isSharing}
             isLoading={isSharing}
           />
@@ -769,7 +812,7 @@ export default function MultiplayerGameScreen({
           {/* Back Button */}
           <ThemedButton
             title="Back to Hub"
-            variant="primary"
+            variant="secondary"
             size="lg"
             onPress={async () => {
               setEndAck(true);
@@ -952,22 +995,176 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: 8,
   },
   gameOverContent: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  gameOverGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.1,
+  },
+  gameOverGradientWin: {
+    backgroundColor: '#FFD700',
+  },
+  gameOverGradientLoss: {
+    backgroundColor: '#EF4444',
+  },
+  gameOverGradientTie: {
+    backgroundColor: '#F59E0B',
+  },
+  gameOverInnerContent: {
+    padding: 24,
     gap: 24,
-    paddingVertical: 8,
+    position: 'relative',
+    zIndex: 1,
   },
   gameOverHeader: {
     alignItems: "center",
-    gap: 16,
-    paddingVertical: 12,
+    gap: 12,
+    paddingVertical: 8,
     width: "100%",
   },
   gameOverIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  gameOverIconWin: {
+    backgroundColor: '#FFD70030',
+    borderWidth: 3,
+    borderColor: '#FFD700',
+  },
+  gameOverIconLoss: {
+    backgroundColor: '#EF444430',
+    borderWidth: 3,
+    borderColor: '#EF4444',
+  },
+  gameOverIconTie: {
+    backgroundColor: '#F59E0B30',
+    borderWidth: 3,
+    borderColor: '#F59E0B',
+  },
+  gameOverTitleWin: {
+    fontSize: 36,
+    textAlign: "center",
+    color: '#FFD700',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  gameOverTitleLoss: {
+    fontSize: 36,
+    textAlign: "center",
+    color: '#EF4444',
+  },
+  gameOverTitleTie: {
+    fontSize: 36,
+    textAlign: "center",
+    color: '#F59E0B',
+  },
+  gameOverSubtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    opacity: 0.8,
+    marginTop: -4,
+  },
+  gameOverStatsCard: {
+    backgroundColor: theme.colors.surfaceVariant + '60',
+    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.outline + '20',
+  },
+  gameOverStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  gameOverPlayerCard: {
+    flex: 1,
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.outline + '30',
+  },
+  gameOverPlayerIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surfaceVariant,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  gameOverPlayerLabel: {
+    fontSize: 10,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    opacity: 0.6,
+    textTransform: "uppercase",
+  },
+  gameOverPlayerNameText: {
+    fontSize: 14,
+    textAlign: "center",
+    maxWidth: 100,
+  },
+  gameOverScoreBadge: {
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.primary + '20',
+    borderRadius: theme.borderRadius.md,
+    minWidth: 80,
+  },
+  gameOverScoreText: {
+    fontSize: 40,
+    color: theme.colors.primary,
+    lineHeight: 40,
+  },
+  gameOverScoreLabel: {
+    fontSize: 10,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+    opacity: 0.7,
+  },
+  gameOverVsDivider: {
+    paddingHorizontal: 8,
+  },
+  gameOverVsText: {
+    fontSize: 20,
+    opacity: 0.4,
+  },
+  gameOverBranding: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.outline + '20',
+  },
+  gameOverBrandText: {
+    fontSize: 14,
+    opacity: 0.7,
   },
   gameOverTitle: {
     fontSize: 32,
@@ -997,12 +1194,6 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 28,
     textAlign: "center",
   },
-  gameOverVsText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    paddingHorizontal: 8,
-    opacity: 0.6,
-  },
   gameOverScoreContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -1015,11 +1206,6 @@ const createStyles = (theme: Theme) => StyleSheet.create({
   gameOverScoreSection: {
     alignItems: "center",
     gap: 8,
-  },
-  gameOverScoreLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
   gameOverScore: {
     fontSize: 48,

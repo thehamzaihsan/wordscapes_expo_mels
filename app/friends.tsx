@@ -11,24 +11,24 @@ import { supabase } from "@/lib/supabase";
 import { showToast } from "@/lib/toast";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  CheckCircle,
-  Gamepad2,
-  Info,
-  Search,
-  UserMinus,
-  UserPlus,
-  Users,
-  XCircle,
+    ArrowLeft,
+    CheckCircle,
+    Gamepad2,
+    Info,
+    Search,
+    UserMinus,
+    UserPlus,
+    Users,
+    XCircle,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -352,11 +352,23 @@ export default function FriendsRoute() {
       .maybeSingle();
     if (existing) {
       if (existing.status === "accepted") {
-        showToast("Already friends", "info");
+        showToast("You are already friends with this user", "info");
         return;
       }
       if (existing.status === "pending") {
-        showToast("Request pending", "info");
+        showToast("A friend request is already pending", "info");
+        return;
+      }
+      if (existing.status === "declined") {
+        // Optional: Allow re-sending if declined? For now, let's block it or allow with a cooldown.
+        // Let's allow re-sending by updating the status to pending.
+        const { error: updateError } = await supabase
+          .from("friend_relationships")
+          .update({ status: "pending", requester: session.user.id, addressee: targetId })
+          .eq("id", existing.id);
+          
+        if (updateError) showToast(updateError.message, "error");
+        else showToast("Friend request sent again", "success");
         return;
       }
     }

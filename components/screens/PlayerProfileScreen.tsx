@@ -1,12 +1,12 @@
 import {
-  aggregateGuestStats,
-  clearGuestProgress,
-  derivePlayerLevel,
-  loadGuestProgress,
-  triggerEnergyRegenCheck,
-  updateGuestAvatar,
-  updateGuestName,
-  type GuestProgressPayload,
+    aggregateGuestStats,
+    clearGuestProgress,
+    derivePlayerLevel,
+    loadGuestProgress,
+    triggerEnergyRegenCheck,
+    updateGuestAvatar,
+    updateGuestName,
+    type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
@@ -14,21 +14,21 @@ import { getDefaultEnergy, getTimeUntilNextEnergyRegen } from "@/lib/energy";
 import { pullRemote, syncUser } from "@/lib/sync";
 import { showToast } from "@/lib/toast";
 import {
-  ChevronLeft,
-  Clock,
-  Edit3,
-  LogOut,
-  Trash2,
-  User,
+    ChevronLeft,
+    Clock,
+    Edit3,
+    LogOut,
+    Trash2,
+    User,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Platform,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  View,
+    Alert,
+    Platform,
+    ScrollView,
+    StatusBar,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ThemedButton from "../ui/ThemedButton";
@@ -122,7 +122,11 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
   const handleSaveName = async () => {
     if (!nameDraft.trim()) {
-      showToast("Name required", "error");
+      showToast("Name cannot be empty", "error");
+      return;
+    }
+    if (nameDraft.trim().length < 3) {
+      showToast("Name must be at least 3 characters", "error");
       return;
     }
     setSavingName(true);
@@ -131,12 +135,16 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
       const updated = await updateGuestName(sanitized);
       setProgress(updated);
       updateEnergyRegenInfo(updated);
-      showToast("Display name updated", "success");
+      showToast("Display name updated successfully!", "success");
       if (user?.id) {
-        syncUser(user.id).catch(() => {});
+        syncUser(user.id).catch((err) => {
+          console.warn("Sync failed after name update:", err);
+          // Don't show error to user as local update succeeded
+        });
       }
-    } catch {
-      showToast("Failed to update name", "error");
+    } catch (error) {
+      console.error("Name update failed:", error);
+      showToast("Failed to update name. Please try again.", "error");
     } finally {
       setSavingName(false);
     }

@@ -5,12 +5,14 @@ export interface AppSettings {
   animationsEnabled: boolean;
   soundEnabled: boolean;
   hapticFeedbackEnabled: boolean;
+  useGestureWheel?: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   animationsEnabled: true,
   soundEnabled: true,
   hapticFeedbackEnabled: true,
+  useGestureWheel: true,
 };
 
 const SETTINGS_STORAGE_KEY = '@app_settings';

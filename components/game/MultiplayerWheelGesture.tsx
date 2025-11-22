@@ -1,21 +1,20 @@
 import { Shuffle } from "lucide-react-native";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import {
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { GAME_SETTINGS } from "@/constants/gameSettings";
 
 interface LetterWheelProps {
   letters?: string[];
@@ -166,7 +165,7 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
   const onWordCompleteRef = useRef(onWordComplete);
   const isDragging = useRef(false);
   const currentTouches = useRef<Set<number>>(new Set());
-  const wheelContainerRef = useRef<HTMLDivElement>(null);
+  const wheelContainerRef = useRef<View>(null);
   
   // Keep the ref updated
   useEffect(() => {
@@ -273,54 +272,47 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
     }
   }, [currentWord, onWordComplete, resetSelection]);
 
-  // Handle mouse/touch move over wheel for web
-  const handleWheelMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  // Handle mouse/touch move over wheel for React Native
+  const handleWheelMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging.current || isShuffling) return;
     
-    let clientX: number;
-    let clientY: number;
-    
-    if ('touches' in e) {
-      if (e.touches.length === 0) return;
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
+    if (e.nativeEvent.touches.length === 0) return;
+    const touch = e.nativeEvent.touches[0];
     
     if (!wheelContainerRef.current) return;
     
-    const rect = wheelContainerRef.current.getBoundingClientRect();
-    const relativeX = clientX - rect.left;
-    const relativeY = clientY - rect.top;
-    
-    // Check if touch is near center (shuffle button area) - ignore if so
-    const centerX = wheelSize / 2;
-    const centerY = wheelSize / 2;
-    const distanceFromCenter = Math.sqrt(
-      Math.pow(relativeX - centerX, 2) + Math.pow(relativeY - centerY, 2)
-    );
-    const centerButtonRadius = isSmallScreen ? 40 : 50; // Shuffle button size
-    
-    // Skip if touching the center shuffle button area
-    if (distanceFromCenter < centerButtonRadius) {
-      return;
-    }
-    
-    // Find which letter is at this position - reduced hitbox
-    const touchRadius = hexagonSize * 0.9; // Reduced to 0.9 for tighter detection
-    for (let i = 0; i < letterPositions.current.length; i++) {
-      const pos = letterPositions.current[i];
-      const dx = relativeX - pos.x;
-      const dy = relativeY - pos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+    // Use measure to get position in React Native
+    wheelContainerRef.current.measure((x, y, width, height, pageX, pageY) => {
+      const relativeX = touch.pageX - pageX;
+      const relativeY = touch.pageY - pageY;
       
-      if (distance <= touchRadius && !currentTouches.current.has(i)) {
-        handleLetterPress(shuffledLetters[i], i);
-        break;
+      // Check if touch is near center (shuffle button area) - ignore if so
+      const centerX = wheelSize / 2;
+      const centerY = wheelSize / 2;
+      const distanceFromCenter = Math.sqrt(
+        Math.pow(relativeX - centerX, 2) + Math.pow(relativeY - centerY, 2)
+      );
+      const centerButtonRadius = isSmallScreen ? 40 : 50; // Shuffle button size
+      
+      // Skip if touching the center shuffle button area
+      if (distanceFromCenter < centerButtonRadius) {
+        return;
       }
-    }
+      
+      // Find which letter is at this position - reduced hitbox
+      const touchRadius = hexagonSize * 0.9; // Reduced to 0.9 for tighter detection
+      for (let i = 0; i < letterPositions.current.length; i++) {
+        const pos = letterPositions.current[i];
+        const dx = relativeX - pos.x;
+        const dy = relativeY - pos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance <= touchRadius && !currentTouches.current.has(i)) {
+          handleLetterPress(shuffledLetters[i], i);
+          break;
+        }
+      }
+    });
   }, [isShuffling, hexagonSize, shuffledLetters, handleLetterPress, wheelSize, isSmallScreen]);
 
   const handleWheelMouseUp = useCallback(() => {
@@ -414,16 +406,13 @@ const LetterWheel: React.FC<LetterWheelProps> = ({
 
       <View style={styles.rowWithShuffle}>
         <View
-          ref={wheelContainerRef as any}
+          ref={wheelContainerRef}
           style={[
             styles.wheelContainer,
             { width: wheelSize, height: wheelSize, borderRadius: wheelCenter },
           ]}
-          onMouseMove={handleWheelMove as any}
           onTouchMove={handleWheelMove as any}
-          onMouseUp={handleWheelMouseUp as any}
           onTouchEnd={handleWheelMouseUp as any}
-          onMouseLeave={handleWheelMouseUp as any}
         >
           <Svg 
             style={StyleSheet.absoluteFill} 

@@ -649,39 +649,44 @@ export function useGameLogic({
     }
   }, [tempProgressLoading, loading, tempProgress, hasTempProgress, gameGrid, wordPlacements, crosswordWords, allValidWords]);
 
-  // Handle word hint - returns true if hint was applied, false if no hints available
-  const handleWordHint = useCallback(
-    async (hintedWord: string): Promise<boolean> => {
-      // Check if player has global hints available
-      if (globalHints > 0) {
-        try {
-          const { loadGuestProgress, saveGuestProgress } = await import("@/hooks/guest-progress");
-          const progress = await loadGuestProgress();
-          if (!progress || (progress.meta.hints || 0) < 1) {
-            return false;
-          }
-          
-          // Deduct hint from global count
-          progress.meta.hints = (progress.meta.hints || 0) - 1;
-          progress.updatedAt = new Date().toISOString();
-          await saveGuestProgress(progress);
-          
-          // Update local state
-          setGlobalHints(progress.meta.hints);
-          setHintedWords((prev) => [...prev, hintedWord]);
-          
-          console.log(`[Hint] Used hint for word: ${hintedWord}. Remaining hints: ${progress.meta.hints}`);
-          return true;
-        } catch (error) {
-          console.warn('Failed to use hint:', error);
-          return false;
-        }
+  // Helper to consume hints
+  const consumeHints = useCallback(async (amount: number): Promise<boolean> => {
+    if (globalHints < amount) return false;
+    
+    try {
+      const { loadGuestProgress, saveGuestProgress } = await import("@/hooks/guest-progress");
+      const progress = await loadGuestProgress();
+      if (!progress || (progress.meta.hints || 0) < amount) {
+        return false;
       }
       
-      // No hints available - return false to trigger modal
+      progress.meta.hints = (progress.meta.hints || 0) - amount;
+      progress.updatedAt = new Date().toISOString();
+      await saveGuestProgress(progress);
+      
+      setGlobalHints(progress.meta.hints);
+      return true;
+    } catch (error) {
+      console.warn('Failed to consume hints:', error);
       return false;
+    }
+  }, [globalHints]);
+
+
+
+  const handleWordHint = useCallback(
+    async (hintedWord: string): Promise<boolean> => {
+      const cost = 1;
+      if (globalHints < cost) return false;
+
+      const success = await consumeHints(cost);
+      if (!success) return false;
+      
+      setHintedWords((prev) => [...prev, hintedWord]);
+      console.log(`[Hint] Used hint for word: ${hintedWord}. Remaining hints: ${globalHints - cost}`);
+      return true;
     },
-    [globalHints]
+    [globalHints, consumeHints]
   );
 
   const handleNextLevel = useCallback(() => {
