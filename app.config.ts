@@ -53,10 +53,6 @@ export default ({ config }: any) => ({
       eas: {
         "projectId": "110cce74-943b-4f02-9aff-3715dfe84f34" // <--- ADD THIS LINE
       },
-      paypalClientId:
-        process.env.EXPO_PUBLIC_PAYPAL_CLIENT_ID ||
-        process.env.EXPO_PAYPAL_CLIENT_ID ||
-        "",
     },
     owner: "hamzaihsan",
   },

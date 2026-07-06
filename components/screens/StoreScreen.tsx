@@ -5,7 +5,7 @@ import {
   type GuestProgressPayload,
 } from "@/hooks/guest-progress";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
-import { usePayPalPurchase } from "@/lib/paypal";
+import { showToast } from "@/lib/toast";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -54,7 +54,6 @@ export default function CombinedStoreScreen() {
   const styles = useThemedStyles(
     createStyles(isLargeScreen, CARD_WIDTH, width)
   );
-  const { open, Modal } = usePayPalPurchase();
   const [activeTab, setActiveTab] = useState<"shop" | "subscription">("shop");
   const [shopIndex, setShopIndex] = useState(0);
   const [subscriptionIndex, setSubscriptionIndex] = useState(0);
@@ -355,7 +354,7 @@ export default function CombinedStoreScreen() {
         </ThemedCard>
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => open({ usd: offer.usd, gems: offer.gems })}
+          onPress={() => showToast("Purchases are coming soon", "info")}
         >
           <LinearGradient
             colors={offer.colors}
@@ -582,7 +581,7 @@ export default function CombinedStoreScreen() {
     <View style={styles.gridContainer}>
       {(activeTab === "shop"
         ? shopOffers
-        : subscriptionsEnabled
+        : SUBSCRIPTIONS_ENABLED
         ? subscriptions
         : []
       ).map(activeTab === "shop" ? renderShopCard : renderSubscriptionCard)}
@@ -714,7 +713,6 @@ export default function CombinedStoreScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-      {Modal}
     </View>
   );
 }

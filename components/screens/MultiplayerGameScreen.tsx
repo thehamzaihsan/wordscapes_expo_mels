@@ -23,7 +23,6 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import { AlertTriangle, ArrowLeft, Award, Clock, Handshake, Share2, Trophy, User, XCircle, Zap } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AdComponent from "../common/AdComponent";
 import BackgroundImage from "../common/BackgroundImage";
 import LoadingScreen from "../common/LoadingScreen";
 import MultiplayerWheel from "../game/MultiplayerWheel";
@@ -629,7 +628,6 @@ export default function MultiplayerGameScreen({
           </View>
         </View>
 
-        <AdComponent />
       </View>
       {/* Withdraw confirm */}
       <Modal

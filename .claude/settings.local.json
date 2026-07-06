@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /home/hamzaihsan/projects_drive/Work/wordscapes_expo_mels branch -a --sort=-committerdate)",
+      "Bash(git checkout *)",
+      "Bash(pnpm install *)",
+      "Bash(npx expo *)",
+      "Bash(getent hosts *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -m 8 https://supabase.com)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -m 60 http://localhost:8090)",
+      "Bash(git rm *)",
+      "Bash(python3 *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -m 90 http://localhost:8090 -o /dev/null -w \"root: %{http_code}\\\\n\")",
+      "Skill(run)",
+      "Bash(chromium-cli *)",
+      "Read(//home/hamzaihsan/.cache/**)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(node -e \"require.resolve\\('playwright-core'\\)\")",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node drive.js s8.txt)",
+      "Bash(git -C /home/hamzaihsan/projects_drive/Work/wordscapes_expo_mels branch --show-current)",
+      "Bash(mkdir -p /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/before)",
+      "Bash(cp /home/hamzaihsan/projects_drive/Work/wordscapes_expo_mels/hooks/crossword-gen.ts /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/before/)",
+      "Bash(cp /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/test-gen.ts /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/before/)",
+      "Bash(/home/hamzaihsan/projects_drive/Work/wordscapes_expo_mels/node_modules/.bin/tsc test-gen.ts crossword-gen.ts --outDir out --module commonjs --target es2020 --lib es2022,dom --skipLibCheck)",
+      "Bash(node out/test-gen.js)",
+      "Bash(mkdir -p /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/after)",
+      "Bash(cp /home/hamzaihsan/projects_drive/Work/wordscapes_expo_mels/hooks/crossword-gen.ts /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/after/)",
+      "Bash(cp /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/test-gen.ts /tmp/claude-1000/-home-hamzaihsan-projects-drive-Work-wordscapes-expo-mels/eb88ade9-90f8-403b-81dd-91746edf35ff/scratchpad/after/)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(node drive.js s16.txt)",
+      "Bash(node stress.js)",
+      "Bash(echo \"exit-status-of-grep: $?\")",
+      "Bash(git stash *)",
+      "Bash(echo \"grep-exit: $?\")"
+    ]
+  }
+}

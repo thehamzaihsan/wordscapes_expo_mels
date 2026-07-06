@@ -5,7 +5,9 @@ import { ChevronLeft, Volume2, VolumeX } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Easing,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,13 +17,10 @@ import {
 
 import { Difficulty } from "@/constants/difficulty";
 import { useSettings } from "@/hooks/useSettings";
-import AdComponent from "../common/AdComponent";
+import LevelCompleteCelebration from "../animations/LevelCompleteCelebration";
 import LetterWheel from "../game/inputWheel";
 import LetterWheelGesture from "../game/InputWheelGesture";
 import { useGameLogic } from "../game/useGameLogic";
-import ThemedButton from "../ui/ThemedButton";
-import ThemedCard from "../ui/ThemedCard";
-import ThemedText from "../ui/ThemedText";
 
 interface GameScreenProps {
   onNavigate?: (screen: string) => void;
@@ -83,14 +82,22 @@ export default function GameScreen({
     onNavigate,
   });
 
-  // Update modal visibility when gameComplete changes
-  useEffect(() => {
-    setModalVisible(gameComplete);
-  }, [gameComplete]);
-
   const { settings, updateSetting } = useSettings();
   const soundEnabled = settings.soundEnabled;
   const animationsEnabled = settings.animationsEnabled;
+
+  // Keep latest sound setting readable from mount-agnostic effects
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  // Update modal visibility when gameComplete changes and play the
+  // level-complete sound once as the celebration opens
+  useEffect(() => {
+    setModalVisible(gameComplete);
+    if (gameComplete && soundEnabledRef.current) {
+      completeSoundRef.current?.replayAsync().catch(() => {});
+    }
+  }, [gameComplete]);
   const useGestureWheel = settings.useGestureWheel ?? true; // Default to true for gesture wheel
 
   const toggleSound = useCallback(() => {
@@ -142,6 +149,25 @@ export default function GameScreen({
       completeSoundRef.current?.unloadAsync();
     };
   }, []);
+
+  // --- Level intro transition: fade/slide the board in instead of an abrupt swap ---
+  const contentAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (loading || !gameGrid) {
+      contentAnim.setValue(0);
+      return;
+    }
+    if (!animationsEnabled) {
+      contentAnim.setValue(1);
+      return;
+    }
+    Animated.timing(contentAnim, {
+      toValue: 1,
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: Platform.OS !== "web",
+    }).start();
+  }, [loading, gameGrid, animationsEnabled, contentAnim]);
 
   // --- Flying letter animation setup ---
   type AnimatingLetter = {
@@ -304,10 +330,21 @@ export default function GameScreen({
       ) : !gameGrid ? (
         <Text style={styles.infoText}>No grid</Text>
       ) : (
-        <View
+        <Animated.View
           style={[
             styles.wrapper,
             { flexDirection: isBigScreen ? "row" : "column" },
+            {
+              opacity: contentAnim,
+              transform: [
+                {
+                  translateY: contentAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [16, 0],
+                  }),
+                },
+              ],
+            },
           ]}
         >
           {/* Floating letters overlay */}
@@ -455,64 +492,47 @@ export default function GameScreen({
               <Text style={styles.infoText}>No letters</Text>
             )}
           </View>
-        </View>
+        </Animated.View>
       )}
 
-      <AdComponent />
-
-      <Modal transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
-          <ThemedCard style={styles.modalCard} padding="lg">
-            {animationsEnabled && (
-              <LottieView
-                source={require("../../assets/animations/level-complete.json")}
-                autoPlay
-                loop={false}
-                style={styles.lottie}
-              />
-            )}
-            <ThemedText variant="h2" style={styles.modalTitle}>
-              Level Complete!
-            </ThemedText>
-            <ThemedText variant="body1" style={styles.modalScore}>
-              Score: {score}
-            </ThemedText>
-            {/* Play complete sound once when modal opens */}
-            {gameComplete && (
-              <View style={{ height: 0, width: 0 }}>
-                {/* Trigger on open */}
-                {(() => {
-                  if (soundEnabled)
-                    completeSoundRef.current?.replayAsync().catch(() => {});
-                  return null;
-                })()}
-              </View>
-            )}
-            <ThemedButton
-              variant="primary"
-              title={nextLevel ? "Next Level" : "Back to Levels"}
-              style={styles.nextButton}
-              onPress={() => {
-                setModalVisible(false);
-                if (nextLevel) {
-                  router.push({
-                    pathname: "/game",
-                    params: {
-                      levelNumber: nextLevel.level,
-                      baseWord: nextLevel.baseWord,
-                      difficulty: nextLevel.difficulty,
-                      categoryName: categoryName,
-                      levelTitle: `Level ${nextLevel.level}`,
-                      levelDataJSON: JSON.stringify(nextLevel)
-                    }
-                  });
-                } else {
-                  onNavigate?.("levels");
-                }
-              }}
-            ></ThemedButton>
-          </ThemedCard>
-        </View>
+      <Modal
+        transparent
+        visible={modalVisible}
+        animationType="none"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <LevelCompleteCelebration
+          score={score}
+          buttonLabel={nextLevel ? "Next Level" : "Back to Levels"}
+          animationsEnabled={animationsEnabled}
+          onNext={() => {
+            setModalVisible(false);
+            if (nextLevel) {
+              router.push({
+                pathname: "/game",
+                params: {
+                  levelNumber: nextLevel.level,
+                  baseWord: nextLevel.baseWord,
+                  difficulty: nextLevel.difficulty,
+                  categoryName: categoryName,
+                  levelTitle: `Level ${nextLevel.level}`,
+                  levelDataJSON: JSON.stringify(nextLevel),
+                },
+              });
+            } else {
+              onNavigate?.("levels");
+            }
+          }}
+        >
+          {animationsEnabled && (
+            <LottieView
+              source={require("../../assets/animations/level-complete.json")}
+              autoPlay
+              loop={false}
+              style={styles.lottie}
+            />
+          )}
+        </LevelCompleteCelebration>
       </Modal>
     </View>
   );
@@ -604,32 +624,6 @@ const styles = StyleSheet.create({
     minHeight: 220,
     height: "100%",
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalCard: {
-    width: "80%",
-    padding: 20,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  modalTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-  nextButton: {
-    marginTop: 12,
-    backgroundColor: "#8B5CF6",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  nextButtonText: { color: "#fff", fontWeight: "bold" },
   levelTitle: {
     fontFamily: "Pacifico",
     position: "absolute",
@@ -645,10 +639,5 @@ const styles = StyleSheet.create({
   lottie: {
     width: 200,
     height: 200,
-  },
-  modalScore: {
-    color: "#fff",
-    fontSize: 18,
-    marginBottom: 20,
   },
 });

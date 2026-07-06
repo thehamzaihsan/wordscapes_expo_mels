@@ -17,7 +17,6 @@ import React, { useState } from "react";
 import { Platform, StatusBar, StyleSheet, View } from "react-native";
 
 // Import the level components
-import AdComponent from "../common/AdComponent";
 import LoadingScreen from "../common/LoadingScreen";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
@@ -257,7 +256,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     return <LoadingScreen />;
   }
 
-  const adsEnabled = process.env.EXPO_PUBLIC_ENABLE_ADS === "1" || false;
 
   return (
     <View style={styles.container}>
@@ -284,7 +282,6 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         guestMeta={guestMeta}
         onLevelPress={handleLevelPress}
       />
-      {adsEnabled && <AdComponent />}
     </View>
   );
 };
