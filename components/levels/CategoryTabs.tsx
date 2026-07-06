@@ -120,24 +120,27 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
 
 const createStyles = (theme: any) => ({
   categoryContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 1,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    borderTopWidth: 0,
+    borderRadius: theme.borderRadius.xl2,
+    marginTop: theme.spacing.md,
+    marginHorizontal: theme.spacing.md,
   },
   categoryScrollContent: {
     paddingHorizontal: theme.spacing.xs,
     gap: theme.spacing.sm,
     paddingVertical: 4,
+    flexGrow: 1,
+    justifyContent: 'center' as const,
   },
   categoryTab: {
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
+    height: 44,
+    minWidth: 96,
+    paddingHorizontal: theme.spacing.md,
     shadowOpacity: 0.05,
     shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
@@ -151,7 +154,6 @@ const createStyles = (theme: any) => ({
   },
   categoryTabLocked: {
     opacity: 0.6,
-    minHeight: 56,
   },
   categoryContent: {
     alignItems: 'center' as const,

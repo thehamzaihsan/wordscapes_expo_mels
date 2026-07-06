@@ -55,6 +55,8 @@ const Text: React.FC<TextProps> = ({
     const baseFont = theme.typography.fontFamilies?.regular || 'System';
     const mediumFont = theme.typography.fontFamilies?.medium || 'System';
     const boldFont = theme.typography.fontFamilies?.bold || 'System';
+    // Brand display serif for headings; single-weight face, so no faux bold
+    const displayFont = theme.typography.fontFamilies?.display || boldFont;
 
     const baseStyles: TextStyle = {
       fontSize: theme.typography.fontSizes.base,
@@ -69,40 +71,45 @@ const Text: React.FC<TextProps> = ({
           ...baseStyles,
           fontSize: theme.typography.fontSizes.xl6,
           lineHeight: theme.typography.lineHeights.xl6,
-          fontWeight: theme.typography.fontWeights.bold,
-          fontFamily: boldFont,
+          fontWeight: theme.typography.fontWeights.normal,
+          fontFamily: displayFont,
+          letterSpacing: 0.5,
         };
       case 'heading1':
         return {
           ...baseStyles,
           fontSize: theme.typography.fontSizes.xl5,
           lineHeight: theme.typography.lineHeights.xl5,
-          fontWeight: theme.typography.fontWeights.bold,
-          fontFamily: boldFont,
+          fontWeight: theme.typography.fontWeights.normal,
+          fontFamily: displayFont,
+          letterSpacing: 0.5,
         };
       case 'heading2':
         return {
           ...baseStyles,
           fontSize: theme.typography.fontSizes.xl4,
           lineHeight: theme.typography.lineHeights.xl4,
-          fontWeight: theme.typography.fontWeights.semibold,
-          fontFamily: boldFont,
+          fontWeight: theme.typography.fontWeights.normal,
+          fontFamily: displayFont,
+          letterSpacing: 0.5,
         };
       case 'heading3':
         return {
           ...baseStyles,
           fontSize: theme.typography.fontSizes.xl3,
           lineHeight: theme.typography.lineHeights.xl3,
-          fontWeight: theme.typography.fontWeights.semibold,
-          fontFamily: mediumFont,
+          fontWeight: theme.typography.fontWeights.normal,
+          fontFamily: displayFont,
+          letterSpacing: 0.5,
         };
       case 'heading4':
         return {
           ...baseStyles,
           fontSize: theme.typography.fontSizes.xl2,
           lineHeight: theme.typography.lineHeights.xl2,
-          fontWeight: theme.typography.fontWeights.semibold,
-          fontFamily: mediumFont,
+          fontWeight: theme.typography.fontWeights.normal,
+          fontFamily: displayFont,
+          letterSpacing: 0.5,
         };
       case 'body1':
         return {
@@ -179,12 +186,19 @@ const Text: React.FC<TextProps> = ({
 
   const variantStyles = getVariantStyles();
   const colorStyles = getColorStyles();
+  const isDisplayVariant =
+    variant === 'display' ||
+    variant === 'heading1' ||
+    variant === 'heading2' ||
+    variant === 'heading3' ||
+    variant === 'heading4';
 
   const finalStyle: TextStyle = {
     ...variantStyles,
     ...colorStyles,
     textAlign: align,
-    ...(weight && {
+    // Headings keep the brand display face regardless of `weight`
+    ...(weight && !isDisplayVariant && {
       fontWeight: theme.typography.fontWeights[weight],
       fontFamily: weight === 'bold' || weight === 'extrabold' 
         ? theme.typography.fontFamilies.bold 

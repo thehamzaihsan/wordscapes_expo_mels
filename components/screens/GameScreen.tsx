@@ -305,7 +305,7 @@ export default function GameScreen({
           onPress={() => onNavigate?.("levels")}
           style={styles.backButton}
         >
-          <ChevronLeft size={16} color="#22C55E" />
+          <ChevronLeft size={16} color="#FFFFFF" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
@@ -315,20 +315,43 @@ export default function GameScreen({
           {/* <Text style={styles.score}>Score: {score}</Text> */}
           <TouchableOpacity onPress={toggleSound} style={styles.soundToggle}>
             {soundEnabled ? (
-              <Volume2 size={18} color="#111827" />
+              <Volume2 size={18} color="#FFFFFF" />
             ) : (
-              <VolumeX size={18} color="#6B7280" />
+              <VolumeX size={18} color="#AEC2BE" />
             )}
           </TouchableOpacity>
         </View>
       </View>
 
       {loading ? (
-        <Text style={styles.infoText}>Loading…</Text>
+        <View style={styles.stateBox}>
+          <Text style={styles.infoText}>Loading level…</Text>
+        </View>
       ) : error ? (
-        <Text style={styles.errorText}>{error}</Text>
+        <View style={styles.stateBox}>
+          <Text style={styles.errorText}>Couldn&apos;t load this level</Text>
+          <Text style={styles.infoText}>{error}</Text>
+          <TouchableOpacity
+            onPress={() => onNavigate?.("levels")}
+            style={[styles.backButton, { marginTop: 16 }]}
+          >
+            <ChevronLeft size={16} color="#FFFFFF" />
+            <Text style={styles.backButtonText}>Back to Levels</Text>
+          </TouchableOpacity>
+        </View>
       ) : !gameGrid ? (
-        <Text style={styles.infoText}>No grid</Text>
+        <View style={styles.stateBox}>
+          <Text style={styles.infoText}>
+            This level has no puzzle grid. Go back and pick another level.
+          </Text>
+          <TouchableOpacity
+            onPress={() => onNavigate?.("levels")}
+            style={[styles.backButton, { marginTop: 16 }]}
+          >
+            <ChevronLeft size={16} color="#FFFFFF" />
+            <Text style={styles.backButtonText}>Back to Levels</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <Animated.View
           style={[
@@ -543,9 +566,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     alignItems: "center",
-    // ...(Platform.OS === "web"
-    //   ? { maxWidth: 1600, alignSelf: "center" as const }
-    //   : {}),
+    ...(Platform.OS === "web"
+      ? { width: "100%", maxWidth: 1100, alignSelf: "center" as const }
+      : {}),
   },
   header: {
     width: "100%",
@@ -559,24 +582,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "#E5E7EB",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(10, 24, 23, 0.62)",
+    borderWidth: 1,
+    borderColor: "rgba(191, 235, 224, 0.16)",
   },
-  backButtonText: { color: "#22C55E", fontWeight: "600" },
-  score: { fontSize: 18, fontWeight: "bold", color: "#22C55E" },
+  backButtonText: { color: "#FFFFFF", fontWeight: "600" },
+  score: { fontSize: 18, fontWeight: "bold", color: "#2F9484" },
   soundToggle: {
     marginLeft: 8,
-    backgroundColor: "#FFFFFF",
-    borderColor: "#D1D5DB",
+    backgroundColor: "rgba(10, 24, 23, 0.62)",
+    borderColor: "rgba(191, 235, 224, 0.16)",
     borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 999,
   },
-  infoText: { color: "#6B7280" },
-  errorText: { color: "red" },
+  infoText: { color: "#E6EEEC", textAlign: "center" },
+  errorText: { color: "#E97C74", fontWeight: "600", fontSize: 18, marginBottom: 6 },
+  stateBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    padding: 24,
+    maxWidth: 420,
+  },
   gridContainer: {
     marginTop: 8,
     flex: 1 / 2,
@@ -595,23 +628,23 @@ const styles = StyleSheet.create({
     alignContent: "space-between",
   },
   cell: {
-    margin: 1,
+    margin: 1.5,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 4,
+    borderRadius: 6,
     width: 100,
     height: 100,
   },
   emptyCell: { backgroundColor: "transparent" },
   hiddenCell: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
     borderWidth: 2,
-    borderColor: "#D1D5DB",
+    borderColor: "rgba(255, 255, 255, 0.95)",
   },
   revealedCell: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F9484",
     borderWidth: 2,
-    borderColor: "#16A34A",
+    borderColor: "#207D6E",
   },
   cellText: { fontWeight: "bold" },
   hiddenText: { color: "transparent" },
@@ -625,7 +658,8 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   levelTitle: {
-    fontFamily: "Pacifico",
+    fontFamily: "Marcellus",
+    letterSpacing: 2,
     position: "absolute",
     left: 0,
     right: 0,

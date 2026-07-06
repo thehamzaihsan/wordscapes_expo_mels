@@ -1,6 +1,6 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
-import WordSpringsText from "@/components/common/WordSpringsText";
+import BrandText from "@/components/common/BrandText";
 import Card from "@/components/ui/ThemedCard";
 import ThemedText from "@/components/ui/ThemedText";
 import { useMatchmaking } from "@/hooks/useMatchmaking";
@@ -367,7 +367,7 @@ export default function MatchfindingScreenComponent() {
                 </LinearGradient>
               </Card>
             </Animated.View>
-            <WordSpringsText style={styles.playerName}>You</WordSpringsText>
+            <BrandText style={styles.playerName}>You</BrandText>
             <Card variant="glassStrong" padding="sm" style={styles.statusBadge}>
               <ThemedText style={[styles.statusText, { color: themeName === 'light' ? 'black' : 'white' }]}>
                 Ready
@@ -387,9 +387,9 @@ export default function MatchfindingScreenComponent() {
             </Animated.View>
             
             <View style={styles.findingTextContainer}>
-              <WordSpringsText style={styles.findingText}>
+              <BrandText style={styles.findingText}>
                 {error ? error : findingText[vsTextIndex]}
-              </WordSpringsText>
+              </BrandText>
               {waiting && !error && (
                 <ThemedText style={[styles.rangeText, { color: 'white' }]}>
                   Range: ±{range}
@@ -449,9 +449,9 @@ export default function MatchfindingScreenComponent() {
                 </LinearGradient>
               </Card>
             </Animated.View>
-            <WordSpringsText style={styles.playerName}>
+            <BrandText style={styles.playerName}>
               {waiting ? "Searching..." : "Opponent"}
-            </WordSpringsText>
+            </BrandText>
             {waiting && (
               <Card variant="glassStrong" padding="sm" style={styles.statusBadge}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>

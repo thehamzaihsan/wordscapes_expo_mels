@@ -92,7 +92,7 @@ const Input = React.forwardRef<TextInput, InputProps>(({
           return {
             ...baseStyle,
             borderColor: theme.colors.primary,
-            backgroundColor: 'transparent',
+            backgroundColor: theme.colors.surfaceSecondary,
           };
         case 'filled':
           return {
@@ -123,7 +123,7 @@ const Input = React.forwardRef<TextInput, InputProps>(({
         return {
           ...baseStyle,
           borderColor: theme.colors.border,
-          backgroundColor: 'transparent',
+          backgroundColor: theme.colors.surfaceSecondary,
         };
       case 'filled':
         return {

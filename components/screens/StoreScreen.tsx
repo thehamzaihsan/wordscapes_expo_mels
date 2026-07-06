@@ -96,7 +96,7 @@ export default function CombinedStoreScreen() {
   const getShopOffers = () => {
     const purchaseOptions = economy.gems.purchaseOptions;
     const colors = [
-      ["#8b5cf6", "#7c3aed"],
+      ["#2F9484", "#207D6E"],
       ["#10b981", "#059669"],
       ["#f59e0b", "#d97706"],
       ["#ef4444", "#dc2626"],
@@ -157,7 +157,7 @@ export default function CombinedStoreScreen() {
         "Exclusive Levels",
       ],
       popular: false,
-      colors: ["#8b5cf6", "#7c3aed"],
+      colors: ["#2F9484", "#207D6E"],
       bgColor: "#2e1065",
       icon: "🌟",
     },

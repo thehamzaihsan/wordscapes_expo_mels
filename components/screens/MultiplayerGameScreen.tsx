@@ -24,6 +24,7 @@ import { useRouter } from "expo-router";
 import { AlertTriangle, ArrowLeft, Award, Clock, Handshake, Share2, Trophy, User, XCircle, Zap } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackgroundImage from "../common/BackgroundImage";
+import BrandLogo from "../common/BrandLogo";
 import LoadingScreen from "../common/LoadingScreen";
 import MultiplayerWheel from "../game/MultiplayerWheel";
 import MultiplayerWheelGesture from "../game/MultiplayerWheelGesture";
@@ -406,7 +407,7 @@ export default function MultiplayerGameScreen({
         const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = `wordsprings-match-result-${Date.now()}.png`;
+        link.download = `wordgrove-match-result-${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -722,14 +723,10 @@ export default function MultiplayerGameScreen({
           {/* Header with Logo and Branding */}
           <View style={styles.shareCardHeader}>
             <View style={styles.shareCardLogoContainer}>
-              <Image 
-                source={require('@/assets/images/icon.png')} 
-                style={styles.shareCardLogo}
-                resizeMode="contain"
-              />
+              <BrandLogo size={40} />
               <View>
                 <ThemedText variant="subtitle" weight="bold" style={styles.shareCardTitle}>
-                  Wordsprings
+                  Wordgrove
                 </ThemedText>
                 <ThemedText variant="caption" style={styles.shareCardSubtitle}>
                   Multiplayer
@@ -818,7 +815,7 @@ export default function MultiplayerGameScreen({
           <View style={styles.shareCardFooter}>
             <View style={styles.shareCardFooterDivider} />
             <ThemedText variant="caption" style={styles.shareCardWebsite}>
-              Play now at wordsprings.vercel.app
+              Wordgrove — Multiplayer word battles
             </ThemedText>
           </View>
         </View>

@@ -1,6 +1,6 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
-import WordSpringsText from "@/components/common/WordSpringsText";
+import BrandText from "@/components/common/BrandText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
 import Modal from "@/components/ui/ThemedModal";
@@ -168,9 +168,9 @@ export default function LeaderboardRoute() {
               <ArrowLeft size={24} color="white" />
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <WordSpringsText variant="h1" style={[styles.title, { color: 'white' }]}>
+              <BrandText variant="h1" style={[styles.title, { color: 'white' }]}>
                 Leaderboard
-              </WordSpringsText>
+              </BrandText>
               <ThemedText variant="body2" style={[styles.subtitle, { color: 'white' }]}>
                 Top {rows.length} players worldwide
               </ThemedText>
@@ -193,9 +193,9 @@ export default function LeaderboardRoute() {
                       <ThemedText variant="caption" style={{ color: 'rgba(255,255,255,0.8)' }}>
                         Your Rank
                       </ThemedText>
-                      <WordSpringsText variant="h2" style={{ color: 'white' }}>
+                      <BrandText variant="h2" style={{ color: 'white' }}>
                         #{meRank}
-                      </WordSpringsText>
+                      </BrandText>
                     </View>
                   </View>
                   <View style={styles.myRankRight}>

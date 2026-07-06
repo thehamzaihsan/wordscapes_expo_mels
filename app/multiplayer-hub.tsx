@@ -1,6 +1,6 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
-import WordSpringsText from "@/components/common/WordSpringsText";
+import BrandText from "@/components/common/BrandText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
 import Modal from "@/components/ui/ThemedModal";
@@ -268,9 +268,9 @@ export default function MultiplayerHubScreen() {
     return (
       <View style={styles.loadingContainer}>
         <BackgroundImage />
-        <WordSpringsText style={{ fontSize: 32 }}>
+        <BrandText style={{ fontSize: 32 }}>
           Multiplayer Locked
-        </WordSpringsText>
+        </BrandText>
         <ThemedText
           variant="body2"
           color="textSecondary"
@@ -324,9 +324,9 @@ export default function MultiplayerHubScreen() {
               <ArrowLeft size={24} color="white" />
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <WordSpringsText variant="h1" style={[styles.headerTitle, { color: 'white' }]}>
+              <BrandText variant="h1" style={[styles.headerTitle, { color: 'white' }]}>
                 Multiplayer Hub
-              </WordSpringsText>
+              </BrandText>
               <ThemedText variant="body2" style={[styles.subtitle, { color: 'white' }]}>
                 Challenge players worldwide
               </ThemedText>

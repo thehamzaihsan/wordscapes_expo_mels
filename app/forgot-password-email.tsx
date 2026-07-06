@@ -39,7 +39,7 @@ export default function ForgotPasswordEmail() {
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
-        placeholderTextColor="#6B7280"
+        placeholderTextColor="#85A09B"
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -75,11 +75,11 @@ const styles = StyleSheet.create({
   subtitle: { color: "#9CA3AF", fontSize: 14, textAlign: "center" },
   input: {
     width: "100%",
-    backgroundColor: "#1F2937",
+    backgroundColor: "#132322",
     color: "#fff",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#374151",
+    borderColor: "#38504B",
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 16,

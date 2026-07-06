@@ -217,6 +217,7 @@ export default function RootLayout() {
         const assetLoadingPromise = Font.loadAsync({
           Helvetica: require("../assets/fonts/Helvetica.ttf"),
           "Cormorant-Garamond": require("../assets/fonts/Cormorant-Garamond.ttf"),
+          Marcellus: require("../assets/fonts/Marcellus-Regular.ttf"),
           Pacifico: require("../assets/fonts/Pacifico-Regular.ttf"),
         });
 
@@ -269,7 +270,7 @@ export default function RootLayout() {
         <ThemeProvider defaultTheme="light">
           <BackgroundProvider>
             <Head>
-              <title>WordSprings</title>
+              <title>Wordgrove</title>
             </Head>
             {appIsReady ? (
               <>

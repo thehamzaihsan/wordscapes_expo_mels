@@ -1,12 +1,8 @@
+import { APP_NAME } from "@/constants/brand";
 import { useSettings } from "@/hooks/useSettings";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { showToast } from "@/lib/toast";
-import {
-  Bug,
-  ChevronLeft,
-  Settings as SettingsIcon,
-  Users,
-} from "lucide-react-native";
+import { Bug, ChevronLeft, Users } from "lucide-react-native";
 import React from "react";
 import { Platform, ScrollView, StatusBar, Switch, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,6 +37,37 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
     await resetSettings();
     showToast("Settings reset to default", "success");
   };
+
+  const renderToggleRow = (
+    label: string,
+    description: string,
+    key: keyof typeof settings,
+    isLast = false
+  ) => (
+    <View style={[styles.settingItem, isLast && styles.settingItemLast]}>
+      <View style={styles.settingInfo}>
+        <ThemedText variant="body1" weight="semibold">
+          {label}
+        </ThemedText>
+        <ThemedText variant="body2" color="textSecondary">
+          {description}
+        </ThemedText>
+      </View>
+      <Switch
+        value={settings[key] as boolean}
+        onValueChange={(value) => handleToggle(key, value)}
+        trackColor={{
+          false: theme.colors.border,
+          true: theme.colors.primary,
+        }}
+        thumbColor={
+          (settings[key] as boolean)
+            ? theme.colors.textInverse
+            : theme.colors.textTertiary
+        }
+      />
+    </View>
+  );
 
   if (loading) {
     return (
@@ -89,217 +116,61 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
           style={styles.backButton}
         />
 
-        {/* Header Card */}
-        <ThemedCard
-          variant="glassStrong"
-          padding="lg"
-          style={styles.headerCard}
-        >
-          <View style={styles.headerTitle}>
-            <SettingsIcon size={24} color={theme.colors.primary} />
-            <ThemedText
-              variant="heading2"
-              weight="bold"
-              align="center"
-              style={styles.title}
-            >
-              Settings
-            </ThemedText>
-          </View>
+        {/* Single settings card */}
+        <ThemedCard variant="glassStrong" padding="xl" style={styles.card}>
+          <ThemedText variant="heading2" style={styles.title}>
+            Settings
+          </ThemedText>
           <ThemedText
             variant="body2"
-            align="center"
             color="textSecondary"
             style={styles.subtitle}
           >
             Configure your game experience
           </ThemedText>
-        </ThemedCard>
-        {/* Theme Settings */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+
+          <View style={styles.divider} />
+
+          {/* Theme */}
           <ThemeSwitcher />
-        </ThemedCard>
 
-        {/* Animation Settings */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <View style={styles.divider} />
+
+          {/* Preferences */}
           <ThemedText
-            variant="heading3"
-            weight="bold"
+            variant="overline"
+            color="textSecondary"
             style={styles.sectionTitle}
           >
-            🎨 Animations
+            PREFERENCES
           </ThemedText>
+          {renderToggleRow(
+            "UI Animations",
+            "Button presses, transitions, and other UI animations",
+            "animationsEnabled"
+          )}
+          {renderToggleRow(
+            "Sound Effects",
+            "Game sounds, button clicks, and audio feedback",
+            "soundEnabled"
+          )}
+          {renderToggleRow(
+            "Haptic Feedback",
+            "Vibration feedback for actions and interactions",
+            "hapticFeedbackEnabled",
+            true
+          )}
 
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <ThemedText
-                variant="body1"
-                weight="semibold"
-                style={styles.settingLabel}
-              >
-                UI Animations
-              </ThemedText>
-              <ThemedText variant="body2" color="textSecondary">
-                Button presses, transitions, and other UI animations
-              </ThemedText>
-            </View>
-            <Switch
-              value={settings.animationsEnabled}
-              onValueChange={(value) =>
-                handleToggle("animationsEnabled", value)
-              }
-              trackColor={{
-                false: theme.colors.border,
-                true: theme.colors.primary,
-              }}
-              thumbColor={
-                settings.animationsEnabled
-                  ? theme.colors.textInverse
-                  : theme.colors.textTertiary
-              }
-            />
-          </View>
-        </ThemedCard>
+          <View style={styles.divider} />
 
-        {/* Audio Settings */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          {/* More */}
           <ThemedText
-            variant="heading3"
-            weight="bold"
+            variant="overline"
+            color="textSecondary"
             style={styles.sectionTitle}
           >
-            🔊 Audio
+            MORE
           </ThemedText>
-
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <ThemedText
-                variant="body1"
-                weight="semibold"
-                style={styles.settingLabel}
-              >
-                Sound Effects
-              </ThemedText>
-              <ThemedText variant="body2" color="textSecondary">
-                Game sounds, button clicks, and audio feedback
-              </ThemedText>
-            </View>
-            <Switch
-              value={settings.soundEnabled}
-              onValueChange={(value) => handleToggle("soundEnabled", value)}
-              trackColor={{
-                false: theme.colors.border,
-                true: theme.colors.primary,
-              }}
-              thumbColor={
-                settings.soundEnabled
-                  ? theme.colors.textInverse
-                  : theme.colors.textTertiary
-              }
-            />
-          </View>
-        </ThemedCard>
-
-        {/* Feedback Settings */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText
-            variant="heading3"
-            weight="bold"
-            style={styles.sectionTitle}
-          >
-            📳 Feedback
-          </ThemedText>
-
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <ThemedText
-                variant="body1"
-                weight="semibold"
-                style={styles.settingLabel}
-              >
-                Haptic Feedback
-              </ThemedText>
-              <ThemedText variant="body2" color="textSecondary">
-                Vibration feedback for actions and interactions
-              </ThemedText>
-            </View>
-            <Switch
-              value={settings.hapticFeedbackEnabled}
-              onValueChange={(value) =>
-                handleToggle("hapticFeedbackEnabled", value)
-              }
-              trackColor={{
-                false: theme.colors.border,
-                true: theme.colors.primary,
-              }}
-              thumbColor={
-                settings.hapticFeedbackEnabled
-                  ? theme.colors.textInverse
-                  : theme.colors.textTertiary
-              }
-            />
-          </View>
-        </ThemedCard>
-
-        {/* Reset Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText
-            variant="heading3"
-            weight="bold"
-            style={styles.sectionTitle}
-          >
-            🔄 Reset
-          </ThemedText>
-
-          <ThemedButton
-            title="Reset to Default Settings"
-            variant="error"
-            size="md"
-            fullWidth
-            onPress={handleReset}
-          />
-        </ThemedCard>
-
-        {/* App Info */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText
-            variant="heading3"
-            weight="bold"
-            style={styles.sectionTitle}
-          >
-            ℹ️ About
-          </ThemedText>
-          <View style={styles.infoContainer}>
-            <ThemedText
-              variant="body1"
-              weight="semibold"
-              style={styles.settingLabel}
-            >
-              Wordscapes Game
-            </ThemedText>
-            <ThemedText
-              variant="body2"
-              color="textSecondary"
-              style={styles.settingLabel}
-            >
-              Version 1.0.0
-            </ThemedText>
-            <ThemedText variant="body2" color="textSecondary" align="center">
-              Configure your game experience with these settings
-            </ThemedText>
-          </View>
-        </ThemedCard>
-
-        {/* Credits Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText
-            variant="heading3"
-            weight="bold"
-            style={styles.sectionTitle}
-          >
-            👥 Team
-          </ThemedText>
-
           <ThemedButton
             title="Meet the Development Team"
             variant="ghost"
@@ -307,29 +178,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
             fullWidth
             leftIcon={<Users size={20} color={theme.colors.primary} />}
             onPress={() => onNavigate("credits")}
-            style={styles.creditsButton}
+            style={styles.linkButton}
           />
-
-          <ThemedText
-            variant="body2"
-            color="textSecondary"
-            align="center"
-            style={styles.creditsDescription}
-          >
-            Learn more about the amazing developers who created this game
-          </ThemedText>
-        </ThemedCard>
-
-        {/* Debug Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
-          <ThemedText
-            variant="heading3"
-            weight="bold"
-            style={styles.sectionTitle}
-          >
-            🛠️ Debug
-          </ThemedText>
-
           <ThemedButton
             title="Debug Tools"
             variant="ghost"
@@ -337,17 +187,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
             fullWidth
             leftIcon={<Bug size={20} color={theme.colors.warning} />}
             onPress={() => onNavigate("debug")}
-            style={styles.debugButton}
+            style={styles.linkButton}
+          />
+          <ThemedButton
+            title="Reset to Default Settings"
+            variant="outline"
+            size="md"
+            fullWidth
+            onPress={handleReset}
+            style={styles.resetButton}
+            textStyle={{ color: theme.colors.error }}
           />
 
-          <ThemedText
-            variant="body2"
-            color="textSecondary"
-            align="center"
-            style={styles.debugDescription}
-          >
-            Developer tools and debugging utilities
-          </ThemedText>
+          <View style={styles.divider} />
+
+          {/* About */}
+          <View style={styles.infoContainer}>
+            <ThemedText variant="body2" color="textSecondary">
+              {APP_NAME} · Version 1.0.0
+            </ThemedText>
+          </View>
         </ThemedCard>
 
         {/* Bottom Spacing */}
@@ -363,7 +222,7 @@ const createStyles = (theme: any) => ({
     position: "relative" as const,
     backgroundColor: "transparent",
     ...(Platform.OS === "web"
-      ? { maxWidth: 1600, alignSelf: "center" as const }
+      ? { width: "100%" as const, maxWidth: 1600, alignSelf: "center" as const }
       : {}),
   },
   loadingContainer: {
@@ -379,69 +238,52 @@ const createStyles = (theme: any) => ({
     alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
   },
-  headerCard: {
-    marginBottom: theme.spacing.lg,
-    shadowOpacity: 0.2,
+  card: {
+    width: "100%" as const,
+    maxWidth: 560,
+    alignSelf: "center" as const,
+    shadowOpacity: 0.18,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  headerTitle: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginBottom: theme.spacing.xs,
+    elevation: 10,
   },
   title: {
-    marginLeft: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
     lineHeight: 18,
   },
-  card: {
-    marginBottom: theme.spacing.lg,
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.glassmorphismBorder,
+    marginVertical: theme.spacing.lg,
   },
   sectionTitle: {
-    marginBottom: theme.spacing.base,
+    marginBottom: theme.spacing.md,
   },
   settingItem: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
     paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderSecondary,
-    marginBottom: theme.spacing.md,
+  },
+  settingItemLast: {
+    paddingBottom: 0,
   },
   settingInfo: {
     flex: 1,
     marginRight: theme.spacing.base,
-  },
-  settingLabel: {
-    marginBottom: theme.spacing.xs,
+    gap: 2,
   },
   infoContainer: {
     alignItems: "center" as const,
   },
-  creditsButton: {
-    marginBottom: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.primary + "20",
+  linkButton: {
+    marginBottom: theme.spacing.xs,
   },
-  creditsDescription: {
-    lineHeight: 18,
-  },
-  debugButton: {
-    marginBottom: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.warning + "20",
-  },
-  debugDescription: {
-    lineHeight: 18,
+  resetButton: {
+    marginTop: theme.spacing.sm,
+    borderColor: theme.colors.error,
   },
   bottomSpacing: {
     height: theme.spacing.xl4,

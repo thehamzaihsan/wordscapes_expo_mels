@@ -39,7 +39,7 @@ export default function ForgotPasswordOtp() {
         value={code}
         onChangeText={setCode}
         placeholder="123456"
-        placeholderTextColor="#6B7280"
+        placeholderTextColor="#85A09B"
         keyboardType="number-pad"
         maxLength={6}
       />
@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
   code: {
     width: 180,
     textAlign: "center",
-    backgroundColor: "#1F2937",
+    backgroundColor: "#132322",
     color: "#fff",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#374151",
+    borderColor: "#38504B",
     paddingVertical: 12,
     fontSize: 20,
     letterSpacing: 8,

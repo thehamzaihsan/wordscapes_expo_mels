@@ -1,110 +1,115 @@
 /**
- * Enhanced Theme System
- * Centralized theme definitions for dynamic theming support
+ * Enhanced Theme System — "Alpine Dusk"
+ * Centralized theme definitions for dynamic theming support.
+ *
+ * Palette direction: the app plays over full-bleed nature photography
+ * (mountain / ocean / forest), so surfaces are deep pine-teal ink glass,
+ * the primary is a lagoon teal-green, and a single warm gold accent
+ * carries rewards / XP / warmth.
  */
 
 import { Platform } from 'react-native';
 
 // Base color palette
 export const BaseColors = {
-  // Primary Colors
-  purple: {
-    50: '#faf5ff',
-    100: '#f3e8ff',
-    200: '#e9d5ff',
-    300: '#d8b4fe',
-    400: '#c084fc',
-    500: '#a855f7',
-    600: '#9333ea',
-    700: '#7c3aed',
-    800: '#6b21a8',
-    900: '#581c87',
+  // Lagoon teal-green — primary
+  lagoon: {
+    50: '#EEF7F5',
+    100: '#D7EDE8',
+    200: '#AFDBD2',
+    300: '#7EC4B6',
+    400: '#4FAB9A',
+    500: '#2F9484',
+    600: '#207D6E',
+    700: '#17655A',
+    800: '#114E45',
+    900: '#0C3A34',
   },
-  blue: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#3b82f6',
-    600: '#2563eb',
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
+  // Sunrise gold — accent / rewards / warning
+  gold: {
+    50: '#FDF8EC',
+    100: '#FAEDCB',
+    200: '#F5DD9B',
+    300: '#EFC96B',
+    400: '#E9B647',
+    500: '#DFA02E',
+    600: '#C08324',
+    700: '#99661D',
+    800: '#734B17',
+    900: '#543711',
   },
-  green: {
-    50: '#ecfdf5',
-    100: '#d1fae5',
-    200: '#a7f3d0',
-    300: '#6ee7b7',
-    400: '#34d399',
-    500: '#10b981',
-    600: '#059669',
-    700: '#047857',
-    800: '#065f46',
-    900: '#064e3b',
+  // Fern — success
+  fern: {
+    50: '#EFF7F0',
+    100: '#D8EDDC',
+    200: '#B0DBB8',
+    300: '#87C594',
+    400: '#66BC76',
+    500: '#4CAA5E',
+    600: '#3B8F4C',
+    700: '#2E713C',
+    800: '#23552E',
+    900: '#1A3F22',
   },
-  red: {
-    50: '#fef2f2',
-    100: '#fee2e2',
-    200: '#fecaca',
-    300: '#fca5a5',
-    400: '#f87171',
-    500: '#ef4444',
-    600: '#dc2626',
-    700: '#b91c1c',
-    800: '#991b1b',
-    900: '#7f1d1d',
+  // Coral — error
+  coral: {
+    50: '#FDF1F0',
+    100: '#F9DBD9',
+    200: '#F2B6B2',
+    300: '#EC948E',
+    400: '#E97C74',
+    500: '#E15A51',
+    600: '#C4463E',
+    700: '#9E362F',
+    800: '#772923',
+    900: '#571E1A',
   },
-  amber: {
-    50: '#fffbeb',
-    100: '#fef3c7',
-    200: '#fde68a',
-    300: '#fcd34d',
-    400: '#fbbf24',
-    500: '#f59e0b',
-    600: '#d97706',
-    700: '#b45309',
-    800: '#92400e',
-    900: '#78350f',
+  // Sky — info
+  sky: {
+    50: '#F0F6FB',
+    100: '#DBEAF5',
+    200: '#B6D4EA',
+    300: '#8FBCDD',
+    400: '#6FA8D0',
+    500: '#4A90C2',
+    600: '#3A76A3',
+    700: '#2E5D81',
+    800: '#234660',
+    900: '#193344',
   },
-  gray: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
+  // Ink — teal-tinted neutrals
+  ink: {
+    50: '#F4F8F7',
+    100: '#E6EEEC',
+    200: '#CFDDDA',
+    300: '#AEC2BE',
+    400: '#85A09B',
+    500: '#64807B',
+    600: '#4B6560',
+    700: '#38504B',
+    800: '#243835',
+    900: '#132322',
+    950: '#0B1B1A',
   },
 };
 
 // Typography system
 export const Typography = {
   fontFamilies: {
-    regular: Platform.OS === 'web' 
-      ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-      : Platform.OS === 'ios' 
-        ? 'Helvetica' 
-        : 'Helvetica',
+    regular: Platform.OS === 'web'
+      ? "'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+      : 'Helvetica',
     medium: Platform.OS === 'web'
-      ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-      : Platform.OS === 'ios'
-        ? 'Helvetica'
-        : 'Helvetica',
+      ? "'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+      : 'Helvetica',
     bold: Platform.OS === 'web'
-      ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-      : Platform.OS === 'ios'
-        ? 'Helvetica'
-        : 'Helvetica',
+      ? "'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+      : 'Helvetica',
     rounded: Platform.OS === 'web'
-      ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-      : Platform.OS === 'ios'
-        ? 'Helvetica'
-        : 'Helvetica',
+      ? "ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif"
+      : 'Helvetica',
+    // Display serif for the wordmark and level titles (bundled font)
+    display: 'Marcellus',
   },
   fontSizes: {
     xs: 12,
@@ -159,59 +164,59 @@ export const Spacing = {
   xl9: 128,
 };
 
-// Border radius system
+// Border radius system — a monotonic scale (was previously jumbled)
 export const BorderRadius = {
   none: 0,
-  sm: 20,
-  base: 24,
-  md: 32,
+  sm: 8,
+  base: 12,
+  md: 14,
   lg: 16,
   xl: 20,
   xl2: 24,
-  xl3: 32,
+  xl3: 28,
   full: 9999,
 };
 
 // Shadow system
 export const Shadows = {
   sm: {
-    shadowColor: '#000',
+    shadowColor: '#0B1B1A',
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
+    shadowOpacity: 0.14,
+    shadowRadius: 2,
     elevation: 1,
   },
   base: {
-    shadowColor: '#000',
+    shadowColor: '#0B1B1A',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
     elevation: 5,
   },
   lg: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.30,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-  xl: {
-    shadowColor: '#000',
+    shadowColor: '#0B1B1A',
     shadowOffset: {
       width: 0,
       height: 6,
     },
-    shadowOpacity: 0.37,
-    shadowRadius: 7.49,
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  xl: {
+    shadowColor: '#0B1B1A',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
     elevation: 12,
   },
 };
@@ -223,8 +228,8 @@ export const DarkThemeShadows = {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 1,
   },
   base: {
@@ -233,28 +238,28 @@ export const DarkThemeShadows = {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.28,
+    shadowRadius: 5,
     elevation: 5,
   },
   lg: {
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.30,
-    shadowRadius: 4.65,
+    shadowOpacity: 0.32,
+    shadowRadius: 10,
     elevation: 8,
   },
   xl: {
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 10,
     },
-    shadowOpacity: 0.37,
-    shadowRadius: 7.49,
+    shadowOpacity: 0.38,
+    shadowRadius: 16,
     elevation: 12,
   },
 };
@@ -264,65 +269,65 @@ export const LightTheme = {
   name: 'light',
   colors: {
     // Primary colors
-    primary: BaseColors.purple[600],
-    primaryLight: BaseColors.purple[500],
-    primaryDark: BaseColors.purple[700],
-    
-    // Secondary colors
-    secondary: BaseColors.blue[600],
-    secondaryLight: BaseColors.blue[500],
-    secondaryDark: BaseColors.blue[700],
-    
+    primary: BaseColors.lagoon[600],
+    primaryLight: BaseColors.lagoon[500],
+    primaryDark: BaseColors.lagoon[700],
+
+    // Secondary colors — warm gold accent
+    secondary: BaseColors.gold[600],
+    secondaryLight: BaseColors.gold[500],
+    secondaryDark: BaseColors.gold[700],
+
     // Success/Error/Warning
-    success: BaseColors.green[600],
-    error: BaseColors.red[600],
-    warning: BaseColors.amber[600],
-    info: BaseColors.blue[600],
-    
+    success: BaseColors.fern[600],
+    error: BaseColors.coral[600],
+    warning: BaseColors.gold[600],
+    info: BaseColors.sky[600],
+
     // Background colors
-    background: '#ffffff',
-    backgroundSecondary: BaseColors.gray[50],
-    backgroundTertiary: BaseColors.gray[100],
-    
+    background: '#F2F7F6',
+    backgroundSecondary: BaseColors.ink[100],
+    backgroundTertiary: BaseColors.ink[200],
+
     // Surface colors
     surface: '#ffffff',
-    surfaceSecondary: BaseColors.gray[50],
-    surfaceTertiary: BaseColors.gray[100],
-    
+    surfaceSecondary: BaseColors.ink[50],
+    surfaceTertiary: BaseColors.ink[100],
+
     // Text colors
-    text: BaseColors.gray[900],
-    textSecondary: BaseColors.gray[600],
-    textTertiary: BaseColors.gray[500],
+    text: BaseColors.ink[900],
+    textSecondary: BaseColors.ink[600],
+    textTertiary: BaseColors.ink[500],
     textInverse: '#ffffff',
-    
+
     // Border colors
-    border: BaseColors.gray[400],
-    borderSecondary: BaseColors.gray[300],
-    borderTertiary: BaseColors.gray[200],
-    
+    border: BaseColors.ink[300],
+    borderSecondary: BaseColors.ink[200],
+    borderTertiary: BaseColors.ink[100],
+
     // Game specific
-    gameBackground: BaseColors.purple[50],
+    gameBackground: BaseColors.lagoon[50],
     gameGrid: '#ffffff',
-    gameLetter: BaseColors.gray[800],
-    gameAccent: BaseColors.purple[600],
-    
+    gameLetter: BaseColors.ink[800],
+    gameAccent: BaseColors.lagoon[600],
+
     // Difficulty colors
-    easy: BaseColors.green[500],
-    medium: BaseColors.amber[500],
-    hard: BaseColors.red[500],
-    
+    easy: BaseColors.fern[500],
+    medium: BaseColors.gold[500],
+    hard: BaseColors.coral[500],
+
     // Overlay colors
-    overlay: 'rgba(0, 0, 0, 0.5)',
-    overlayLight: 'rgba(0, 0, 0, 0.2)',
-    
-    // Glassmorphism colors (theme-aware) - Fixed for light mode visibility
-    glassmorphismBackground: 'rgba(255, 255, 255, 0.75)',
-    glassmorphismBorder: 'rgba(255, 255, 255, 1)',
-    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.75)',
+    overlay: 'rgba(11, 27, 26, 0.5)',
+    overlayLight: 'rgba(11, 27, 26, 0.2)',
+
+    // Glassmorphism colors (theme-aware)
+    glassmorphismBackground: 'rgba(255, 255, 255, 0.78)',
+    glassmorphismBorder: 'rgba(255, 255, 255, 0.95)',
+    glassmorphismBackgroundStrong: 'rgba(255, 255, 255, 0.86)',
     glassmorphismBorderStrong: 'rgba(255, 255, 255, 1)',
-    
+
     // Status bar
-    statusBar: BaseColors.gray[900],
+    statusBar: BaseColors.ink[900],
   },
   typography: Typography,
   spacing: Spacing,
@@ -334,62 +339,65 @@ export const DarkTheme = {
   name: 'dark',
   colors: {
     // Primary colors
-    primary: BaseColors.purple[500],
-    primaryLight: BaseColors.purple[400],
-    primaryDark: BaseColors.purple[600],
-    
-    // Secondary colors
-    secondary: BaseColors.blue[500],
-    secondaryLight: BaseColors.blue[400],
-    secondaryDark: BaseColors.blue[600],
-    
+    primary: BaseColors.lagoon[500],
+    primaryLight: BaseColors.lagoon[400],
+    primaryDark: BaseColors.lagoon[600],
+
+    // Secondary colors — warm gold accent
+    secondary: BaseColors.gold[500],
+    secondaryLight: BaseColors.gold[400],
+    secondaryDark: BaseColors.gold[600],
+
     // Success/Error/Warning
-    success: BaseColors.green[500],
-    error: BaseColors.red[500],
-    warning: BaseColors.amber[500],
-    info: BaseColors.blue[500],
-    
+    success: BaseColors.fern[500],
+    error: BaseColors.coral[500],
+    warning: BaseColors.gold[500],
+    info: BaseColors.sky[500],
+
     // Background colors
-    background: BaseColors.gray[900],
-    backgroundSecondary: BaseColors.gray[800],
-    backgroundTertiary: BaseColors.gray[700],
-    
+    background: BaseColors.ink[950],
+    backgroundSecondary: BaseColors.ink[900],
+    backgroundTertiary: BaseColors.ink[800],
+
     // Surface colors
-    surface: BaseColors.gray[800],
-    surfaceSecondary: BaseColors.gray[700],
-    surfaceTertiary: BaseColors.gray[600],
-    
+    surface: BaseColors.ink[900],
+    surfaceSecondary: BaseColors.ink[800],
+    surfaceTertiary: BaseColors.ink[700],
+
     // Text colors
-    text: '#ffffff',
-    textSecondary: BaseColors.gray[300],
-    textTertiary: BaseColors.gray[400],
-    textInverse: BaseColors.gray[900],
-    
+    text: BaseColors.ink[50],
+    textSecondary: BaseColors.ink[200],
+    textTertiary: BaseColors.ink[300],
+    textInverse: BaseColors.ink[900],
+
     // Border colors
-    border: BaseColors.gray[600],
-    borderSecondary: BaseColors.gray[700],
-    borderTertiary: BaseColors.gray[800],
-    
+    border: BaseColors.ink[700],
+    borderSecondary: BaseColors.ink[800],
+    borderTertiary: BaseColors.ink[900],
+
     // Game specific
-    gameBackground: BaseColors.gray[900],
-    gameGrid: BaseColors.gray[800],
-    gameLetter: '#ffffff',
-    gameAccent: BaseColors.purple[500],
-    
+    gameBackground: BaseColors.ink[950],
+    gameGrid: BaseColors.ink[900],
+    gameLetter: BaseColors.ink[50],
+    gameAccent: BaseColors.lagoon[400],
+
     // Difficulty colors
-    easy: BaseColors.green[400],
-    medium: BaseColors.amber[400],
-    hard: BaseColors.red[400],
-    
+    easy: BaseColors.fern[400],
+    medium: BaseColors.gold[400],
+    hard: BaseColors.coral[400],
+
     // Overlay colors
     overlay: 'rgba(0, 0, 0, 0.7)',
     overlayLight: 'rgba(0, 0, 0, 0.3)',
-    
+
     // Glassmorphism colors (theme-aware)
-    glassmorphismBackground: 'rgba(20, 20, 21, 0.75)',
-    glassmorphismBorder: 'rgba(255, 255, 255, 0.3)',
-    glassmorphismBackgroundStrong: 'rgba(20, 20, 21, 0.85)',
-    statusBar: BaseColors.gray[900],
+    glassmorphismBackground: 'rgba(11, 27, 26, 0.72)',
+    glassmorphismBorder: 'rgba(175, 219, 210, 0.18)',
+    glassmorphismBackgroundStrong: 'rgba(11, 27, 26, 0.85)',
+    glassmorphismBorderStrong: 'rgba(175, 219, 210, 0.28)',
+
+    // Status bar
+    statusBar: BaseColors.ink[950],
   },
   typography: Typography,
   spacing: Spacing,
@@ -402,65 +410,65 @@ export const GameTheme = {
   name: 'game',
   colors: {
     // Primary colors
-    primary: BaseColors.purple[600],
-    primaryLight: BaseColors.purple[500],
-    primaryDark: BaseColors.purple[700],
-    
-    // Secondary colors
-    secondary: BaseColors.blue[600],
-    secondaryLight: BaseColors.blue[500],
-    secondaryDark: BaseColors.blue[700],
-    
+    primary: BaseColors.lagoon[500],
+    primaryLight: BaseColors.lagoon[400],
+    primaryDark: BaseColors.lagoon[600],
+
+    // Secondary colors — warm gold accent
+    secondary: BaseColors.gold[500],
+    secondaryLight: BaseColors.gold[400],
+    secondaryDark: BaseColors.gold[600],
+
     // Success/Error/Warning
-    success: BaseColors.green[500],
-    error: BaseColors.red[500],
-    warning: BaseColors.amber[500],
-    info: BaseColors.blue[500],
-    
+    success: BaseColors.fern[500],
+    error: BaseColors.coral[500],
+    warning: BaseColors.gold[500],
+    info: BaseColors.sky[500],
+
     // Background colors - translucent for game overlay feel
-    background: 'rgba(18, 18, 19, 0.85)',
-    backgroundSecondary: 'rgba(31, 41, 55, 0.75)',
-    backgroundTertiary: 'rgba(55, 65, 81, 0.65)',
-    
+    background: 'rgba(9, 22, 21, 0.85)',
+    backgroundSecondary: 'rgba(19, 35, 34, 0.75)',
+    backgroundTertiary: 'rgba(36, 56, 53, 0.65)',
+
     // Surface colors
-    surface: 'rgba(31, 41, 55, 0.75)',
-    surfaceSecondary: 'rgba(55, 65, 81, 0.65)',
-    surfaceTertiary: 'rgba(75, 85, 99, 0.55)',
-    
+    surface: 'rgba(19, 35, 34, 0.75)',
+    surfaceSecondary: 'rgba(36, 56, 53, 0.65)',
+    surfaceTertiary: 'rgba(56, 80, 75, 0.55)',
+
     // Text colors
     text: '#ffffff',
-    textSecondary: BaseColors.gray[300],
-    textTertiary: BaseColors.gray[400],
-    textInverse: BaseColors.gray[900],
-    
+    textSecondary: BaseColors.ink[200],
+    textTertiary: BaseColors.ink[300],
+    textInverse: BaseColors.ink[900],
+
     // Border colors
-    border: BaseColors.gray[600],
-    borderSecondary: BaseColors.gray[700],
-    borderTertiary: BaseColors.gray[800],
-    
+    border: BaseColors.ink[600],
+    borderSecondary: BaseColors.ink[700],
+    borderTertiary: BaseColors.ink[800],
+
     // Game specific
-    gameBackground: 'rgba(18, 18, 19, 0.85)',
-    gameGrid: 'rgba(31, 41, 55, 0.75)',
+    gameBackground: 'rgba(9, 22, 21, 0.85)',
+    gameGrid: 'rgba(19, 35, 34, 0.75)',
     gameLetter: '#ffffff',
-    gameAccent: BaseColors.purple[500],
-    
+    gameAccent: BaseColors.lagoon[400],
+
     // Difficulty colors
-    easy: BaseColors.green[400],
-    medium: BaseColors.amber[400],
-    hard: BaseColors.red[400],
-    
+    easy: BaseColors.fern[400],
+    medium: BaseColors.gold[400],
+    hard: BaseColors.coral[400],
+
     // Overlay colors
     overlay: 'rgba(0, 0, 0, 0.8)',
     overlayLight: 'rgba(0, 0, 0, 0.4)',
-    
+
     // Glassmorphism colors (theme-aware)
-    glassmorphismBackground: 'rgba(30, 30, 30, 0.6)',
-    glassmorphismBorder: 'rgba(255, 255, 255, 0.15)',
-    glassmorphismBackgroundStrong: 'rgba(30, 30, 30, 0.75)',
-    glassmorphismBorderStrong: 'rgba(255, 255, 255, 0.2)',
-    
+    glassmorphismBackground: 'rgba(10, 24, 23, 0.62)',
+    glassmorphismBorder: 'rgba(191, 235, 224, 0.16)',
+    glassmorphismBackgroundStrong: 'rgba(10, 24, 23, 0.78)',
+    glassmorphismBorderStrong: 'rgba(191, 235, 224, 0.24)',
+
     // Status bar
-    statusBar: '#121213',
+    statusBar: '#0B1B1A',
   },
   typography: Typography,
   spacing: Spacing,

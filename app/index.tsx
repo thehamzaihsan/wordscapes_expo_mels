@@ -1,8 +1,11 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
-import WordSpringsText from "@/components/common/WordSpringsText";
+import BrandLogo from "@/components/common/BrandLogo";
+import BrandText from "@/components/common/BrandText";
 import ThemedButton from "@/components/ui/ThemedButton";
+import ThemedCard from "@/components/ui/ThemedCard";
 import Modal from "@/components/ui/ThemedModal";
 import ThemedText from "@/components/ui/ThemedText";
+import { APP_NAME, APP_TAGLINE } from "@/constants/brand";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { checkOnline } from "@/lib/network";
@@ -12,9 +15,9 @@ import { Play, Settings, Users, UserX, WifiOff } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StatusBar,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,6 +28,8 @@ export default function Index() {
   const { loading, session } = useSupabaseAuth();
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
 
   const [errorModal, setErrorModal] = useState<null | {
     title: string;
@@ -170,33 +175,38 @@ export default function Index() {
             },
           ]}
         >
-          {/* Logo Section */}
+          {/* Brand hero */}
           <View style={styles.compactLogoContainer}>
-            {/* REPLACE <Logo /> with the Image component */}
-            <Image
-              source={require("../assets/images/WorldSprings_logo_1.png")}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <WordSpringsText
-              style={{ fontSize: 40, paddingTop: 15, paddingBottom: 15 }}
+            <BrandLogo size={isWide ? 140 : 108} />
+            <BrandText
+              style={{
+                fontSize: isWide ? 76 : 52,
+                letterSpacing: 3,
+                paddingTop: 18,
+              }}
             >
-              Word Springs
-            </WordSpringsText>
+              {APP_NAME}
+            </BrandText>
+            <BrandText
+              style={{
+                fontSize: isWide ? 22 : 17,
+                letterSpacing: 1.5,
+                opacity: 0.92,
+                paddingTop: 6,
+                paddingBottom: 12,
+                textAlign: "center",
+              }}
+            >
+              {APP_TAGLINE}
+            </BrandText>
           </View>
 
-          {/* Main Action Buttons */}
-          <View style={styles.actionButtonsContainer}>
-            <ThemedButton
-              title="Multiplayer"
-              variant="primary"
-              size="xl"
-              fullWidth
-              leftIcon={<Users size={20} color="white" />}
-              onPress={handleMultiplayer}
-              style={styles.primaryButton}
-            />
-
+          {/* Main Action Panel */}
+          <ThemedCard
+            variant="glassStrong"
+            padding="xl"
+            style={styles.actionPanel}
+          >
             <ThemedButton
               title="Start Playing"
               variant="primary"
@@ -208,22 +218,24 @@ export default function Index() {
             />
 
             <ThemedButton
+              title="Multiplayer"
+              variant="glassStrong"
+              size="lg"
+              fullWidth
+              leftIcon={<Users size={20} color={theme.colors.text} />}
+              onPress={handleMultiplayer}
+              style={styles.secondaryButton}
+            />
+
+            <ThemedButton
               title="Settings"
-              variant="secondary"
-              size="xl"
+              variant="glass"
+              size="lg"
               fullWidth
               leftIcon={<Settings size={20} color={theme.colors.text} />}
               onPress={handleSettings}
-              style={styles.secondaryButton}
             />
-          </View>
-
-          {/* Quick Access Footer */}
-          {/* <View style={styles.footerSection}>
-          <ThemedText variant="caption" align="center"  style={styles.footerText}>
-            Play thousands of word puzzles
-          </ThemedText>
-        </View> */}
+          </ThemedCard>
         </View>
       </ScrollView>
       {/* Enhanced error modal */}
@@ -326,36 +338,25 @@ const createStyles = (theme: any) => ({
     alignItems: "center" as const,
     marginBottom: theme.spacing.lg,
   },
-  actionButtonsContainer: {
+  actionPanel: {
     width: "100%" as const,
-    maxWidth: 320,
+    maxWidth: 420,
     marginBottom: theme.spacing.xl4,
-    gap: theme.spacing.base,
+    gap: theme.spacing.md,
   },
   primaryButton: {
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
   secondaryButton: {
-    marginBottom: theme.spacing.lg,
-  },
-  footerSection: {
-    marginTop: theme.spacing.xl4,
-    marginBottom: theme.spacing.lg,
-  },
-  footerText: {
-    opacity: 0.8,
+    marginBottom: theme.spacing.md,
   },
   compactLogoContainer: {
     alignItems: "center" as const,
-    // marginBottom: theme.spacing.xl2,
     marginTop: theme.spacing.xl2,
-  },
-  logoImage: {
-    width: 200,
-    height: 200,
+    paddingHorizontal: theme.spacing.lg,
   },
 });

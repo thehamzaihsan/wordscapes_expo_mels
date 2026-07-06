@@ -21,6 +21,8 @@ import LoadingScreen from "../common/LoadingScreen";
 import CategoryTabs from "../levels/CategoryTabs";
 import LevelGrid from "../levels/LevelGrid";
 import LevelHeader from "../levels/LevelHeader";
+import ThemedButton from "../ui/ThemedButton";
+import ThemedModal from "../ui/ThemedModal";
 
 interface LevelData {
   level: number;
@@ -58,6 +60,10 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     [key: string]: LevelData[];
   }>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [energyModal, setEnergyModal] = useState<null | {
+    required: number;
+    current: number;
+  }>(null);
   const [snapshotProfileName, setSnapshotProfileName] = useState<string | null>(
     null
   );
@@ -221,12 +227,8 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
     const currentEnergy = guestMeta?.energy || 0;
 
     if (currentEnergy < energyCost) {
-      // Show energy insufficient message or navigate to shop
-      console.warn("Insufficient energy to play level", {
-        required: energyCost,
-        current: currentEnergy,
-      });
-      // For now, just prevent navigation. Could show a modal later.
+      // Not enough energy — explain and offer the shop instead of failing silently
+      setEnergyModal({ required: energyCost, current: currentEnergy });
       return;
     }
 
@@ -282,6 +284,41 @@ const LevelScreen: React.FC<LevelScreenProps> = ({ onNavigate }) => {
         guestMeta={guestMeta}
         onLevelPress={handleLevelPress}
       />
+
+      {/* Not-enough-energy popup */}
+      <ThemedModal
+        isVisible={!!energyModal}
+        onClose={() => setEnergyModal(null)}
+        title="Not enough energy"
+        subtitle={
+          energyModal
+            ? `Playing a level costs ${energyModal.required} energy. You have ${energyModal.current}. Energy refills over time, or you can get more in the shop.`
+            : undefined
+        }
+        backdrop="blur"
+        showCloseButton
+        size="small"
+      >
+        <View style={{ gap: 8 }}>
+          <ThemedButton
+            title="Go to Shop"
+            variant="primary"
+            size="lg"
+            fullWidth
+            onPress={() => {
+              setEnergyModal(null);
+              onNavigate("shop");
+            }}
+          />
+          <ThemedButton
+            title="Wait for refill"
+            variant="ghost"
+            size="md"
+            fullWidth
+            onPress={() => setEnergyModal(null)}
+          />
+        </View>
+      </ThemedModal>
     </View>
   );
 };
@@ -293,7 +330,7 @@ const styles = StyleSheet.create({
     // Web: center the content with a max width for desktop layouts.
     // Mobile: take full width so the screen is visible on small devices.
     ...(Platform.OS === "web"
-      ? { width: "100%", maxWidth: 1024, alignSelf: "center", paddingHorizontal: 12 }
+      ? { width: "100%", maxWidth: 1280, alignSelf: "center", paddingHorizontal: 12 }
       : { width: "100%" }),
   },
   loadingContainer: {

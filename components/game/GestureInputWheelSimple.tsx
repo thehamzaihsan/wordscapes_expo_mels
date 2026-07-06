@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
   hintTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#22C55E",
+    color: "#2F9484",
     marginBottom: 12,
     fontFamily: "Helvetica",
   },
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
   },
   hintCloseButton: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#2F9484",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 25,

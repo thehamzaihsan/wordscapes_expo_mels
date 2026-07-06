@@ -1,3 +1,5 @@
+import BrandText from "@/components/common/BrandText";
+import { APP_NAME } from "@/constants/brand";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { signInEmailPassword } from "@/lib/auth";
 import { showToast } from "@/lib/toast";
@@ -99,18 +101,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
           style={styles.backButton}
         />
 
-        {/* /* Compact Logo */}
-        {/* <View style={styles.compactLogoContainer}> */}
-        {/* REPLACE <Logo /> with the Image component */}
-        {/* <Image
-            source={require("../../../assets/images/WorldSprings_logo_1.png")} 
-            style={styles.logoImage} 
-            resizeMode="contain" 
-          /> */}
-        {/* <WordSpringsText style={{ fontSize: 32 }}> 
-            WORDSPRINGS
-          </WordSpringsText> */}
-        {/* </View>  */}
+        {/* Wordmark */}
+        <View style={styles.compactLogoContainer}>
+          <BrandText style={{ fontSize: 44, letterSpacing: 2 }}>
+            {APP_NAME}
+          </BrandText>
+        </View>
 
         {/* Login Form Card */}
         <ThemedCard variant="glassStrong" padding="xl" style={styles.loginCard}>

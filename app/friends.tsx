@@ -1,6 +1,6 @@
 import BackgroundImage from "@/components/common/BackgroundImage";
 import LoadingScreen from "@/components/common/LoadingScreen";
-import WordSpringsText from "@/components/common/WordSpringsText";
+import BrandText from "@/components/common/BrandText";
 import ThemedButton from "@/components/ui/ThemedButton";
 import Card from "@/components/ui/ThemedCard";
 import Modal from "@/components/ui/ThemedModal";
@@ -391,9 +391,9 @@ export default function FriendsRoute() {
     return (
       <View style={styles.loadingContainer}>
         <BackgroundImage />
-        <WordSpringsText style={{ fontSize: 32 }}>
+        <BrandText style={{ fontSize: 32 }}>
           Sign in required
-        </WordSpringsText>
+        </BrandText>
         <ThemedButton
           title="Login"
           variant="primary"
@@ -427,9 +427,9 @@ export default function FriendsRoute() {
               <ArrowLeft size={24} color="white" />
             </TouchableOpacity>
             <View style={styles.headerTextContainer}>
-              <WordSpringsText variant="h1" style={[styles.title, { color: 'white' }]}>
+              <BrandText variant="h1" style={[styles.title, { color: 'white' }]}>
                 Friends
-              </WordSpringsText>
+              </BrandText>
               <ThemedText variant="body2" style={[styles.subtitle, { color: 'white' }]}>
                 Connect and compete
               </ThemedText>

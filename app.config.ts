@@ -3,8 +3,10 @@ import "dotenv/config";
 // This is now your one and only config file.
 export default ({ config }: any) => ({
   expo: {
-    name: "WordSprings",
-    slug: "wordsprings", // <--- FIX #1: Matched this to your EAS project
+    name: "Wordgrove",
+    // NOTE: slug intentionally left as "wordsprings" — it is pinned to the EAS
+    // project (extra.eas.projectId) and changing it breaks EAS builds.
+    slug: "wordsprings",
     version: "1.0.0",
     orientation: "portrait",
     scheme: "com.hexadevs.word",
@@ -36,10 +38,9 @@ export default ({ config }: any) => ({
       [
         "expo-splash-screen",
         {
-          image: "assets/images/WorldSprings_logo_1.png", // This was missing from your app.json plugins, good.
           resizeMode: "cover",
-          backgroundColor: "#6757f7",
-          dark: { backgroundColor: "#6757f7" },
+          backgroundColor: "#0B1B1A",
+          dark: { backgroundColor: "#0B1B1A" },
         },
       ],
       "@react-native-google-signin/google-signin",

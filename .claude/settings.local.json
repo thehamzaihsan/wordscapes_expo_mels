@@ -34,7 +34,20 @@
       "Bash(node stress.js)",
       "Bash(echo \"exit-status-of-grep: $?\")",
       "Bash(git stash *)",
-      "Bash(echo \"grep-exit: $?\")"
+      "Bash(echo \"grep-exit: $?\")",
+      "Bash(npx playwright *)",
+      "Bash(google-chrome --headless=new --disable-gpu --window-size=1440,900 --screenshot=shots/home-desktop.png --virtual-time-budget=15000 http://localhost:8090)",
+      "Bash(google-chrome --headless=new --disable-gpu --window-size=390,844 --screenshot=shots/home-mobile.png --virtual-time-budget=15000 http://localhost:8090)",
+      "Bash(sed -i 's/#22C55E/#2F9484/g; s/#16A34A/#207D6E/g' components/game/GestureInputWheelSimple.tsx components/game/GestureInputWheel.tsx components/game/inputWheel.tsx components/game/InputWheelGesture.tsx components/game/MultiplayerWheel.tsx components/game/MultiplayerWheelGesture.tsx)",
+      "Bash(sed -i 's/\"#8b5cf6\", \"#7c3aed\"/\"#2F9484\", \"#207D6E\"/g' components/screens/StoreScreen.tsx)",
+      "Bash(mkdir -p bg)",
+      "Bash(curl -sL --max-time 60 -o bg/mountain.jpg \"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=75&fm=jpg\" -o bg/ocean.jpg \"https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1920&q=75&fm=jpg\" -o bg/forest.jpg \"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=75&fm=jpg\" -o bg/default_background.jpg \"https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=75&fm=jpg\")",
+      "Bash(file bg/*.jpg)",
+      "Bash(curl -sL --max-time 60 -o assets/fonts/Marcellus-Regular.ttf \"https://raw.githubusercontent.com/google/fonts/main/ofl/marcellus/Marcellus-Regular.ttf\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8090)",
+      "Bash(curl -s -o /dev/null -w \"page:%{http_code}\\\\n\" http://localhost:8090)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

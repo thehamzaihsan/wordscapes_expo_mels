@@ -240,19 +240,18 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
           style={styles.backButton}
         />
 
-        {/* Header Card */}
+        {/* Single profile card */}
         <ThemedCard
           variant="glassStrong"
-          padding="lg"
-          style={styles.headerCard}
+          padding="xl"
+          style={styles.card}
         >
           <ThemedText
             variant="heading2"
-            weight="bold"
             align="center"
             style={styles.title}
           >
-            PLAYER PROFILE
+            Player Profile
           </ThemedText>
           <ThemedText
             variant="body2"
@@ -262,10 +261,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
           >
             Account & Progress Overview
           </ThemedText>
-        </ThemedCard>
+        <View style={styles.divider} />
 
         {/* Identity Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemedText
             variant="heading3"
             weight="bold"
@@ -298,10 +296,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
             leftIcon={<Edit3 size={16} color={theme.colors.textInverse} />}
             style={styles.updateButton}
           />
-        </ThemedCard>
+        <View style={styles.divider} />
 
         {/* Avatar Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemedText
             variant="heading3"
             weight="bold"
@@ -349,10 +346,9 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
               style={styles.updateButton}
             />
           )}
-        </ThemedCard>
+        <View style={styles.divider} />
 
         {/* Progress Overview */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemedText
             variant="heading3"
             weight="bold"
@@ -413,11 +409,10 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
               </View>
             </View>
           )}
-        </ThemedCard>
-
         {/* Player Stats */}
         {progress && derived && (
-          <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
+          <View>
+            <View style={styles.divider} />
             <ThemedText
               variant="heading3"
               weight="bold"
@@ -531,11 +526,12 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 />
               </View>
             </View>
-          </ThemedCard>
+          </View>
         )}
 
+        <View style={styles.divider} />
+
         {/* Advanced Section */}
-        <ThemedCard variant="glassStrong" padding="lg" style={styles.card}>
           <ThemedButton
             title={showAdvanced ? "Hide Advanced" : "Show Advanced"}
             variant="ghost"
@@ -597,19 +593,20 @@ const createStyles = (theme: any) => ({
     alignSelf: "flex-start" as const,
     marginBottom: theme.spacing.lg,
   },
-  headerCard: {
+  card: {
+    width: "100%" as const,
+    maxWidth: 560,
+    alignSelf: "center" as const,
     marginBottom: theme.spacing.lg,
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.18,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    elevation: 10,
   },
-  card: {
-    marginBottom: theme.spacing.lg,
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.glassmorphismBorder,
+    marginVertical: theme.spacing.lg,
   },
   title: {
     marginBottom: theme.spacing.xs,
@@ -726,6 +723,9 @@ const createStyles = (theme: any) => ({
     marginTop: theme.spacing.sm,
   },
   logoutButton: {
+    width: "100%" as const,
+    maxWidth: 560,
+    alignSelf: "center" as const,
     marginTop: theme.spacing.base,
     shadowOpacity: 0.2,
     shadowRadius: 8,

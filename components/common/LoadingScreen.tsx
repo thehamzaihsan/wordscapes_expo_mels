@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
+import { APP_NAME } from "@/constants/brand";
 import BackgroundImage from "../common/BackgroundImage";
-// Import the custom text component from its path alias
-import WordSpringsText from "@/components/common/WordSpringsText";
+import BrandText from "@/components/common/BrandText";
 
 // Array of possible loading messages
 const loadingMessages = [
@@ -10,7 +10,7 @@ const loadingMessages = [
   "Preparing Journey",
   "Assembling Words",
   "Charting the Course",
-  "Warming Up the Springs",
+  "Wandering the Grove",
   "Gathering Vowels",
 ];
 
@@ -33,7 +33,7 @@ const LoadingScreen: React.FC = () => {
         }),
         Animated.timing(progress, {
           toValue: 1,
-          duration: 1000, 
+          duration: 1000,
           useNativeDriver: false,
         }),
       ])
@@ -48,16 +48,12 @@ const LoadingScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <BackgroundImage />
-      <Image
-        style={styles.logo}
-        source={require("../../assets/images/WorldSprings_logo_1.png")}
-        resizeMode="contain"
-      />
+      <BrandText style={styles.wordmark}>{APP_NAME}</BrandText>
+      <View style={styles.rule} />
 
-      {/* --- Use WordSpringsText component for the message --- */}
-      <WordSpringsText style={styles.loadingText}>
+      <BrandText style={styles.loadingText}>
         {currentMessage}
-      </WordSpringsText>
+      </BrandText>
 
       {/* --- LOADING BAR --- */}
       <View style={styles.loadingBarContainer}>
@@ -80,28 +76,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: {
-    width: 200,
-    height: 200,
+  wordmark: {
+    fontSize: 52,
+    letterSpacing: 2,
   },
-  // --- New style for the WordSpringsText component ---
+  rule: {
+    width: 72,
+    height: 2,
+    backgroundColor: '#DFA02E',
+    borderRadius: 1,
+    marginTop: 14,
+    marginBottom: 22,
+  },
   loadingText: {
-    fontSize: 36, // Smaller than the main title, but still prominent
-    marginTop: 20,
-    marginBottom: 10,
+    fontSize: 24,
+    letterSpacing: 1.5,
     textAlign: 'center',
+    opacity: 0.92,
   },
   loadingBarContainer: {
-    width: "60%",
-    height: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 4,
-    marginTop: 20, // Adjusted space below the new text style
+    width: "50%",
+    maxWidth: 320,
+    height: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    borderRadius: 3,
+    marginTop: 24,
   },
   loadingBarFill: {
     height: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 4,
+    backgroundColor: "#DFA02E",
+    borderRadius: 3,
   },
 });
 

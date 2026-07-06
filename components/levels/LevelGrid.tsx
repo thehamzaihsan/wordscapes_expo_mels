@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ScrollView } from "react-native";
+import { View, ScrollView, useWindowDimensions } from "react-native";
 import { useTheme, useThemedStyles } from "@/hooks/useTheme";
 import { Lock, TrendingUp, Zap } from "lucide-react-native";
 import LevelCard from "./LevelCard";
@@ -32,6 +32,9 @@ const LevelGrid: React.FC<LevelGridProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { width } = useWindowDimensions();
+  // Responsive columns: 1 on phones, 2 on tablets, 3 on desktop
+  const numColumns = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
   const { getUnlockedCategories } = require('@/hooks/guest-progress');
   
   const allCurrentLevels = levelCategories[selectedCategory] || [];
@@ -150,15 +153,27 @@ const LevelGrid: React.FC<LevelGridProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {currentLevels.map((level) => (
-          <LevelCard
-            key={level.level}
-            level={level}
-            categoryName={selectedCategory}
-            guestMeta={guestMeta}
-            onPress={onLevelPress}
-          />
-        ))}
+        <View style={styles.gridWrap}>
+          {currentLevels.map((level) => (
+            <View
+              key={level.level}
+              style={{
+                width:
+                  numColumns === 1
+                    ? ("100%" as const)
+                    : (`${100 / numColumns}%` as any),
+                padding: theme.spacing.sm,
+              }}
+            >
+              <LevelCard
+                level={level}
+                categoryName={selectedCategory}
+                guestMeta={guestMeta}
+                onPress={onLevelPress}
+              />
+            </View>
+          ))}
+        </View>
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
@@ -259,8 +274,12 @@ const createStyles = (theme: any) => ({
     flex: 1,
   },
   scrollContent: {
-    padding: theme.spacing.lg,
-    gap: theme.spacing.base,
+    padding: theme.spacing.md,
+  },
+  gridWrap: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    alignItems: 'stretch' as const,
   },
   emptyContainer: {
     flex: 1,

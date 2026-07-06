@@ -183,11 +183,13 @@ const LevelHeader: React.FC<LevelHeaderProps> = ({
 
 const createStyles = (theme: any) => ({
   header: {
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 6,
-    borderRadius: 0,
+    borderRadius: theme.borderRadius.xl2,
+    marginTop: theme.spacing.md,
+    marginHorizontal: theme.spacing.md,
   },
   headerTop: {
     flexDirection: 'row' as const,

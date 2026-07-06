@@ -28,7 +28,7 @@ export const colors = {
   textSecondary: '#d1d5db',
   textTertiary: '#9ca3af',
   textInverse: '#111827',
-  primary: '#8b5cf6',
+  primary: '#2F9484',
   secondary: '#3b82f6',
   success: '#10b981',
   error: '#ef4444',

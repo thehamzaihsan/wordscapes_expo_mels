@@ -38,7 +38,7 @@ export default function ForgotPasswordNew() {
         value={pass}
         onChangeText={setPass}
         placeholder="New password"
-        placeholderTextColor="#6B7280"
+        placeholderTextColor="#85A09B"
         secureTextEntry
       />
       <TextInput
@@ -46,7 +46,7 @@ export default function ForgotPasswordNew() {
         value={confirm}
         onChangeText={setConfirm}
         placeholder="Confirm password"
-        placeholderTextColor="#6B7280"
+        placeholderTextColor="#85A09B"
         secureTextEntry
       />
       {error && <Text style={styles.error}>{error}</Text>}
@@ -80,11 +80,11 @@ const styles = StyleSheet.create({
   title: { color: "#fff", fontSize: 22, fontWeight: "700" },
   input: {
     width: "100%",
-    backgroundColor: "#1F2937",
+    backgroundColor: "#132322",
     color: "#fff",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#374151",
+    borderColor: "#38504B",
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 16,
