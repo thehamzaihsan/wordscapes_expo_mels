@@ -1307,7 +1307,6 @@ export const ENGLISH_WORDS = new Set<string>([
   "STATION",
   "CHRISTIAN",
   "ROUND",
-  "PAYPAL",
   "FAVORITE",
   "UNDERSTAND",
   "OPTION",
